@@ -1,0 +1,6 @@
+[Match]
+Name=usbbr0
+
+[Network]
+Address=172.31.250.1/24
+ConfigureWithoutCarrier=yes

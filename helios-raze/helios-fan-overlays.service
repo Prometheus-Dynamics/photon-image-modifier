@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable CM5 fan PWM/tacho overlays
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/helios-fan-overlays.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

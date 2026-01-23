@@ -1,0 +1,36 @@
+[Unit]
+Description=Configure USB gadget via configfs
+# Start early but do not block basic/multi-user if gadget setup is slow or fails.
+DefaultDependencies=no
+# Ensure root is rw and local fs ready, plus modules/udev/configfs
+After=systemd-remount-fs.service local-fs.target systemd-modules-load.service sys-kernel-config.mount systemd-udevd.service
+Wants=systemd-modules-load.service sys-kernel-config.mount
+Requires=sys-kernel-config.mount
+Before=network-pre.target helios-dnsmasq.service
+# On failure, collect a structured diagnostics bundle for offline analysis
+OnFailure=helios-diagnostics@%n.service
+ConditionPathIsReadWrite=/
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/helios/diagnostics.conf
+Environment=PATH=/bin:/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+SyslogIdentifier=usb-gadget
+StandardOutput=journal+console
+StandardError=journal+console
+# Lightweight pre/post breadcrumbs in addition to script logging
+ExecStartPre=/bin/sh -c 'mkdir -p /var/log; : > /var/log/usb-gadget.log; echo "[unit][usb-gadget] starting" | /bin/tee -a /var/log/usb-gadget.log >/dev/null || true'
+ExecStart=/bin/bash /usr/local/bin/usb-gadget-setup.sh
+ExecStartPost=/bin/sh -c 'echo "[unit][usb-gadget] finished" | /bin/tee -a /var/log/usb-gadget.log >/dev/null || true'
+# Do not auto-collect diagnostics here; rely on OnFailure= drop-in
+# ExecStartPost=/usr/sbin/helios-diag-collect.sh usb-gadget
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=sysinit.target
+WantedBy=multi-user.target
+WantedBy=default.target

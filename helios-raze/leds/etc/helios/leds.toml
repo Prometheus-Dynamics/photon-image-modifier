@@ -1,0 +1,10 @@
+[leds]
+enabled = true
+gpio = 13
+count = 16
+color_order = "rgbw"
+frequency_hz = 800000
+use_pwm = true
+brightness = 128
+protocol = "sk6812-ec20"
+label = "Status ring"

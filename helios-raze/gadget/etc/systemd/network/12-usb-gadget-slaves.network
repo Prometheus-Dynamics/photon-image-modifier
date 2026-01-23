@@ -1,0 +1,6 @@
+[Match]
+Name=usb*
+
+[Network]
+Bridge=usbbr0
+LinkLocalAddressing=no

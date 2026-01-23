@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-probe WS2812 PIO after RP1 PIO init
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "modprobe -r ws2812_pio_rp1 2>/dev/null; modprobe ws2812_pio_rp1"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

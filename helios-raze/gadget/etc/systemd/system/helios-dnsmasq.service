@@ -1,0 +1,15 @@
+[Unit]
+Description=Helios USB gadget dnsmasq
+# Start after gadget setup and networkd; attach dynamically to usbbr0 when it appears
+After=helios-usb-gadget.service systemd-networkd.service
+Wants=systemd-networkd.service
+Requires=helios-usb-gadget.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-dir=/etc/dnsmasq.d
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
