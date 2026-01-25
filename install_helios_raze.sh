@@ -3,6 +3,9 @@
 # Exit on errors, print commands, ignore unset variables
 set -ex +u
 
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+
 SRC_DIR_DEFAULT="helios-raze/ov9782"
 SRC_DIR="${HELIOS_RAZE_SRC_DIR:-${SRC_DIR_DEFAULT}}"
 TUNING_DIR_DEFAULT="helios-raze/libcamera/ipa/rpi"
@@ -12,10 +15,35 @@ LIBCAMERA_PATCH_DIR="${HELIOS_RAZE_LIBCAMERA_PATCH_DIR:-${LIBCAMERA_PATCH_DIR_DE
 LIBCAMERA_GIT_REF_DEFAULT="v0.6.0+rpt20251202"
 LIBCAMERA_GIT_REF="${LIBCAMERA_GIT_REF:-${LIBCAMERA_GIT_REF_DEFAULT}}"
 LIBCAMERA_SOURCE_DIR="${LIBCAMERA_SOURCE_DIR:-}"
+DISABLE_INITRAMFS_UPDATES="${DISABLE_INITRAMFS_UPDATES:-1}"
+
+initramfs_diverted=0
 
 die() {
   echo "$@" 1>&2
   exit 1
+}
+
+disable_initramfs_updates() {
+  if [ "${DISABLE_INITRAMFS_UPDATES}" != "1" ]; then
+    return 0
+  fi
+  if [ ! -x /usr/sbin/update-initramfs ]; then
+    return 0
+  fi
+  if ! dpkg-divert --list /usr/sbin/update-initramfs >/dev/null 2>&1; then
+    dpkg-divert --local --rename --add /usr/sbin/update-initramfs
+  fi
+  ln -sf /bin/true /usr/sbin/update-initramfs
+  initramfs_diverted=1
+}
+
+restore_initramfs_updates() {
+  if [ "${initramfs_diverted}" -ne 1 ]; then
+    return 0
+  fi
+  rm -f /usr/sbin/update-initramfs
+  dpkg-divert --local --rename --remove /usr/sbin/update-initramfs || true
 }
 
 install_if_exists() {
@@ -451,6 +479,9 @@ build_ov9782_module() {
 }
 
 # Run the base Pi install script first.
+disable_initramfs_updates
+trap restore_initramfs_updates EXIT
+
 chmod +x ./install_pi.sh
 ./install_pi.sh "$1"
 

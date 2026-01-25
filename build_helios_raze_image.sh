@@ -32,6 +32,9 @@ MAVEN_LOCAL_REPO="${maven_local_repo}" \
   "${libcamera_driver_repo}/tools/build_arm64_jni.sh"
 
 libcamera_driver_version="$(git -C "${libcamera_driver_repo}" describe --tags --match "v*" 2>/dev/null || true)"
+if [[ "${libcamera_driver_version}" =~ -[0-9]+-g[0-9a-f]+$ ]]; then
+  libcamera_driver_version="dev-${libcamera_driver_version}"
+fi
 libcamera_version_arg=""
 if [ -n "${libcamera_driver_version}" ]; then
   libcamera_version_arg="-PlibcameraDriverVersion=${libcamera_driver_version}"
@@ -53,7 +56,12 @@ fi
 
 cp -v "${jar_path}" "${jar_out}"
 
-PHOTONVISION_JAR_PATH="${jar_out}" \
+jar_out_docker="${jar_out}"
+if [[ "${jar_out}" == "${repo_root}/"* ]]; then
+  jar_out_docker="/work/${jar_out#${repo_root}/}"
+fi
+
+PHOTONVISION_JAR_PATH="${jar_out_docker}" \
 OUTPUT_DIR="${output_dir}" \
 IMAGE_NAME="${image_name}" \
   "${repo_root}/tools/workflow/run-workflow-docker.sh"

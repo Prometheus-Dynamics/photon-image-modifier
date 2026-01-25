@@ -1,2 +1,2 @@
 [fan]
-invert_pwm = true
+invert_pwm = false

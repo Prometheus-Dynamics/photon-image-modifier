@@ -3,6 +3,9 @@
 # Exit on errors, print commands, ignore unset variables
 set -ex +u
 
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+
 # Mount partition 1 as /boot/firmware (or bind /boot if already mounted).
 boot_mounted="no"
 boot_bound="no"
@@ -68,7 +71,7 @@ apt-get purge -y gdb gcc g++ linux-headers* libgcc*-dev
 apt-get autoremove -y
 
 echo "Installing additional things"
-sudo apt-get update
+apt-get update
 apt-get install -y device-tree-compiler
 apt-get install -y network-manager net-tools
 # libcamera-driver stuff

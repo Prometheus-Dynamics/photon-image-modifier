@@ -44,10 +44,14 @@ echo "${GITHUB_REF_NAME};${image_name}" > /opt/photonvision/image-version
 if [ -f ./image-version.json ]; then
   cp -f ./image-version.json /opt/photonvision/image-version.json
 else
+  build_date="${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
   cat > /opt/photonvision/image-version.json <<EOF
 {
-  "imageName": "${image_name:-unknown}",
-  "gitRef": "${GITHUB_REF_NAME:-unknown}"
+  "image_name": "${image_name:-unknown}",
+  "image_source": "${IMAGE_SOURCE:-unknown}",
+  "commit_tag": "${GITHUB_REF_NAME:-unknown}",
+  "commit_sha": "${GITHUB_SHA:-unknown}",
+  "build_date": "${build_date}"
 }
 EOF
 fi
