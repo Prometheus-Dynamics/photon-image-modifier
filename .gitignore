@@ -1,0 +1,20 @@
+.cache/
+artifacts/
+base_image.img
+base_image.img.xz
+commands.sh
+output/
+rootfs/
+tools/
+helios_diag_*/
+helios_diag_*.tar.gz
+
+# Kernel module build outputs.
+helios-raze/ov9782/*.cmd
+helios-raze/ov9782/.*.cmd
+helios-raze/ov9782/*.ko
+helios-raze/ov9782/*.mod
+helios-raze/ov9782/*.mod.*
+helios-raze/ov9782/*.o
+helios-raze/ov9782/Module.symvers
+helios-raze/ov9782/modules.order

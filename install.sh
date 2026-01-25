@@ -51,7 +51,7 @@ install_if_missing() {
 }
 
 get_versions() {
-  PHOTON_VISION_RELEASES="$(wget -qO- https://api.github.com/repos/photonvision/photonvision/releases?per_page=$1)"
+  PHOTON_VISION_RELEASES="$(wget -qO- https://api.github.com/repos/${PHOTONVISION_REPO}/releases?per_page=$1)"
 
   PHOTON_VISION_VERSIONS=$(echo "$PHOTON_VISION_RELEASES" | \
     sed -En 's/\"tag_name\": \"(.+)\",/\1/p' | \
@@ -113,6 +113,9 @@ fi
 INSTALL_NETWORK_MANAGER="ask"
 DISABLE_NETWORKING="false"
 VERSION="latest"
+PHOTONVISION_REPO_DEFAULT="photonvision/photonvision"
+PHOTONVISION_REPO="${PHOTONVISION_REPO:-$PHOTONVISION_REPO_DEFAULT}"
+PHOTONVISION_JAR_PATH="${PHOTONVISION_JAR_PATH:-}"
 
 while getopts "hlva:mnqt-:" OPT; do
   if [ "$OPT" = "-" ]; then
@@ -182,6 +185,9 @@ fi
 
 if is_chroot ; then
   debug "Running in chroot. Arch should be specified."
+  if [ "${PHOTONVISION_REPO}" = "${PHOTONVISION_REPO_DEFAULT}" ]; then
+    PHOTONVISION_REPO="Prometheus-Dynamics/photonvision"
+  fi
 fi
 
 if [[ -z "$ARCH" ]]; then
@@ -205,22 +211,26 @@ fi
 
 debug "Installing for platform $ARCH"
 
-# make sure that we are downloading a valid version
-if [ "$VERSION" = "latest" ] ; then
-  RELEASE_URL="https://api.github.com/repos/photonvision/photonvision/releases/latest"
+if [[ -n "${PHOTONVISION_JAR_PATH}" ]]; then
+  debug "Using local PhotonVision jar at ${PHOTONVISION_JAR_PATH}"
 else
-  RELEASE_URL="https://api.github.com/repos/photonvision/photonvision/releases/tags/$VERSION"
-fi
+  # make sure that we are downloading a valid version
+  if [ "$VERSION" = "latest" ] ; then
+    RELEASE_URL="https://api.github.com/repos/${PHOTONVISION_REPO}/releases/latest"
+  else
+    RELEASE_URL="https://api.github.com/repos/${PHOTONVISION_REPO}/releases/tags/$VERSION"
+  fi
 
-DOWNLOAD_URL=$(curl -sk "$RELEASE_URL" |
-                  grep "browser_download_url.*$ARCH_NAME.jar" |
-                  cut -d : -f 2,3 |
-                  tr -d '"'
-              )
+  DOWNLOAD_URL=$(curl -sk "$RELEASE_URL" |
+                    grep "browser_download_url.*$ARCH_NAME.jar" |
+                    cut -d : -f 2,3 |
+                    tr -d '"'
+                )
 
-if [[ -z $DOWNLOAD_URL ]] ; then
-  die "PhotonVision '$VERSION' is not available for $ARCH_NAME!" \
-      "See ./install --list-versions for a list of available versions."
+  if [[ -z $DOWNLOAD_URL ]] ; then
+    die "PhotonVision '$VERSION' is not available for $ARCH_NAME!" \
+        "See ./install --list-versions for a list of available versions."
+  fi
 fi
 
 DISTRO=$(lsb_release -is)
@@ -291,11 +301,18 @@ debug "Downloading PhotonVision '$VERSION'..."
 if [[ -z $TEST ]]; then
   mkdir -p /opt/photonvision
   cd /opt/photonvision || die "Tried to enter /opt/photonvision, but it was not created."
-  curl -sk "$RELEASE_URL" |
-      grep "browser_download_url.*$ARCH_NAME.jar" |
-      cut -d : -f 2,3 |
-      tr -d '"' |
-      wget -qi - -O photonvision.jar
+  if [[ -n "${PHOTONVISION_JAR_PATH}" ]]; then
+    if [[ ! -f "${PHOTONVISION_JAR_PATH}" ]]; then
+      die "PHOTONVISION_JAR_PATH does not exist: ${PHOTONVISION_JAR_PATH}"
+    fi
+    cp -v "${PHOTONVISION_JAR_PATH}" photonvision.jar
+  else
+    curl -sk "$RELEASE_URL" |
+        grep "browser_download_url.*$ARCH_NAME.jar" |
+        cut -d : -f 2,3 |
+        tr -d '"' |
+        wget -qi - -O photonvision.jar
+  fi
 fi
 debug "Downloaded PhotonVision."
 

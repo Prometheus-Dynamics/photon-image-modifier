@@ -9,6 +9,9 @@ TUNING_DIR_DEFAULT="helios-raze/libcamera/ipa/rpi"
 TUNING_DIR="${HELIOS_RAZE_TUNING_DIR:-${TUNING_DIR_DEFAULT}}"
 LIBCAMERA_PATCH_DIR_DEFAULT="helios-raze/libcamera/patches"
 LIBCAMERA_PATCH_DIR="${HELIOS_RAZE_LIBCAMERA_PATCH_DIR:-${LIBCAMERA_PATCH_DIR_DEFAULT}}"
+LIBCAMERA_GIT_REF_DEFAULT="v0.6.0+rpt20251202"
+LIBCAMERA_GIT_REF="${LIBCAMERA_GIT_REF:-${LIBCAMERA_GIT_REF_DEFAULT}}"
+LIBCAMERA_SOURCE_DIR="${LIBCAMERA_SOURCE_DIR:-}"
 
 die() {
   echo "$@" 1>&2
@@ -204,6 +207,24 @@ cleanup_libcamera_build_deps() {
   apt-get clean
 }
 
+ensure_libcamera_compat() {
+  local libdir
+  local multiarch
+  multiarch="$(dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null || true)"
+  if [ -n "${multiarch}" ]; then
+    libdir="/usr/lib/${multiarch}"
+  else
+    libdir="/usr/lib"
+  fi
+  if [ -f "${libdir}/libcamera.so.0.6.0" ] && [ ! -e "${libdir}/libcamera.so.0.2" ]; then
+    ln -sf libcamera.so.0.6.0 "${libdir}/libcamera.so.0.2"
+  fi
+  if [ -f "${libdir}/libcamera-base.so.0.6.0" ] && [ ! -e "${libdir}/libcamera-base.so.0.2" ]; then
+    ln -sf libcamera-base.so.0.6.0 "${libdir}/libcamera-base.so.0.2"
+  fi
+  ldconfig || true
+}
+
 enable_deb_src() {
   local src_list="/etc/apt/sources.list.d/helios-deb-src.list"
   if [ -f "${src_list}" ]; then
@@ -229,11 +250,27 @@ fetch_libcamera_source() {
   local apt_output=""
   local parsed_dir=""
   local want_apt_source=""
+  local local_src=""
+  local local_src_resolved=""
   mkdir -p "${workdir}"
+  local_src="${LIBCAMERA_SOURCE_DIR:-}"
+  if [ -n "${local_src}" ]; then
+    if [ ! -d "${local_src}" ]; then
+      die "LIBCAMERA_SOURCE_DIR does not exist: ${local_src}"
+    fi
+    local_src_resolved="$(resolve_dir "${local_src}")"
+    if [ ! -f "${local_src_resolved}/meson.build" ]; then
+      die "LIBCAMERA_SOURCE_DIR missing meson.build: ${local_src_resolved}"
+    fi
+    echo "${local_src_resolved}"
+    return 0
+  fi
   pushd "${workdir}" >/dev/null
   want_apt_source="${LIBCAMERA_APT_SOURCE:-}"
   if [ -z "${want_apt_source}" ]; then
-    if grep -R "^deb-src " /etc/apt/sources.list /etc/apt/sources.list.d/*.list >/dev/null 2>&1; then
+    if [ -n "${LIBCAMERA_GIT_REF:-}" ]; then
+      want_apt_source=0
+    elif grep -R "^deb-src " /etc/apt/sources.list /etc/apt/sources.list.d/*.list >/dev/null 2>&1; then
       want_apt_source=1
     fi
   fi
@@ -474,6 +511,7 @@ cleanup_build_deps
 
 # Build and install patched libcamera (Helios OV9782 patches).
 build_libcamera
+ensure_libcamera_compat
 
 # Install libcamera IPA tuning files for OV9782.
 if [ -f "${TUNING_DIR}/vc4/ov9782.json" ]; then
@@ -502,6 +540,7 @@ ensure_dir /usr/local/bin
 install -m 755 helios-raze/leds/usr/local/bin/helios-leds-gpio.sh /usr/local/bin/helios-leds-gpio.sh
 ensure_dir /etc/helios
 install -m 644 helios-raze/leds/etc/helios/leds.toml /etc/helios/leds.toml
+install -m 644 helios-raze/fan/etc/helios/fan.toml /etc/helios/fan.toml
 ensure_dir /etc/modprobe.d
 install -m 644 helios-raze/leds/etc/modprobe.d/ws2812-pio.conf /etc/modprobe.d/ws2812-pio.conf
 install -m 644 helios-raze/leds/etc/systemd/system/ws2812-reprobe.service /etc/systemd/system/ws2812-reprobe.service

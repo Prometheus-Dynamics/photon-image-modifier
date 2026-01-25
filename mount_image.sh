@@ -76,6 +76,7 @@ fi
 mount -t proc /proc "${rootdir}/proc"
 mount -t sysfs /sys "${rootdir}/sys"
 mount --rbind /dev "${rootdir}/dev"
+mount --make-rslave "${rootdir}/dev"
 
 # Temporarily replace resolv.conf for networking
 mv -v "${rootdir}/etc/resolv.conf" "${rootdir}/etc/resolv.conf.bak"
@@ -89,9 +90,21 @@ scriptdir=${rootdir}${chrootscriptdir}
 mkdir --parents "${scriptdir}"
 mount --bind "$(pwd)" "${scriptdir}"
 
+photonvision_jar_path="${PHOTONVISION_JAR_PATH:-}"
+if [ -n "${photonvision_jar_path}" ]; then
+    if [ ! -f "${photonvision_jar_path}" ]; then
+        echo "PHOTONVISION_JAR_PATH does not exist: ${photonvision_jar_path}" 1>&2
+        exit 1
+    fi
+    mkdir -p "${scriptdir}/artifacts"
+    cp -v "${photonvision_jar_path}" "${scriptdir}/artifacts/"
+    photonvision_jar_path="${chrootscriptdir}/artifacts/$(basename "${photonvision_jar_path}")"
+fi
+
 cat >> "${scriptdir}/commands.sh" << EOF
 set -ex
 export DEBIAN_FRONTEND=noninteractive
+export PHOTONVISION_JAR_PATH="${photonvision_jar_path}"
 cd "${chrootscriptdir}"
 echo "Running ${install_script}"
 chmod +x "${install_script}"
@@ -121,7 +134,7 @@ fi
 
 (cat /dev/zero > "${rootdir}/zeros" 2>/dev/null || true); sync; rm "${rootdir}/zeros";
 
-umount --recursive "${rootdir}"
+umount -R -l "${rootdir}"
 
 echo "Resizing root filesystem to minimal size."
 e2fsck -v -f -p -E discard "${rootdev}"

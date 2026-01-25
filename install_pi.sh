@@ -3,9 +3,37 @@
 # Exit on errors, print commands, ignore unset variables
 set -ex +u
 
-# mount partition 1 as /boot/firmware
+# Mount partition 1 as /boot/firmware (or bind /boot if already mounted).
+boot_mounted="no"
+boot_bound="no"
+boot_device=""
+
 mkdir --parent /boot/firmware
-mount "${loopdev}p1" /boot/firmware
+if mountpoint -q /boot/firmware; then
+  boot_mounted="yes"
+elif mountpoint -q /boot; then
+  mount --bind /boot /boot/firmware
+  boot_bound="yes"
+  boot_mounted="yes"
+else
+  if [ -n "${BOOT_DEVICE:-}" ]; then
+    boot_device="${BOOT_DEVICE}"
+  elif [ -n "${loopdev:-}" ]; then
+    if [ -b "${loopdev}p1" ]; then
+      boot_device="${loopdev}p1"
+    elif [ -b "${loopdev}1" ]; then
+      boot_device="${loopdev}1"
+    fi
+  fi
+  if [ -n "${boot_device}" ]; then
+    mount "${boot_device}" /boot/firmware
+    boot_mounted="yes"
+  else
+    echo "No boot device available to mount /boot/firmware" 1>&2
+    exit 1
+  fi
+fi
+
 ls -la /boot/firmware
 
 # silence log spam from dpkg
@@ -52,4 +80,6 @@ apt-get clean
 rm -rf /usr/share/doc
 rm -rf /usr/share/locale/
 
-umount /boot/firmware
+if [ "${boot_mounted}" = "yes" ] || [ "${boot_bound}" = "yes" ]; then
+  umount /boot/firmware
+fi

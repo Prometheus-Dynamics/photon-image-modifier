@@ -17,7 +17,11 @@ EOF
 
 # Create user photon:vision login
 echo "creating photon user"
-useradd photon -m -b /home -s /bin/bash
+if id photon >/dev/null 2>&1; then
+  echo "photon user already exists"
+else
+  useradd photon -m -b /home -s /bin/bash
+fi
 usermod -a -G sudo photon
 echo 'photon ALL=(ALL) NOPASSWD: ALL' | tee -a /etc/sudoers.d/010_photon-nopasswd >/dev/null
 chmod 0440 /etc/sudoers.d/010_photon-nopasswd
@@ -37,4 +41,13 @@ mkdir -p /opt/photonvision/
 # DEPRECATED: removal in 2027
 echo "${GITHUB_REF_NAME};${image_name}" > /opt/photonvision/image-version
 
-cp -f ./image-version.json /opt/photonvision/image-version.json
+if [ -f ./image-version.json ]; then
+  cp -f ./image-version.json /opt/photonvision/image-version.json
+else
+  cat > /opt/photonvision/image-version.json <<EOF
+{
+  "imageName": "${image_name:-unknown}",
+  "gitRef": "${GITHUB_REF_NAME:-unknown}"
+}
+EOF
+fi
