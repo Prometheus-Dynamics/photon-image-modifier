@@ -1,10 +1,14 @@
 [Unit]
 Description=Re-probe WS2812 PIO after RP1 PIO init
 After=systemd-modules-load.service
+ConditionPathExists=!/dev/leds0
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c "modprobe -r ws2812_pio_rp1 2>/dev/null; modprobe ws2812_pio_rp1"
+ExecStart=/bin/sh -c "for i in $(seq 1 40); do if [ -e /sys/bus/platform/devices/1f00178000.pio/driver ]; then break; fi; if [ -e /sys/bus/platform/drivers/rp1-pio/bind ]; then echo 1f00178000.pio > /sys/bus/platform/drivers/rp1-pio/bind 2>/dev/null || true; fi; sleep 0.25; done; modprobe -r ws2812_pio_rp1 2>/dev/null || true; modprobe ws2812_pio_rp1; if [ -e /sys/bus/platform/drivers/ws2812-pio-rp1/bind ] && [ -e /sys/bus/platform/devices/ws2812_pio@d ]; then echo ws2812_pio@d > /sys/bus/platform/drivers/ws2812-pio-rp1/bind 2>/dev/null || true; fi; if [ -e /dev/leds0 ]; then exit 0; fi; exit 1"
+Restart=on-failure
+RestartSec=30
 RemainAfterExit=yes
 
 [Install]

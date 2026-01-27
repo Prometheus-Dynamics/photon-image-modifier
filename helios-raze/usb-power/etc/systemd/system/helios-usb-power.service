@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure USB external port power
+After=local-fs.target
+ConditionPathExists=/sys/class/gpio
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/helios/usb-power.env
+ExecStart=/usr/local/bin/helios-usb-power-setup.sh
+Environment=PATH=/bin:/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

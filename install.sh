@@ -344,6 +344,7 @@ Nice=-10
 # look up the right values for your CPU
 # AllowedCPUs=4-7
 
+ExecStartPre=/bin/rm -rf /root/.wpilib/nativecache /home/photon/.wpilib/nativecache
 ExecStart=/usr/bin/java -Xmx512m -jar /opt/photonvision/photonvision.jar
 ExecStop=/bin/systemctl kill photonvision
 Type=simple

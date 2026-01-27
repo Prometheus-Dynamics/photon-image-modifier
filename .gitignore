@@ -5,7 +5,6 @@ base_image.img.xz
 commands.sh
 output/
 rootfs/
-tools/
 helios_diag_*/
 helios_diag_*.tar.gz
 

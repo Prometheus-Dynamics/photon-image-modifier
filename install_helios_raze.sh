@@ -16,6 +16,8 @@ LIBCAMERA_GIT_REF_DEFAULT="v0.6.0+rpt20251202"
 LIBCAMERA_GIT_REF="${LIBCAMERA_GIT_REF:-${LIBCAMERA_GIT_REF_DEFAULT}}"
 LIBCAMERA_SOURCE_DIR="${LIBCAMERA_SOURCE_DIR:-}"
 DISABLE_INITRAMFS_UPDATES="${DISABLE_INITRAMFS_UPDATES:-1}"
+HELIOS_RAZE_SKIP_LIBCAMERA="${HELIOS_RAZE_SKIP_LIBCAMERA:-0}"
+HELIOS_RAZE_SKIP_KERNEL_MODULE="${HELIOS_RAZE_SKIP_KERNEL_MODULE:-0}"
 
 initramfs_diverted=0
 
@@ -28,22 +30,23 @@ disable_initramfs_updates() {
   if [ "${DISABLE_INITRAMFS_UPDATES}" != "1" ]; then
     return 0
   fi
-  if [ ! -x /usr/sbin/update-initramfs ]; then
-    return 0
-  fi
-  if ! dpkg-divert --list /usr/sbin/update-initramfs >/dev/null 2>&1; then
-    dpkg-divert --local --rename --add /usr/sbin/update-initramfs
+  if command -v dpkg-divert >/dev/null 2>&1; then
+    if dpkg-divert --list /usr/sbin/update-initramfs >/dev/null 2>&1; then
+      initramfs_diverted=1
+    elif dpkg-divert --local --rename --add /usr/sbin/update-initramfs; then
+      initramfs_diverted=1
+    fi
   fi
   ln -sf /bin/true /usr/sbin/update-initramfs
-  initramfs_diverted=1
 }
 
 restore_initramfs_updates() {
-  if [ "${initramfs_diverted}" -ne 1 ]; then
-    return 0
+  if [ -L /usr/sbin/update-initramfs ] && [ "$(readlink /usr/sbin/update-initramfs)" = "/bin/true" ]; then
+    rm -f /usr/sbin/update-initramfs
   fi
-  rm -f /usr/sbin/update-initramfs
-  dpkg-divert --local --rename --remove /usr/sbin/update-initramfs || true
+  if [ "${initramfs_diverted}" -eq 1 ]; then
+    dpkg-divert --local --rename --remove /usr/sbin/update-initramfs || true
+  fi
 }
 
 install_if_exists() {
@@ -61,6 +64,21 @@ ensure_dir() {
   if [ ! -d "${dir}" ]; then
     mkdir -p "${dir}"
   fi
+}
+
+compute_patch_hash() {
+  local dir="$1"
+  if [ ! -d "${dir}" ]; then
+    echo ""
+    return 0
+  fi
+  find "${dir}" -type f -name '*.patch' -print0 | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | awk '{print $1}'
+}
+
+compute_libcamera_stamp() {
+  local patch_hash
+  patch_hash="$(compute_patch_hash "${LIBCAMERA_PATCH_DIR}")"
+  echo "ref=${LIBCAMERA_GIT_REF};patch=${patch_hash}"
 }
 
 resolve_dir() {
@@ -212,6 +230,9 @@ install_libcamera_build_deps() {
 }
 
 cleanup_libcamera_build_deps() {
+  if [ "${LIBCAMERA_KEEP_DEPS:-}" = "1" ]; then
+    return 0
+  fi
   apt-get purge -y \
     build-essential \
     git \
@@ -233,6 +254,97 @@ cleanup_libcamera_build_deps() {
   apt-get autoremove -y
   rm -rf /var/lib/apt/lists/*
   apt-get clean
+}
+
+update_boot_firmware() {
+  apt-get update
+  if dpkg -s raspi-firmware >/dev/null 2>&1; then
+    apt-get install -y --only-upgrade raspi-firmware
+  elif apt-cache show raspi-firmware >/dev/null 2>&1; then
+    apt-get install -y raspi-firmware
+  else
+    die "raspi-firmware package not available; cannot update boot firmware"
+  fi
+  # Avoid legacy Raspberry Pi bootloader/kernel packages that overwrite CM5 firmware assets.
+  if dpkg -s raspberrypi-bootloader >/dev/null 2>&1 || dpkg -s raspberrypi-kernel >/dev/null 2>&1; then
+    apt-get purge -y raspberrypi-bootloader raspberrypi-kernel || true
+  fi
+}
+
+kernel_release_base() {
+  echo "${1%%+rpt*}"
+}
+
+sync_boot_assets_from_kernel() {
+  local release="$1"
+  local base=""
+  local kernel_dir=""
+  if [ -z "${release}" ]; then
+    return 0
+  fi
+  base="$(kernel_release_base "${release}")"
+  kernel_dir="/usr/lib/linux-image-${release}"
+  if [ ! -d "${kernel_dir}" ]; then
+    return 0
+  fi
+  ensure_dir /boot/firmware
+  ensure_dir /boot/firmware/overlays
+  if [ -d "${kernel_dir}/broadcom" ]; then
+    cp -f "${kernel_dir}/broadcom/"*.dtb /boot/firmware/ 2>/dev/null || true
+  fi
+  if [ -d "${kernel_dir}/overlays" ]; then
+    cp -f "${kernel_dir}/overlays/"*.dtbo /boot/firmware/overlays/ 2>/dev/null || true
+    if [ -f "${kernel_dir}/overlays/overlay_map.dtb" ]; then
+      cp -f "${kernel_dir}/overlays/overlay_map.dtb" /boot/firmware/overlays/
+    fi
+  fi
+  if [ -n "${base}" ]; then
+    for root in /boot/firmware /boot; do
+      if [ -f "${root}/vmlinuz-${base}+rpt-rpi-2712" ]; then
+        install -m 755 "${root}/vmlinuz-${base}+rpt-rpi-2712" /boot/firmware/kernel_2712.img
+        break
+      fi
+    done
+    for root in /boot/firmware /boot; do
+      if [ -f "${root}/vmlinuz-${base}+rpt-rpi-v8" ]; then
+        install -m 755 "${root}/vmlinuz-${base}+rpt-rpi-v8" /boot/firmware/kernel8.img
+        break
+      fi
+    done
+  fi
+}
+
+prune_old_kernels() {
+  local keep_base="$1"
+  local keep_release=""
+  local current_release=""
+  local rel=""
+  local base=""
+  local pkg=""
+  if [ -z "${keep_base}" ]; then
+    return 0
+  fi
+  current_release="$(uname -r 2>/dev/null || true)"
+  for rel in $(ls -1 /lib/modules 2>/dev/null | sort -V); do
+    base="$(kernel_release_base "${rel}")"
+    if [ "${base}" = "${keep_base}" ]; then
+      continue
+    fi
+    if [ -n "${current_release}" ] && [ "${rel}" = "${current_release}" ]; then
+      continue
+    fi
+    pkg="linux-image-${rel}"
+    if dpkg -s "${pkg}" >/dev/null 2>&1; then
+      apt-get purge -y "${pkg}" || true
+    fi
+    pkg="linux-headers-${rel}"
+    if dpkg -s "${pkg}" >/dev/null 2>&1; then
+      apt-get purge -y "${pkg}" || true
+    fi
+    rm -rf "/lib/modules/${rel}"
+    rm -f "/boot/firmware/vmlinuz-${rel}" "/boot/firmware/initrd.img-${rel}" "/boot/firmware/System.map-${rel}" "/boot/firmware/config-${rel}" || true
+    rm -f "/boot/vmlinuz-${rel}" "/boot/initrd.img-${rel}" "/boot/System.map-${rel}" "/boot/config-${rel}" || true
+  done
 }
 
 ensure_libcamera_compat() {
@@ -478,6 +590,30 @@ build_ov9782_module() {
   echo "ov9782" > /etc/modules-load.d/ov9782.conf
 }
 
+ov9782_module_present() {
+  local rel
+  local found=0
+  for rel in $(ls -1 /lib/modules 2>/dev/null | sort -V); do
+    found=1
+    if [ ! -f "/lib/modules/${rel}/extra/ov9782.ko" ]; then
+      return 1
+    fi
+  done
+  if [ "${found}" -eq 0 ]; then
+    return 1
+  fi
+  return 0
+}
+
+# Optional libcamera-only mode for isolated builds.
+if [ "${HELIOS_LIBCAMERA_ONLY:-}" = "1" ]; then
+  LIBCAMERA_PATCH_DIR="$(resolve_dir "${LIBCAMERA_PATCH_DIR}")"
+  export LIBCAMERA_KEEP_DEPS=1
+  build_libcamera
+  ensure_libcamera_compat
+  exit 0
+fi
+
 # Run the base Pi install script first.
 disable_initramfs_updates
 trap restore_initramfs_updates EXIT
@@ -505,6 +641,24 @@ else
   die "Boot device not found. Set BOOT_DEVICE or loopdev."
 fi
 ls -la /boot/firmware
+
+# Build and install OV9782 kernel module in the image.
+if [ "${HELIOS_RAZE_SKIP_KERNEL_MODULE}" = "1" ]; then
+  echo "Skipping OV9782 kernel module build (HELIOS_RAZE_SKIP_KERNEL_MODULE=1)"
+elif ov9782_module_present; then
+  echo "OV9782 kernel module already present; skipping rebuild"
+else
+  build_ov9782_module
+  cleanup_build_deps
+fi
+
+# Update boot firmware after any kernel/header upgrades.
+update_boot_firmware
+image_kernel_release="$(detect_image_kernel_release)"
+if [ -n "${image_kernel_release}" ]; then
+  sync_boot_assets_from_kernel "${image_kernel_release}"
+  prune_old_kernels "$(kernel_release_base "${image_kernel_release}")"
+fi
 
 # Install our CM5 config.txt (some images mount /boot/firmware or /boot).
 install -m 644 helios-raze/config.txt /boot/firmware/config.txt
@@ -536,12 +690,24 @@ if [ -f /boot/firmware/overlays/ov9782-overlay.dtbo ]; then
   fi
 fi
 
-# Build and install OV9782 kernel module in the image.
-build_ov9782_module
-cleanup_build_deps
-
 # Build and install patched libcamera (Helios OV9782 patches).
-build_libcamera
+libcamera_stamp="$(compute_libcamera_stamp)"
+multiarch="$(dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null || true)"
+if [ -n "${multiarch}" ]; then
+  libcamera_so_path="/usr/lib/${multiarch}/libcamera.so.0.6.0"
+else
+  libcamera_so_path="/usr/lib/libcamera.so.0.6.0"
+fi
+if [ "${HELIOS_RAZE_SKIP_LIBCAMERA}" = "1" ]; then
+  echo "Skipping libcamera build (HELIOS_RAZE_SKIP_LIBCAMERA=1)"
+elif [ -f /etc/helios/libcamera.stamp ] && [ -f "${libcamera_so_path}" ] \
+  && grep -qx "${libcamera_stamp}" /etc/helios/libcamera.stamp; then
+  echo "libcamera already built for ${libcamera_stamp}; skipping rebuild"
+else
+  build_libcamera
+  ensure_dir /etc/helios
+  echo "${libcamera_stamp}" > /etc/helios/libcamera.stamp
+fi
 ensure_libcamera_compat
 
 # Install libcamera IPA tuning files for OV9782.
@@ -581,6 +747,9 @@ if [ ! -f /opt/photonvision/photonvision_config/hardwareConfig.json ] || [ "${HE
   install -m 644 helios-raze/hardwareConfig.json /opt/photonvision/photonvision_config/hardwareConfig.json
 fi
 seed_photonvision_hardware_config
+install -m 755 helios-raze/helios-seed-photonvision-camera.sh /usr/local/bin/helios-seed-photonvision-camera.sh
+install -m 644 helios-raze/helios-seed-photonvision-camera.service /etc/systemd/system/helios-seed-photonvision-camera.service
+systemctl enable helios-seed-photonvision-camera.service
 
 # Install Helios USB gadget + dnsmasq setup.
 install_gadget_deps
@@ -601,6 +770,12 @@ systemctl enable systemd-networkd.service
 systemctl disable dnsmasq.service || true
 systemctl enable helios-usb-gadget.service
 systemctl enable helios-dnsmasq.service
+
+# Enable USB port power rails.
+install -m 755 helios-raze/usb-power/usr/local/bin/helios-usb-power-setup.sh /usr/local/bin/helios-usb-power-setup.sh
+install -m 644 helios-raze/usb-power/etc/systemd/system/helios-usb-power.service /etc/systemd/system/helios-usb-power.service
+install -m 644 helios-raze/usb-power/etc/helios/usb-power.env /etc/helios/usb-power.env
+systemctl enable helios-usb-power.service
 rm -rf /var/lib/apt/lists/*
 apt-get clean
 

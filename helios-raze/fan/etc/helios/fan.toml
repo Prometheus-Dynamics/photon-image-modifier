@@ -1,2 +1,14 @@
 [fan]
+enabled = true
+pwm_path = "auto"
+tacho_path = "auto"
+min_percent = 30
+max_percent = 100
+poll_interval_ms = 5000
 invert_pwm = false
+curve = [
+  { temp_c = 40.0, percent = 50 },
+  { temp_c = 50.0, percent = 70 },
+  { temp_c = 60.0, percent = 85 },
+  { temp_c = 70.0, percent = 100 },
+]

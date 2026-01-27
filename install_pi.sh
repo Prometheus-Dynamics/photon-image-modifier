@@ -46,9 +46,17 @@ APT::Color "0";
 Dpkg::Use-Pty "0";
 EOF
 
-# Run normal photon installer
-chmod +x ./install.sh
-./install.sh --install-nm=yes --arch=aarch64 --version="$1"
+# Run normal photon installer (or skip when resuming an existing image)
+if [ "${PHOTONVISION_SKIP_INSTALL:-0}" = "1" ]; then
+  echo "Skipping PhotonVision base install (PHOTONVISION_SKIP_INSTALL=1)"
+  if [ -n "${PHOTONVISION_JAR_PATH:-}" ]; then
+    mkdir -p /opt/photonvision
+    cp -v "${PHOTONVISION_JAR_PATH}" /opt/photonvision/photonvision.jar
+  fi
+else
+  chmod +x ./install.sh
+  ./install.sh --install-nm=yes --arch=aarch64 --version="$1"
+fi
 
 # and edit boot partition
 install -m 644 config.txt /boot/firmware
@@ -65,17 +73,19 @@ install -v files/rpi-blacklist.conf /etc/modprobe.d/blacklist.conf
 # Enable ssh
 systemctl enable ssh
 
-# Remove extra packages too
-echo "Purging extra things"
-apt-get purge -y gdb gcc g++ linux-headers* libgcc*-dev
-apt-get autoremove -y
+if [ "${PHOTONVISION_SKIP_INSTALL:-0}" != "1" ]; then
+  # Remove extra packages too
+  echo "Purging extra things"
+  apt-get purge -y gdb gcc g++ linux-headers* libgcc*-dev
+  apt-get autoremove -y
 
-echo "Installing additional things"
-apt-get update
-apt-get install -y device-tree-compiler
-apt-get install -y network-manager net-tools
-# libcamera-driver stuff
-apt-get install -y libegl1 libopengl0 libgl1-mesa-dri libcamera-dev libgbm1
+  echo "Installing additional things"
+  apt-get update
+  apt-get install -y device-tree-compiler
+  apt-get install -y network-manager net-tools
+  # libcamera-driver stuff
+  apt-get install -y libegl1 libopengl0 libgl1-mesa-dri libcamera-dev libgbm1
+fi
 
 rm -rf /var/lib/apt/lists/*
 apt-get clean
