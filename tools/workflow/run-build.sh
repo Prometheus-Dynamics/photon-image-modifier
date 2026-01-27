@@ -142,8 +142,27 @@ if [ "${isolated}" = "1" ]; then
         ;;
     esac
   fi
+  guestfs_mode="${GUESTFS_MODE:-}"
+  if [ -z "${guestfs_mode}" ]; then
+    if [ "${isolated_image_platform}" = "linux/amd64" ]; then
+      guestfs_mode="mount"
+    else
+      guestfs_mode="customize"
+    fi
+  fi
+  if [ "${guestfs_mode}" = "customize" ] && [ "${isolated_image_platform}" != "${isolated_build_platform}" ]; then
+    isolated_image_platform="${isolated_build_platform}"
+  fi
   container_output_dir="$(map_path "${OUTPUT_DIR:-/workspace/photon-image-modifier/output}")"
   host_output_dir="${HOST_OUTPUT_DIR:-${repo_root}/output}"
+  if [ ! -d "${host_output_dir}" ]; then
+    mkdir -p "${host_output_dir}" 2>/dev/null || true
+  fi
+  if [ ! -w "${host_output_dir}" ]; then
+    host_output_dir="${repo_root}/.output"
+    mkdir -p "${host_output_dir}"
+    echo "Host output dir not writable; using ${host_output_dir} instead." 1>&2
+  fi
 
   env_args=()
   cache_dir="${CACHE_DIR:-${cache_dir_default}}"
@@ -192,7 +211,10 @@ if [ "${isolated}" = "1" ]; then
     fi
   fi
   if [ -z "${GUESTFS_MODE:-}" ]; then
-    env_args+=(-e "GUESTFS_MODE=customize")
+    env_args+=(-e "GUESTFS_MODE=${guestfs_mode}")
+  fi
+  if [ "${guestfs_mode}" = "mount" ] && [ -z "${GUESTMOUNT_WAIT_SEC:-}" ]; then
+    env_args+=(-e "GUESTMOUNT_WAIT_SEC=3600")
   fi
   for var in IMAGE_URL ROOT_LOCATION BOOT_PARTITION MINIMUM_FREE_MB SHRINK_IMAGE INSTALL_SCRIPT INSTALL_ARG IMAGE_NAME BUILD_DOCS SYSROOT_DIR BUILD_LIBCAMERA_HOST OUTPUT_DIR PHOTONVISION_GRADLE_ARGS PHOTONVISION_DOCS_VENV MAVEN_LOCAL_REPO JAR_OUT_DIR JAR_OUT BUILD_STEP IMAGE_MOUNT_BACKEND; do
     if [ -n "${!var:-}" ]; then
@@ -217,26 +239,35 @@ if [ "${isolated}" = "1" ]; then
     --exclude='.cache' \
     --exclude='artifacts' \
     --exclude='output' \
+    --exclude='.output' \
+    --exclude='.output/*' \
+    --exclude='output/*' \
     --exclude='rootfs' \
     --exclude='base_image.img' \
     --exclude='base_image.img.xz' \
     --exclude='helios_diag_*'
 
-  stage_repo "${workspace_root}/photonvision" "${temp_context}/photonvision" \
-    --exclude='.git' \
-    --exclude='.gradle' \
-    --exclude='build' \
-    --exclude='docs/.venv' \
-    --exclude='docs/build' \
-    --exclude='photon-client/node_modules' \
-    --exclude='photon-client/dist'
+  if [ "${build_step}" = "image" ] || [ -n "${PHOTONVISION_JAR_PATH:-}" ]; then
+    mkdir -p "${temp_context}/photonvision" "${temp_context}/photon-libcamera-gl-driver"
+    printf "stub\n" > "${temp_context}/photonvision/.keep"
+    printf "stub\n" > "${temp_context}/photon-libcamera-gl-driver/.keep"
+  else
+    stage_repo "${workspace_root}/photonvision" "${temp_context}/photonvision" \
+      --exclude='.git' \
+      --exclude='.gradle' \
+      --exclude='build' \
+      --exclude='docs/.venv' \
+      --exclude='docs/build' \
+      --exclude='photon-client/node_modules' \
+      --exclude='photon-client/dist'
 
-  stage_repo "${workspace_root}/photon-libcamera-gl-driver" "${temp_context}/photon-libcamera-gl-driver" \
-    --exclude='.git' \
-    --exclude='.gradle' \
-    --exclude='.m2-arm64' \
-    --exclude='cmake_build' \
-    --exclude='build'
+    stage_repo "${workspace_root}/photon-libcamera-gl-driver" "${temp_context}/photon-libcamera-gl-driver" \
+      --exclude='.git' \
+      --exclude='.gradle' \
+      --exclude='.m2-arm64' \
+      --exclude='cmake_build' \
+      --exclude='build'
+  fi
 
   build_isolated_image() {
     local platform="$1"
@@ -258,7 +289,8 @@ if [ "${isolated}" = "1" ]; then
     if [ "${cached_jar_present}" -eq 0 ]; then
       build_isolated_image "${isolated_build_platform}" "${build_tag}"
       build_env_args=("${env_args[@]}" -e "BUILD_STEP=jar")
-      build_container_id="$(container_id="$(docker create --privileged --platform="${isolated_build_platform}" "${cache_mount[@]}" "${build_env_args[@]}" "${build_tag}")"; docker start -a "${container_id}"; echo "${container_id}")"
+      build_container_id="$(docker create --privileged --platform="${isolated_build_platform}" "${cache_mount[@]}" "${build_env_args[@]}" "${build_tag}")"
+      docker start -a "${build_container_id}"
       docker rm "${build_container_id}" >/dev/null
     else
       echo "Reusing cached jar at ${cache_dir}/artifacts/photonvision-linuxarm64.jar"
@@ -270,20 +302,30 @@ if [ "${isolated}" = "1" ]; then
     fi
     image_env_args+=(-e "BUILD_STEP=image" -e "BUILD_LIBCAMERA_HOST=0")
     build_isolated_image "${isolated_image_platform}" "${image_tag_image}"
-    image_container_id="$(container_id="$(docker create --privileged --platform="${isolated_image_platform}" "${cache_mount[@]}" "${image_env_args[@]}" "${image_tag_image}")"; docker start -a "${container_id}"; echo "${container_id}")"
+    image_container_id="$(docker create --privileged --platform="${isolated_image_platform}" "${cache_mount[@]}" "${image_env_args[@]}" "${image_tag_image}")"
+    docker start -a "${image_container_id}"
     mkdir -p "${host_output_dir}"
+    if [ -n "${image_name}" ]; then
+      rm -f "${host_output_dir}/photonvision_${image_name}.img" || true
+    fi
     docker cp "${image_container_id}:${container_output_dir}/." "${host_output_dir}/"
     docker rm "${image_container_id}" >/dev/null
   else
     platform="${isolated_build_platform}"
     if [ "${build_step}" = "image" ]; then
       platform="${isolated_image_platform}"
+      if [ -z "${BUILD_LIBCAMERA_HOST:-}" ]; then
+        env_args+=(-e "BUILD_LIBCAMERA_HOST=0")
+      fi
     fi
     build_isolated_image "${platform}" "${image_tag}"
     container_id="$(docker create --privileged --platform="${platform}" "${cache_mount[@]}" "${env_args[@]}" "${image_tag}")"
     docker start -a "${container_id}"
     if [ "${build_step}" = "image" ] || [ -n "${PHOTONVISION_JAR_PATH:-}" ]; then
       mkdir -p "${host_output_dir}"
+      if [ -n "${image_name}" ]; then
+        rm -f "${host_output_dir}/photonvision_${image_name}.img" || true
+      fi
       docker cp "${container_id}:${container_output_dir}/." "${host_output_dir}/"
     fi
     docker rm "${container_id}" >/dev/null

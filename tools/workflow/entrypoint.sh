@@ -85,10 +85,22 @@ run_guestfs_customize() {
   elif [ -n "${pv_jar}" ]; then
     jar_in_guest="${build_dir}/artifacts/$(basename "${pv_jar}")"
     extra_upload="${pv_jar}"
-    extra_upload_dst="${build_dir}/artifacts/$(basename "${pv_jar}")"
+    extra_upload_dst="/tmp/$(basename "${pv_jar}")"
   fi
   local temp_dir="${work_root}/.cache/guestfs"
   mkdir -p "${temp_dir}"
+  local repo_tar="${temp_dir}/photon-image-modifier.tar"
+  tar -C "${work_root}" \
+    --exclude='.git' \
+    --exclude='.cache' \
+    --exclude='artifacts' \
+    --exclude='output' \
+    --exclude='.output' \
+    --exclude='rootfs' \
+    --exclude='base_image.img' \
+    --exclude='base_image.img.xz' \
+    --exclude='helios_diag_*' \
+    -cf "${repo_tar}" .
   local cmd_file="${temp_dir}/guestfs-commands.sh"
   cat > "${cmd_file}" <<EOF
 set -ex
@@ -101,6 +113,12 @@ export PHOTONVISION_JAR_PATH="${jar_in_guest}"
 export PHOTONVISION_SKIP_INSTALL="${PHOTONVISION_SKIP_INSTALL:-}"
 export HELIOS_RAZE_SKIP_LIBCAMERA="${HELIOS_RAZE_SKIP_LIBCAMERA:-}"
 export HELIOS_RAZE_SKIP_KERNEL_MODULE="${HELIOS_RAZE_SKIP_KERNEL_MODULE:-}"
+mkdir -p "${build_dir}"
+tar -xf /tmp/photon-image-modifier.tar -C "${build_dir}"
+if [ -n "${extra_upload_dst}" ] && [ -f "${extra_upload_dst}" ]; then
+  mkdir -p "$(dirname "${jar_in_guest}")"
+  cp -f "${extra_upload_dst}" "${jar_in_guest}"
+fi
 cd "${build_dir}"
 if [ -d /boot ] && [ ! -d /boot/firmware ]; then
   mkdir -p /boot/firmware
@@ -116,18 +134,93 @@ chmod +x "./install_common.sh"
 "./install_common.sh"
 EOF
 
-  local upload_src="${work_root}"
-  if [ ! -d "${upload_src}" ]; then
-    echo "Missing work root at ${upload_src}" 1>&2
+  if [ ! -f "${repo_tar}" ]; then
+    echo "Missing repo tar at ${repo_tar}" 1>&2
     exit 1
   fi
-  local customize_args=(--upload "${upload_src}:${build_dir}" --upload "${cmd_file}:/tmp/guestfs-commands.sh")
+  local customize_args=(--upload "${repo_tar}:/tmp/photon-image-modifier.tar" --upload "${cmd_file}:/tmp/guestfs-commands.sh")
   if [ -n "${extra_upload}" ]; then
     customize_args+=(--upload "${extra_upload}:${extra_upload_dst}")
   fi
   LIBGUESTFS_BACKEND=direct virt-customize -a "${image}" \
     "${customize_args[@]}" \
     --run-command "bash /tmp/guestfs-commands.sh"
+}
+
+run_guestfs_firstboot() {
+  ensure_guestfs_backend
+  if ! command -v virt-customize >/dev/null 2>&1; then
+    echo "virt-customize not found (install libguestfs-tools)." 1>&2
+    exit 1
+  fi
+  local build_dir="/tmp/build"
+  local pv_jar="${PHOTONVISION_JAR_PATH:-}"
+  local jar_in_guest=""
+  local extra_upload=""
+  local extra_upload_dst=""
+  if [ -n "${pv_jar}" ] && [[ "${pv_jar}" == "${work_root}/"* ]]; then
+    jar_in_guest="${build_dir}/${pv_jar#${work_root}/}"
+  elif [ -n "${pv_jar}" ]; then
+    jar_in_guest="${build_dir}/artifacts/$(basename "${pv_jar}")"
+    extra_upload="${pv_jar}"
+    extra_upload_dst="/tmp/$(basename "${pv_jar}")"
+  fi
+  local temp_dir="${work_root}/.cache/guestfs"
+  mkdir -p "${temp_dir}"
+  local repo_tar="${temp_dir}/photon-image-modifier.tar"
+  tar -C "${work_root}" \
+    --exclude='.git' \
+    --exclude='.cache' \
+    --exclude='artifacts' \
+    --exclude='output' \
+    --exclude='.output' \
+    --exclude='rootfs' \
+    --exclude='base_image.img' \
+    --exclude='base_image.img.xz' \
+    --exclude='helios_diag_*' \
+    -cf "${repo_tar}" .
+  local cmd_file="${temp_dir}/guestfs-firstboot.sh"
+  cat > "${cmd_file}" <<EOF
+set -ex
+export DEBIAN_FRONTEND=noninteractive
+export IMAGE_MOUNT_BACKEND="guestfs"
+export PHOTONVISION_JAR_PATH="${jar_in_guest}"
+export PHOTONVISION_SKIP_INSTALL="${PHOTONVISION_SKIP_INSTALL:-}"
+export HELIOS_RAZE_SKIP_LIBCAMERA="${HELIOS_RAZE_SKIP_LIBCAMERA:-}"
+export HELIOS_RAZE_SKIP_KERNEL_MODULE="${HELIOS_RAZE_SKIP_KERNEL_MODULE:-}"
+mkdir -p "${build_dir}"
+tar -xf /tmp/photon-image-modifier.tar -C "${build_dir}"
+if [ -n "${extra_upload_dst}" ] && [ -f "${extra_upload_dst}" ]; then
+  mkdir -p "$(dirname "${jar_in_guest}")"
+  cp -f "${extra_upload_dst}" "${jar_in_guest}"
+fi
+cd "${build_dir}"
+if [ -d /boot ] && [ ! -d /boot/firmware ]; then
+  mkdir -p /boot/firmware
+fi
+if mountpoint -q /boot && ! mountpoint -q /boot/firmware; then
+  mount --bind /boot /boot/firmware
+fi
+echo "Running ${install_script}"
+chmod +x "${install_script}"
+"${install_script}" "${install_arg}"
+echo "Running install_common.sh"
+chmod +x "./install_common.sh"
+"./install_common.sh"
+rm -rf "${build_dir}" /tmp/photon-image-modifier.tar /tmp/photonvision-linuxarm64.jar || true
+EOF
+
+  if [ ! -f "${repo_tar}" ]; then
+    echo "Missing repo tar at ${repo_tar}" 1>&2
+    exit 1
+  fi
+  local customize_args=(--upload "${repo_tar}:/tmp/photon-image-modifier.tar")
+  if [ -n "${extra_upload}" ]; then
+    customize_args+=(--upload "${extra_upload}:${extra_upload_dst}")
+  fi
+  LIBGUESTFS_BACKEND=direct virt-customize -a "${image}" \
+    "${customize_args[@]}" \
+    --firstboot "${cmd_file}"
 }
 
 image=""
@@ -472,7 +565,7 @@ else
   fi
 
   if [ "${minimum_free}" -gt 0 ]; then
-    if [ "${guestfs_mode}" = "customize" ]; then
+    if [ "${guestfs_mode}" = "customize" ] || [ "${guestfs_mode}" = "firstboot" ]; then
       free="$(get_guestfs_free_mb || true)"
       if [ -n "${free}" ]; then
         need=$((minimum_free - free))
@@ -481,6 +574,17 @@ else
         fi
       fi
     else
+      if [ "${guestfs_mode}" = "mount" ]; then
+        free="$(get_guestfs_free_mb || true)"
+        if [ -n "${free}" ] && [ "${free}" -gt 0 ]; then
+          need=$((minimum_free - free))
+          if [ "${need}" -gt 0 ]; then
+            additional_mb="${need}"
+          fi
+        else
+          additional_mb="${minimum_free}"
+        fi
+      else
       if mount_image_guestfs ro; then
         echo "Space in root directory:"
         df --block-size=M "${rootdir}"
@@ -504,6 +608,7 @@ else
           exit 1
         fi
       fi
+      fi
     fi
   fi
 
@@ -514,6 +619,9 @@ else
 
   if [ "${guestfs_mode}" = "customize" ]; then
     run_guestfs_customize
+    guestfs_customized=1
+  elif [ "${guestfs_mode}" = "firstboot" ]; then
+    run_guestfs_firstboot
     guestfs_customized=1
   else
     if mount_image_guestfs rw; then
@@ -551,8 +659,20 @@ if [ "${guestfs_customized}" -eq 0 ]; then
   mount --bind "${work_root}" "${scriptdir}"
 
   photonvision_jar_path="${PHOTONVISION_JAR_PATH:-}"
-  if [[ -n "${photonvision_jar_path}" && "${photonvision_jar_path}" == "${work_root}"/* ]]; then
-    photonvision_jar_path="${chrootscriptdir}/${photonvision_jar_path#${work_root}/}"
+  if [ -n "${photonvision_jar_path}" ]; then
+    if [[ "${photonvision_jar_path}" == "${work_root}"/* ]]; then
+      photonvision_jar_path="${chrootscriptdir}/${photonvision_jar_path#${work_root}/}"
+    else
+      if [ ! -f "${photonvision_jar_path}" ]; then
+        echo "PHOTONVISION_JAR_PATH does not exist: ${photonvision_jar_path}" 1>&2
+        exit 1
+      fi
+      jar_cache_dir="${work_root}/.cache/guestfs"
+      mkdir -p "${jar_cache_dir}"
+      jar_basename="$(basename "${photonvision_jar_path}")"
+      cp -f "${photonvision_jar_path}" "${jar_cache_dir}/${jar_basename}"
+      photonvision_jar_path="${chrootscriptdir}/.cache/guestfs/${jar_basename}"
+    fi
   fi
 
   loopdev_env=""
