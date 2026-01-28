@@ -6,6 +6,32 @@ set -ex +u
 export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
 
+# Optional flags
+SKIP_PURGE="${PHOTONVISION_SKIP_PURGE:-0}"
+VERSION=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --skip-purge)
+      SKIP_PURGE=1
+      shift
+      ;;
+    --version)
+      VERSION="${2:-}"
+      shift 2 || true
+      ;;
+    --version=*)
+      VERSION="${1#*=}"
+      shift
+      ;;
+    *)
+      if [ -z "${VERSION}" ]; then
+        VERSION="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
 # Mount partition 1 as /boot/firmware (or bind /boot if already mounted).
 boot_mounted="no"
 boot_bound="no"
@@ -55,7 +81,7 @@ if [ "${PHOTONVISION_SKIP_INSTALL:-0}" = "1" ]; then
   fi
 else
   chmod +x ./install.sh
-  ./install.sh --install-nm=yes --arch=aarch64 --version="$1"
+  ./install.sh --install-nm=yes --arch=aarch64 --version="${VERSION}"
 fi
 
 # and edit boot partition
@@ -74,10 +100,13 @@ install -v files/rpi-blacklist.conf /etc/modprobe.d/blacklist.conf
 systemctl enable ssh
 
 if [ "${PHOTONVISION_SKIP_INSTALL:-0}" != "1" ]; then
-  # Remove extra packages too
-  echo "Purging extra things"
-  apt-get purge -y gdb gcc g++ linux-headers* libgcc*-dev
-  apt-get autoremove -y
+  if [ "${SKIP_PURGE}" != "1" ]; then
+    echo "Purging extra things"
+    apt-get purge -y gdb gcc g++ linux-headers* libgcc*-dev
+    apt-get autoremove -y
+  else
+    echo "Skipping purge (SKIP_PURGE=1)"
+  fi
 
   echo "Installing additional things"
   apt-get update

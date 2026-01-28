@@ -262,18 +262,30 @@ debug "Updated package list."
 
 install_if_missing curl
 install_if_missing avahi-daemon
-install_if_missing cpufrequtils
+if apt-cache policy cpufrequtils 2>/dev/null | grep -q "Candidate:" && \
+   ! apt-cache policy cpufrequtils 2>/dev/null | grep -q "Candidate: (none)"; then
+  install_if_missing cpufrequtils
+else
+  debug "cpufrequtils not available; skipping CPU governor configuration."
+fi
 install_if_missing libatomic1
 install_if_missing v4l-utils
 install_if_missing sqlite3
-install_if_missing openjdk-17-jre-headless
+if apt-cache policy openjdk-17-jre-headless 2>/dev/null | grep -q "Candidate:" && \
+   ! apt-cache policy openjdk-17-jre-headless 2>/dev/null | grep -q "Candidate: (none)"; then
+  install_if_missing openjdk-17-jre-headless
+else
+  install_if_missing openjdk-21-jre-headless
+fi
 
-debug "Setting cpufrequtils to performance mode"
-if [[ -z $TEST ]]; then
-  if [ -f /etc/default/cpufrequtils ]; then
-      sed -i -e 's/^#\?GOVERNOR=.*$/GOVERNOR=performance/' /etc/default/cpufrequtils
-  else
-      echo 'GOVERNOR=performance' > /etc/default/cpufrequtils
+if dpkg-query -W -f='${Status}' cpufrequtils 2>/dev/null | grep -q "ok installed"; then
+  debug "Setting cpufrequtils to performance mode"
+  if [[ -z $TEST ]]; then
+    if [ -f /etc/default/cpufrequtils ]; then
+        sed -i -e 's/^#\?GOVERNOR=.*$/GOVERNOR=performance/' /etc/default/cpufrequtils
+    else
+        echo 'GOVERNOR=performance' > /etc/default/cpufrequtils
+    fi
   fi
 fi
 

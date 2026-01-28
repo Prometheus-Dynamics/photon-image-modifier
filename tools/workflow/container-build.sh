@@ -5,38 +5,36 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 photonvision_repo="${PHOTONVISION_REPO:-${repo_root}/../photonvision}"
 libcamera_driver_repo="${LIBCAMERA_DRIVER_REPO:-${repo_root}/../photon-libcamera-gl-driver}"
 sysroot_dir="${SYSROOT_DIR:-/}"
-build_libcamera_host="${BUILD_LIBCAMERA_HOST:-1}"
 build_step="${BUILD_STEP:-all}"
+photonvision_remote="${PHOTONVISION_REMOTE:-https://github.com/photonvision/photonvision.git}"
+libcamera_driver_remote="${LIBCAMERA_DRIVER_REMOTE:-https://github.com/photonvision/photon-libcamera-gl-driver.git}"
 
-photonvision_repo="$(realpath "${photonvision_repo}")"
-libcamera_driver_repo="$(realpath "${libcamera_driver_repo}")"
+photonvision_repo="$(realpath -m "${photonvision_repo}")"
+libcamera_driver_repo="$(realpath -m "${libcamera_driver_repo}")"
 sysroot_dir="$(realpath "${sysroot_dir}")"
+
+if [ ! -d "${photonvision_repo}" ] || [ -z "$(ls -A "${photonvision_repo}" 2>/dev/null)" ]; then
+  mkdir -p "$(dirname "${photonvision_repo}")"
+  git clone "${photonvision_remote}" "${photonvision_repo}"
+fi
+
+if [ ! -d "${libcamera_driver_repo}" ] || [ -z "$(ls -A "${libcamera_driver_repo}" 2>/dev/null)" ]; then
+  mkdir -p "$(dirname "${libcamera_driver_repo}")"
+  git clone "${libcamera_driver_remote}" "${libcamera_driver_repo}"
+fi
 
 rm -rf \
   "${libcamera_driver_repo}/cmake_build" \
   "${libcamera_driver_repo}/build"
 
 case "${build_step}" in
-  all|libcamera|jni|jar|image)
+  all|jni|jar|image)
     ;;
   *)
-    echo "Unsupported BUILD_STEP: ${build_step} (use all|libcamera|jni|jar|image)" 1>&2
+    echo "Unsupported BUILD_STEP: ${build_step} (use all|jni|jar|image)" 1>&2
     exit 1
     ;;
 esac
-
-if [ "${build_step}" = "libcamera" ]; then
-  if [ "${build_libcamera_host}" = "1" ]; then
-    (cd "${repo_root}" && HELIOS_LIBCAMERA_ONLY=1 ./install_helios_raze.sh)
-  else
-    echo "BUILD_LIBCAMERA_HOST=0; skipping libcamera host build." 1>&2
-  fi
-  exit 0
-fi
-
-if [ "${build_libcamera_host}" = "1" ]; then
-  (cd "${repo_root}" && HELIOS_LIBCAMERA_ONLY=1 ./install_helios_raze.sh)
-fi
 
 PHOTONVISION_REPO="${photonvision_repo}" \
 LIBCAMERA_DRIVER_REPO="${libcamera_driver_repo}" \

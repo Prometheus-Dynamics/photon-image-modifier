@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && npm install -g pnpm \
   && rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint.sh /usr/local/bin/workflow-entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/workflow-entrypoint
 RUN chmod +x /usr/local/bin/workflow-entrypoint
 
 WORKDIR /workspace
