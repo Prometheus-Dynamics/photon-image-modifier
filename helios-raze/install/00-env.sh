@@ -400,3 +400,48 @@ SQL
   sqlite3 "${db_path}" \
     "INSERT OR REPLACE INTO global (filename, contents) VALUES ('hardwareConfig', readfile('${config_dir}/hardwareConfig.json'));"
 }
+
+ensure_photonvision_camera_schema() {
+  local config_dir="/opt/photonvision/photonvision_config"
+  local db_path="${config_dir}/photon.sqlite"
+  if ! command -v sqlite3 >/dev/null 2>&1; then
+    return 0
+  fi
+  if [ ! -f "${db_path}" ]; then
+    return 0
+  fi
+
+  if [ -z "$(sqlite3 "${db_path}" "SELECT name FROM sqlite_master WHERE type='table' AND name='cameras';" 2>/dev/null)" ]; then
+    return 0
+  fi
+
+  local info
+  info="$(sqlite3 "${db_path}" "SELECT name, notnull, dflt_value FROM pragma_table_info('cameras') WHERE name='otherpaths_json';" 2>/dev/null || true)"
+  if [ -z "${info}" ]; then
+    sqlite3 "${db_path}" "ALTER TABLE cameras ADD COLUMN otherpaths_json TEXT NOT NULL DEFAULT '[]';" || true
+    return 0
+  fi
+
+  local notnull
+  local dflt
+  notnull="$(printf '%s' "${info}" | cut -d'|' -f2)"
+  dflt="$(printf '%s' "${info}" | cut -d'|' -f3)"
+  if [ "${notnull}" = "1" ] && [ -z "${dflt}" ]; then
+    sqlite3 "${db_path}" <<'SQL'
+BEGIN;
+CREATE TABLE IF NOT EXISTS cameras_new (
+ unique_name TINYTEXT PRIMARY KEY,
+ config_json text NOT NULL,
+ drivermode_json text NOT NULL,
+ otherpaths_json TEXT NOT NULL DEFAULT '[]',
+ pipeline_jsons mediumtext NOT NULL
+);
+INSERT INTO cameras_new (unique_name, config_json, drivermode_json, otherpaths_json, pipeline_jsons)
+SELECT unique_name, config_json, drivermode_json, COALESCE(otherpaths_json, '[]'), pipeline_jsons
+FROM cameras;
+DROP TABLE cameras;
+ALTER TABLE cameras_new RENAME TO cameras;
+COMMIT;
+SQL
+  fi
+}

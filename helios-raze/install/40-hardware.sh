@@ -17,17 +17,36 @@ if ! command -v dtc >/dev/null 2>&1; then
   apt-get install -y device-tree-compiler
 fi
 
-ensure_dir /boot/firmware/overlays
-ensure_dir /boot/overlays
+fw_overlays_dir="/boot/firmware/overlays"
+if [ -L "${fw_overlays_dir}" ]; then
+  resolved="$(readlink -f "${fw_overlays_dir}" || true)"
+  if [ -n "${resolved}" ]; then
+    fw_overlays_dir="${resolved}"
+  else
+    rm -f "${fw_overlays_dir}"
+  fi
+fi
+ensure_dir "${fw_overlays_dir}"
+
+boot_overlays_dir="/boot/overlays"
+if [ -L "${boot_overlays_dir}" ]; then
+  resolved="$(readlink -f "${boot_overlays_dir}" || true)"
+  if [ -n "${resolved}" ]; then
+    boot_overlays_dir="${resolved}"
+  else
+    rm -f "${boot_overlays_dir}"
+  fi
+fi
+ensure_dir "${boot_overlays_dir}"
 if [ -f "${HELIOS_DIR}/ov9782-overlay.dts" ]; then
-  dtc -@ -I dts -O dtb -o /boot/firmware/overlays/ov9782-overlay.dtbo "${HELIOS_DIR}/ov9782-overlay.dts"
+  dtc -@ -I dts -O dtb -o "${fw_overlays_dir}/ov9782-overlay.dtbo" "${HELIOS_DIR}/ov9782-overlay.dts"
 else
   die "Missing OV9782 overlay source at ${HELIOS_DIR}/ov9782-overlay.dts"
 fi
 
-if [ -f /boot/firmware/overlays/ov9782-overlay.dtbo ]; then
-  fw_overlay="/boot/firmware/overlays/ov9782-overlay.dtbo"
-  boot_overlay="/boot/overlays/ov9782-overlay.dtbo"
+if [ -f "${fw_overlays_dir}/ov9782-overlay.dtbo" ]; then
+  fw_overlay="${fw_overlays_dir}/ov9782-overlay.dtbo"
+  boot_overlay="${boot_overlays_dir}/ov9782-overlay.dtbo"
   same_file=0
   if [ -e "${boot_overlay}" ]; then
     fw_id="$(stat -c '%d:%i' "${fw_overlay}" 2>/dev/null || echo "")"
@@ -60,6 +79,7 @@ if [ ! -f /opt/photonvision/photonvision_config/hardwareConfig.json ]; then
   install -m 644 "${HELIOS_DIR}/hardwareConfig.json" /opt/photonvision/photonvision_config/hardwareConfig.json
 fi
 seed_photonvision_hardware_config
+ensure_photonvision_camera_schema
 install -m 755 "${HELIOS_DIR}/helios-seed-photonvision-camera.sh" /usr/local/bin/helios-seed-photonvision-camera.sh
 install -m 644 "${HELIOS_DIR}/helios-seed-photonvision-camera.service" /etc/systemd/system/helios-seed-photonvision-camera.service
 systemctl enable helios-seed-photonvision-camera.service
