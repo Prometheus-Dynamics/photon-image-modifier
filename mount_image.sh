@@ -28,7 +28,17 @@ run_guestfs() {
     local source_image
     local rootdev="/dev/sda${rootpartition}"
     local bootdev=""
-    local mount_boot="${GUESTFS_MOUNT_BOOT:-0}"
+    # If a boot partition is provided, default to mounting it.
+    # Historically this was opt-in, which caused edits (config.txt, overlays, etc.)
+    # to land in the rootfs' /boot directory instead of the actual boot partition.
+    local mount_boot="${GUESTFS_MOUNT_BOOT:-}"
+    if [ -z "${mount_boot}" ]; then
+        if [ -n "${bootpartition:-}" ]; then
+            mount_boot=1
+        else
+            mount_boot=0
+        fi
+    fi
     local resume_image="${RESUME_IMAGE:-1}"
     guestmount_pid=""
     guestmount_pid_file="/tmp/guestmount.pid.$$"
@@ -94,7 +104,10 @@ run_guestfs() {
         guestmount_pid=$!
         echo "${guestmount_pid}" > "${guestmount_pid_file}"
 
-        local wait_seconds="${GUESTFS_MOUNT_WAIT_SECONDS:-10}"
+        # guestmount can take a while to come up, especially when libguestfs
+        # falls back to software emulation (no /dev/kvm). Keep the default
+        # conservative to avoid flaky mounts.
+        local wait_seconds="${GUESTFS_MOUNT_WAIT_SECONDS:-120}"
         local i
         for i in $(seq 1 "${wait_seconds}"); do
             if mountpoint -q "${rootdir}"; then
@@ -261,7 +274,10 @@ EOF
     fi
 
     cp -f "${image}" "base_image.img"
-    echo "image=base_image.img" >> "$GITHUB_OUTPUT"
+    # Only write CI outputs when running under GitHub Actions.
+    if [ -n "${GITHUB_OUTPUT:-}" ]; then
+        echo "image=base_image.img" >> "${GITHUB_OUTPUT}"
+    fi
 }
 
 if [[ "${image_mount_backend}" != "loop" ]]; then
@@ -455,4 +471,6 @@ if [[ "${use_mapper}" -eq 1 ]]; then
 fi
 losetup --detach "${loopdev}"
 
-echo "image=${image}" >> "$GITHUB_OUTPUT"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+    echo "image=${image}" >> "${GITHUB_OUTPUT}"
+fi
