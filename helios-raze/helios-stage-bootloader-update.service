@@ -1,0 +1,13 @@
+[Unit]
+Description=Stage CM5 bootloader EEPROM update
+After=local-fs.target
+Before=photonvision.service
+ConditionPathExists=/etc/helios/bootloader.conf
+ConditionPathExists=/usr/share/helios/bootloader
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/helios-stage-bootloader-update.sh
+
+[Install]
+WantedBy=multi-user.target

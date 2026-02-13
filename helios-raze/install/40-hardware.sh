@@ -74,6 +74,14 @@ install -m 644 "${HELIOS_DIR}/leds/etc/modprobe.d/ws2812-pio.conf" /etc/modprobe
 install -m 644 "${HELIOS_DIR}/leds/etc/systemd/system/ws2812-reprobe.service" /etc/systemd/system/ws2812-reprobe.service
 systemctl enable ws2812-reprobe.service
 
+ensure_dir /usr/share/helios/bootloader
+install -m 644 "${HELIOS_DIR}/bootloader/pieeprom-2025-12-08.upd" /usr/share/helios/bootloader/pieeprom-2025-12-08.upd
+install -m 644 "${HELIOS_DIR}/bootloader/pieeprom-2025-12-08.sig" /usr/share/helios/bootloader/pieeprom-2025-12-08.sig
+install -m 644 "${HELIOS_DIR}/bootloader.conf" /etc/helios/bootloader.conf
+install -m 755 "${HELIOS_DIR}/helios-stage-bootloader-update.sh" /usr/local/bin/helios-stage-bootloader-update.sh
+install -m 644 "${HELIOS_DIR}/helios-stage-bootloader-update.service" /etc/systemd/system/helios-stage-bootloader-update.service
+systemctl enable helios-stage-bootloader-update.service
+
 ensure_dir /opt/photonvision/photonvision_config
 if [ ! -f /opt/photonvision/photonvision_config/hardwareConfig.json ]; then
   install -m 644 "${HELIOS_DIR}/hardwareConfig.json" /opt/photonvision/photonvision_config/hardwareConfig.json
