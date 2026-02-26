@@ -237,9 +237,6 @@ cleanup_libcamera_build_deps() {
     meson \
     ninja-build \
     pkg-config \
-    python3-jinja2 \
-    python3-ply \
-    python3-yaml \
     libevent-dev \
     libyaml-dev \
     libdrm-dev \
@@ -250,6 +247,18 @@ cleanup_libcamera_build_deps() {
     libudev-dev \
     libexif-dev || true
   apt-get autoremove -y
+
+  # PhotonVision networking depends on nmcli/NetworkManager at runtime.
+  apt_update_once
+  if apt-cache show network-manager >/dev/null 2>&1; then
+    apt_fast_install network-manager
+    apt-mark manual network-manager >/dev/null 2>&1 || true
+  fi
+  if apt-cache show netplan.io >/dev/null 2>&1; then
+    apt_fast_install netplan.io
+    apt-mark manual netplan.io >/dev/null 2>&1 || true
+  fi
+
   rm -rf /var/lib/apt/lists/*
   apt-get clean
 }
