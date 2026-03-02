@@ -1,0 +1,206 @@
+[stage]
+enabled = true
+
+[[stage.files]]
+src = "gaia/assets/etc/hostname"
+dst = "/etc/hostname"
+mode = 420
+
+[[stage.files]]
+src = "gaia/assets/etc/os-release"
+dst = "/etc/os-release"
+mode = 420
+
+[[stage.files]]
+src = "gaia/assets/etc/motd"
+dst = "/etc/motd"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/hardwareConfig.json"
+dst = "/opt/photonvision/photonvision_config/hardwareConfig.json"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/bootloader.conf"
+dst = "/etc/helios/bootloader.conf"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/bootloader/pieeprom-2025-12-08.upd"
+dst = "/usr/share/helios/bootloader/pieeprom-2025-12-08.upd"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/bootloader/pieeprom-2025-12-08.sig"
+dst = "/usr/share/helios/bootloader/pieeprom-2025-12-08.sig"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/NetworkManager/conf.d/90-usb-gadget-unmanaged.conf"
+dst = "/etc/NetworkManager/conf.d/90-usb-gadget-unmanaged.conf"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/dnsmasq.d/usb0.conf"
+dst = "/etc/dnsmasq.d/usb0.conf"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/helios/gadget.env"
+dst = "/etc/helios/gadget.env"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/modules-load.d/usb-gadget.conf"
+dst = "/etc/modules-load.d/usb-gadget.conf"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/systemd/network/10-usbbr0.netdev"
+dst = "/etc/systemd/network/10-usbbr0.netdev"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/systemd/network/11-usbbr0.network"
+dst = "/etc/systemd/network/11-usbbr0.network"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/systemd/network/12-usb-gadget-slaves.network"
+dst = "/etc/systemd/network/12-usb-gadget-slaves.network"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/usb-power/etc/helios/usb-power.env"
+dst = "/etc/helios/usb-power.env"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/fan/etc/helios/fan.toml"
+dst = "/etc/helios/fan.toml"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/leds/etc/helios/leds.toml"
+dst = "/etc/helios/leds.toml"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/leds/etc/modprobe.d/ws2812-pio.conf"
+dst = "/etc/modprobe.d/ws2812-pio.conf"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/libcamera/ipa/rpi/vc4/ov9782.json"
+dst = "/usr/share/libcamera/ipa/rpi/vc4/ov9782.json"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/libcamera/ipa/rpi/vc4/ov9782.json"
+dst = "/usr/share/libcamera/ipa/rpi/vc4/ov9281.json"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/libcamera/ipa/rpi/pisp/ov9782.json"
+dst = "/usr/share/libcamera/ipa/rpi/pisp/ov9782.json"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/libcamera/ipa/rpi/pisp/ov9782.json"
+dst = "/usr/share/libcamera/ipa/rpi/pisp/ov9281.json"
+mode = 420
+
+[stage.env.sets.photonvision]
+PHOTONVISION_JAVA_OPTS = "-Xmx512m"
+PHOTONVISION_ARGS = ""
+
+[stage.env.sets.helios_seed]
+HELIOS_CAMERA_FOV = "70.0"
+
+[stage.services.units.photonvision]
+src = "gaia/assets/systemd/photonvision.service"
+unit = "photonvision.service"
+targets = ["multi-user.target"]
+env_set = "photonvision"
+
+[[stage.services.units.photonvision.assets]]
+src = "gaia/assets/usr/local/bin/photonvision-launch.sh"
+dst = "/usr/local/bin/photonvision-launch.sh"
+mode = 493
+
+[stage.services.units.helios_seed_photonvision_camera]
+src = "helios-raze/helios-seed-photonvision-camera.service"
+unit = "helios-seed-photonvision-camera.service"
+targets = ["multi-user.target"]
+env_set = "helios_seed"
+
+[[stage.services.units.helios_seed_photonvision_camera.assets]]
+src = "helios-raze/helios-seed-photonvision-camera.sh"
+dst = "/usr/local/bin/helios-seed-photonvision-camera.sh"
+mode = 493
+
+[stage.services.units.helios_usb_gadget]
+src = "helios-raze/gadget/etc/systemd/system/helios-usb-gadget.service"
+unit = "helios-usb-gadget.service"
+targets = ["multi-user.target", "sysinit.target", "default.target"]
+
+[[stage.services.units.helios_usb_gadget.assets]]
+src = "helios-raze/gadget/usr/local/bin/usb-gadget-setup.sh"
+dst = "/usr/local/bin/usb-gadget-setup.sh"
+mode = 493
+
+[stage.services.units.helios_dnsmasq]
+src = "helios-raze/gadget/etc/systemd/system/helios-dnsmasq.service"
+unit = "helios-dnsmasq.service"
+targets = ["multi-user.target"]
+
+[stage.services.units.helios_usb_power]
+src = "helios-raze/usb-power/etc/systemd/system/helios-usb-power.service"
+unit = "helios-usb-power.service"
+targets = ["multi-user.target"]
+
+[[stage.services.units.helios_usb_power.assets]]
+src = "helios-raze/usb-power/usr/local/bin/helios-usb-power-setup.sh"
+dst = "/usr/local/bin/helios-usb-power-setup.sh"
+mode = 493
+
+[stage.services.units.helios_fan_overlays]
+src = "helios-raze/helios-fan-overlays.service"
+unit = "helios-fan-overlays.service"
+targets = ["multi-user.target"]
+
+[[stage.services.units.helios_fan_overlays.assets]]
+src = "helios-raze/helios-fan-overlays.sh"
+dst = "/usr/local/bin/helios-fan-overlays.sh"
+mode = 493
+
+[stage.services.units.ws2812_reprobe]
+src = "helios-raze/leds/etc/systemd/system/ws2812-reprobe.service"
+unit = "ws2812-reprobe.service"
+targets = ["multi-user.target"]
+
+[[stage.services.units.ws2812_reprobe.assets]]
+src = "helios-raze/leds/usr/local/bin/helios-leds-gpio.sh"
+dst = "/usr/local/bin/helios-leds-gpio.sh"
+mode = 493
+
+[stage.services.units.helios_stage_bootloader_update]
+src = "helios-raze/helios-stage-bootloader-update.service"
+unit = "helios-stage-bootloader-update.service"
+targets = ["multi-user.target"]
+
+[[stage.services.units.helios_stage_bootloader_update.assets]]
+src = "helios-raze/helios-stage-bootloader-update.sh"
+dst = "/usr/local/bin/helios-stage-bootloader-update.sh"
+mode = 493
+
+[stage.services.units.systemd_networkd]
+vendor = true
+unit = "systemd-networkd.service"
+targets = ["multi-user.target"]
+
+[stage.services.units.ssh]
+vendor = true
+unit = "sshd.service"
+targets = ["multi-user.target"]

@@ -1,0 +1,3 @@
+[inputs.values]
+pv_build_jni = false
+pv_jar_source = "repo"

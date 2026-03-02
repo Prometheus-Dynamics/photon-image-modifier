@@ -1,0 +1,10 @@
+imports = [
+  "../configs/workspace.toml",
+  "../configs/buildroot.toml",
+  "../configs/program.toml",
+  "../configs/stage.toml",
+  "../configs/checkpoints.toml",
+]
+
+[build]
+version = "v0.1.0"

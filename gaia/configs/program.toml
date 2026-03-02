@@ -1,0 +1,63 @@
+[inputs.options.pv_jar_source]
+description = "How to source the PhotonVision jar"
+type = "string"
+default = "release"
+choices = ["repo", "release", "local"]
+
+[inputs.options.pv_jar_release_url]
+description = "Release URL used when pv_jar_source=release"
+type = "string"
+default = "https://github.com/PhotonVision/photonvision/releases/latest/download/photonvision-linuxarm64.jar"
+
+[inputs.options.pv_jar_local_path]
+description = "Local jar path used when pv_jar_source=local"
+type = "string"
+default = ""
+
+[inputs.options.photonvision_repo]
+description = "PhotonVision source repo path used when pv_jar_source=repo"
+type = "string"
+default = "../photonvision"
+
+[inputs.options.libcamera_driver_repo]
+description = "photon-libcamera-gl-driver repo path for optional JNI dependency build"
+type = "string"
+default = "../photon-libcamera-gl-driver"
+
+[inputs.options.pv_build_jni]
+description = "Build/install JNI dependency before PhotonVision jar build"
+type = "bool"
+default = false
+
+[inputs.options.sysroot_dir]
+description = "Target sysroot path required when pv_build_jni=true"
+type = "string"
+default = ""
+
+[inputs.options.maven_local_repo]
+description = "Local Maven cache path used during repo build"
+type = "string"
+default = "artifacts/m2"
+
+[program]
+enabled = true
+check_policy = "required"
+
+[program.custom]
+enabled = true
+workspace_dir = "."
+
+[[program.custom.artifacts]]
+id = "photonvision-jar"
+mode = "auto"
+output_path = "gaia/inputs/photonvision-linuxarm64.jar"
+cwd = "."
+build_command = ["bash", "gaia/scripts/build-photonvision-jar.sh"]
+
+[program.install]
+enabled = true
+
+[[program.install.items]]
+artifact = "photonvision-jar"
+dest = "/opt/photonvision/photonvision.jar"
+mode = 420

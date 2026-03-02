@@ -1,0 +1,29 @@
+{
+  "name": "HeliOS",
+  "version": "v0.1.5",
+  "release_date": "2025-12-12",
+  "description": "HeliOS for Raspberry Pi 5 / CM5",
+  "url": "https://helios.example.com",
+  "supports_secureboot": false,
+  "supported_models": [
+    "Raspberry Pi 5",
+    "Raspberry Pi 500",
+    "Raspberry Pi 5 Model B",
+    "Raspberry Pi 5 Model B Rev 1.0",
+    "Raspberry Pi 5 Model B Rev 1.1",
+    "Raspberry Pi Compute Module 5",
+    "Raspberry Pi Compute Module 5 Rev 1.0",
+    "Raspberry Pi Compute Module 5 Rev 1.1",
+    "Raspberry Pi 5 Compute Module",
+    "Raspberry Pi 5 Compute Module Rev 1.0",
+    "Raspberry Pi 5 Compute Module Rev 1.1",
+    "Compute Module 5",
+    "Raspberry Pi Compute Module 5 Lite",
+    "Raspberry Pi Compute Module 5 Lite Rev 1.0",
+    "Raspberry Pi Compute Module 5 Lite Rev 1.1",
+    "Raspberry Pi 5 Compute Module Lite",
+    "Raspberry Pi 5 Compute Module Lite Rev 1.0",
+    "Raspberry Pi 5 Compute Module Lite Rev 1.1",
+    "Compute Module 5 Lite"
+  ]
+}

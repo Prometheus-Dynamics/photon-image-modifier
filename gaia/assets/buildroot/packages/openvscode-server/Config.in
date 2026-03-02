@@ -1,0 +1,8 @@
+config BR2_PACKAGE_OPENVSCODE_SERVER
+	bool "openvscode-server"
+	depends on BR2_aarch64
+	depends on BR2_TOOLCHAIN_USES_GLIBC
+	help
+	  OpenVSCode Server provides a browser-based VS Code experience.
+	  This package installs the prebuilt server under /opt/helios/ide
+	  for authoring Helios custom nodes on-device.

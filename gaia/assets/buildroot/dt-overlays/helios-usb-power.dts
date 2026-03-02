@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Helios CM5 carrier: USB port power enables (gpio export)
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2712";
+
+	fragment@0 {
+		target-path = "/axi/pcie@1000120000/rp1/gpio@d0000";
+		__overlay__ {
+			usba-pwr-en {
+				/delete-property/ gpio-hog;
+				/delete-property/ output-high;
+				/delete-property/ output-low;
+				/delete-property/ input;
+				status = "disabled";
+			};
+
+			usbc-pwr-en {
+				/delete-property/ gpio-hog;
+				/delete-property/ output-high;
+				/delete-property/ output-low;
+				/delete-property/ input;
+				status = "disabled";
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			gpio_export: gpio-export {
+				compatible = "gpio-export";
+				#size-cells = <0>;
+
+				usba_pwr_en: usba-pwr-en {
+					gpio-export,name = "helios-usba-pwr-en";
+					gpio-export,output = <1>;
+					gpios = <&rp1_gpio 20 0>;
+				};
+
+				usbc_pwr_en: usbc-pwr-en {
+					gpio-export,name = "helios-usbc-pwr-en";
+					gpio-export,output = <1>;
+					gpios = <&rp1_gpio 16 0>;
+				};
+			};
+		};
+	};
+};

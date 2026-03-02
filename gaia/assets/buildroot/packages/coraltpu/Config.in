@@ -1,0 +1,4 @@
+config BR2_PACKAGE_CORALTPU
+    bool "coral-tpu"
+    help
+      Custom Coral TPU support.

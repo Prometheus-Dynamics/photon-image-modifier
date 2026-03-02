@@ -6,6 +6,9 @@ commands.sh
 output/
 .output/
 rootfs/
+build/gaia/
+gaia/checkpoints/
+gaia/inputs/photonvision-linuxarm64.jar
 helios_diag_*/
 helios_diag_*.tar.gz
 

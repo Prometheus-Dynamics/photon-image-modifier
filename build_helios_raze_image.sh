@@ -14,16 +14,14 @@ image_name="${IMAGE_NAME:-helios-raze}"
 clean_after="${CLEAN_AFTER:-0}"
 build_docs="${BUILD_DOCS:-1}"
 workflow_runner="${WORKFLOW_RUNNER:-docker}"
+image_builder="${IMAGE_BUILDER:-gaia}"
 build_step="${BUILD_STEP:-all}"
-
-if [ -z "${sysroot_dir}" ]; then
-  echo "SYSROOT_DIR is required (path to target rootfs or sysroot)." 1>&2
-  exit 1
-fi
 
 photonvision_repo="$(realpath "${photonvision_repo}")"
 libcamera_driver_repo="$(realpath "${libcamera_driver_repo}")"
-sysroot_dir="$(realpath "${sysroot_dir}")"
+if [ -n "${sysroot_dir}" ]; then
+  sysroot_dir="$(realpath "${sysroot_dir}")"
+fi
 maven_local_repo="$(realpath -m "${maven_local_repo}")"
 jar_out_dir="$(realpath -m "${jar_out_dir}")"
 output_dir="$(realpath -m "${output_dir}")"
@@ -81,6 +79,10 @@ case "${build_step}" in
 esac
 
 if [ "${run_jni}" = "1" ]; then
+  if [ -z "${sysroot_dir}" ]; then
+    echo "SYSROOT_DIR is required for BUILD_STEP=jni/all (path to target rootfs or sysroot)." 1>&2
+    exit 1
+  fi
   SYSROOT_DIR="${sysroot_dir}" \
   MAVEN_LOCAL_REPO="${maven_local_repo}" \
     "${libcamera_driver_repo}/tools/build_arm64_jni.sh"
@@ -122,26 +124,44 @@ if [ "${run_jar}" = "1" ]; then
 fi
 
 if [ "${run_image}" = "1" ]; then
-  jar_for_image="${PHOTONVISION_JAR_PATH:-}"
-  if [ -z "${jar_for_image}" ] && [ -f "${jar_out}" ]; then
-    jar_for_image="${jar_out}"
-  fi
-  if [ -z "${jar_for_image}" ]; then
-    echo "PHOTONVISION_JAR_PATH is required for BUILD_STEP=image (or build jar first)." 1>&2
-    exit 1
-  fi
+  if [ "${image_builder}" = "gaia" ]; then
+    jar_for_image="${PHOTONVISION_JAR_PATH:-}"
+    if [ -z "${jar_for_image}" ] && [ -f "${jar_out}" ]; then
+      jar_for_image="${jar_out}"
+    fi
 
-  if [ "${workflow_runner}" = "direct" ]; then
-    WORK_ROOT="${repo_root}" \
-    PHOTONVISION_JAR_PATH="${jar_for_image}" \
-    OUTPUT_DIR="${output_dir}" \
-    IMAGE_NAME="${image_name}" \
-      "${repo_root}/tools/workflow/entrypoint.sh"
+    if [ -n "${jar_for_image}" ]; then
+      PHOTONVISION_JAR_PATH="${jar_for_image}" \
+      OUTPUT_DIR="${output_dir}" \
+      IMAGE_NAME="${image_name}" \
+        "${repo_root}/gaia/scripts/build-helios-raze-image.sh"
+    else
+      OUTPUT_DIR="${output_dir}" \
+      IMAGE_NAME="${image_name}" \
+        "${repo_root}/gaia/scripts/build-helios-raze-image.sh"
+    fi
   else
-    PHOTONVISION_JAR_PATH="${jar_for_image}" \
-    OUTPUT_DIR="${output_dir}" \
-    IMAGE_NAME="${image_name}" \
-      "${repo_root}/tools/workflow/run-build.sh"
+    jar_for_image="${PHOTONVISION_JAR_PATH:-}"
+    if [ -z "${jar_for_image}" ] && [ -f "${jar_out}" ]; then
+      jar_for_image="${jar_out}"
+    fi
+    if [ -z "${jar_for_image}" ]; then
+      echo "PHOTONVISION_JAR_PATH is required for BUILD_STEP=image (or build jar first)." 1>&2
+      exit 1
+    fi
+
+    if [ "${workflow_runner}" = "direct" ]; then
+      WORK_ROOT="${repo_root}" \
+      PHOTONVISION_JAR_PATH="${jar_for_image}" \
+      OUTPUT_DIR="${output_dir}" \
+      IMAGE_NAME="${image_name}" \
+        "${repo_root}/tools/workflow/entrypoint.sh"
+    else
+      PHOTONVISION_JAR_PATH="${jar_for_image}" \
+      OUTPUT_DIR="${output_dir}" \
+      IMAGE_NAME="${image_name}" \
+        "${repo_root}/tools/workflow/run-build.sh"
+    fi
   fi
 fi
 

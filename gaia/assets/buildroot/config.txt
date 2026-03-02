@@ -1,0 +1,37 @@
+# For more options and information see
+# http://rptl.io/configtxt
+# Some settings may impact device functionality. See link above for details
+
+start_file=start4.elf
+fixup_file=fixup4.dat
+disable_fw_kms_setup=1
+kernel=Image
+
+arm_64bit=1
+arm_boost=1
+
+camera_auto_detect=0
+
+dtparam=i2c_csi_dsi0=on
+dtparam=i2c_csi_dsi1=on
+dtparam=watchdog=off
+
+dtoverlay=disable-wifi
+dtoverlay=disable-bt
+
+dtoverlay=dwc2,dr_mode=peripheral
+dtoverlay=ov9782-overlay,cam0,clk-continuous
+[cm4]
+
+[cm5]
+# Keep firmware auto-detection of carrier DTB (cm4io/cm5io) for CM5.
+# Hardware I2C bus for power sensors:
+#   /dev/i2c-1 -> GPIO10 (SDA) / GPIO11 (SCL) via RP1 i2c1
+# Shared software I2C bus for peripheral sensors (IMU, etc.)
+#   bus4 -> GPIO8 (SDA) / GPIO7 (SCL)
+
+dtoverlay=i2c1-pi5,pins_10_11
+dtoverlay=i2c-gpio,bus=4,i2c_gpio_sda=8,i2c_gpio_scl=7
+dtoverlay=ws2812-pio,gpio=13,num_leds=16,brightness=255,dev_name=leds%d
+dtoverlay=helios-usb-power
+dtoverlay=vc4-kms-v3d-pi5

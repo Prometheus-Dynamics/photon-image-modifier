@@ -1,0 +1,4 @@
+config BR2_PACKAGE_TURBOJPEG
+    bool "libjpeg-turbo"
+    help
+      Custom TurboJPEG build.
