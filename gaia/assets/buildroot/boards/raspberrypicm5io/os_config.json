@@ -1,9 +1,9 @@
 {
-  "name": "HeliOS",
+  "name": "PhotonVision HeliOS Raze",
   "version": "v0.1.5",
   "release_date": "2025-12-12",
-  "description": "HeliOS for Raspberry Pi 5 / CM5",
-  "url": "https://helios.example.com",
+  "description": "PhotonVision HeliOS Raze for Raspberry Pi 5 / CM5",
+  "url": "https://photonvision.org",
   "supports_secureboot": false,
   "supported_models": [
     "Raspberry Pi 5",

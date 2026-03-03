@@ -1,0 +1,44 @@
+config BR2_PACKAGE_JAVA_RUNTIME
+	bool "java-runtime"
+	depends on BR2_aarch64
+	help
+	  Install a prebuilt Java runtime for PhotonVision.
+
+	  The package can either download a release archive URL or
+	  consume a local archive path.
+
+if BR2_PACKAGE_JAVA_RUNTIME
+
+choice
+	prompt "Java runtime source"
+	default BR2_PACKAGE_JAVA_RUNTIME_SOURCE_RELEASE
+
+config BR2_PACKAGE_JAVA_RUNTIME_SOURCE_RELEASE
+	bool "Download release archive"
+
+config BR2_PACKAGE_JAVA_RUNTIME_SOURCE_LOCAL
+	bool "Use local archive path"
+
+endchoice
+
+config BR2_PACKAGE_JAVA_RUNTIME_RELEASE_URL
+	string "Release archive URL"
+	default "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_aarch64_linux_hotspot_21.0.4_7.tar.gz"
+	depends on BR2_PACKAGE_JAVA_RUNTIME_SOURCE_RELEASE
+	help
+	  Full URL to the Java runtime tar archive.
+
+config BR2_PACKAGE_JAVA_RUNTIME_LOCAL_PATH
+	string "Local archive path"
+	default ""
+	depends on BR2_PACKAGE_JAVA_RUNTIME_SOURCE_LOCAL
+	help
+	  Absolute path to a local Java runtime tar archive.
+
+config BR2_PACKAGE_JAVA_RUNTIME_INSTALL_DIR
+	string "Install directory"
+	default "/usr/lib/jvm"
+	help
+	  Target path where the runtime should be installed.
+
+endif

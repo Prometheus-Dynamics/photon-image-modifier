@@ -1,6 +1,6 @@
 # photon-image-modifier
 
-This repo now includes a Gaia-native full image pipeline for HeliOS Raze under `gaia/`.
+This repo now includes a Gaia-native full image pipeline for PhotonVision HeliOS Raze under `gaia/`.
 
 ## Default build path (Gaia)
 

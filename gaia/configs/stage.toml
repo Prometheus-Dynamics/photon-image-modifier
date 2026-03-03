@@ -17,6 +17,21 @@ dst = "/etc/motd"
 mode = 420
 
 [[stage.files]]
+src = "gaia/assets/etc/issue"
+dst = "/etc/issue"
+mode = 420
+
+[[stage.files]]
+src = "gaia/assets/etc/issue"
+dst = "/etc/issue.net"
+mode = 420
+
+[[stage.files]]
+src = "gaia/assets/etc/sshd_config"
+dst = "/etc/ssh/sshd_config"
+mode = 420
+
+[[stage.files]]
 src = "helios-raze/hardwareConfig.json"
 dst = "/opt/photonvision/photonvision_config/hardwareConfig.json"
 mode = 420
@@ -62,13 +77,18 @@ dst = "/etc/systemd/network/10-usbbr0.netdev"
 mode = 420
 
 [[stage.files]]
-src = "helios-raze/gadget/etc/systemd/network/11-usbbr0.network"
-dst = "/etc/systemd/network/11-usbbr0.network"
+src = "helios-raze/gadget/etc/systemd/network/10-usb0.network"
+dst = "/etc/systemd/network/10-usb0.network"
 mode = 420
 
 [[stage.files]]
-src = "helios-raze/gadget/etc/systemd/network/12-usb-gadget-slaves.network"
-dst = "/etc/systemd/network/12-usb-gadget-slaves.network"
+src = "helios-raze/gadget/etc/systemd/network/11-usb-gadget-slaves.network"
+dst = "/etc/systemd/network/11-usb-gadget-slaves.network"
+mode = 420
+
+[[stage.files]]
+src = "helios-raze/gadget/etc/systemd/network/12-usbbr0.network"
+dst = "/etc/systemd/network/12-usbbr0.network"
 mode = 420
 
 [[stage.files]]

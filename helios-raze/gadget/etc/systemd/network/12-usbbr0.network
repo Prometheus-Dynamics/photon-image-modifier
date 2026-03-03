@@ -2,5 +2,7 @@
 Name=usbbr0
 
 [Network]
+DHCP=no
 Address=172.31.250.1/24
 ConfigureWithoutCarrier=yes
+LinkLocalAddressing=no

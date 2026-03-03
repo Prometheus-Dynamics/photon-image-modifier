@@ -1,0 +1,7 @@
+Port 22
+Protocol 2
+PermitRootLogin yes
+PasswordAuthentication yes
+ChallengeResponseAuthentication no
+PermitEmptyPasswords no
+Banner /etc/issue.net

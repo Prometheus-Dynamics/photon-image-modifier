@@ -1,0 +1,7 @@
+[Match]
+Name=usb1 end0 end1
+
+[Network]
+Bridge=usbbr0
+LinkLocalAddressing=no
+ConfigureWithoutCarrier=yes

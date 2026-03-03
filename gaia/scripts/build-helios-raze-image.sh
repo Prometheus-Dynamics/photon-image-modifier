@@ -68,6 +68,18 @@ compress_img_xz() {
   fi
 }
 
+sync_artifact() {
+  local src="$1"
+  local dst="$2"
+  if [[ ! -f "${src}" ]]; then
+    return 1
+  fi
+  if [[ -f "${dst}" && "${src}" -ef "${dst}" ]]; then
+    return 0
+  fi
+  cp -f "${src}" "${dst}"
+}
+
 mode="run"
 if [[ $# -gt 0 ]]; then
   case "$1" in
@@ -131,50 +143,71 @@ case "${mode}" in
 esac
 
 target_img="${output_dir}/photonvision_${image_name}.img"
+target_img_xz="${target_img}.xz"
 gaia_img="${repo_root}/output/gaia/photonvision-helios-raze.img"
+gaia_img_xz="${repo_root}/output/gaia/photonvision-helios-raze.img.xz"
+gaia_images_img="${repo_root}/output/gaia/images/sdcard.img"
 legacy_img="${repo_root}/output/photonvision-helios-raze.img"
+legacy_img_xz="${repo_root}/output/photonvision-helios-raze.img.xz"
 
-if [[ -f "${gaia_img}" ]]; then
-  final_img="${gaia_img}"
-elif [[ -f "${legacy_img}" ]]; then
-  final_img="${legacy_img}"
-else
-  final_img="$(find "${repo_root}/output" -maxdepth 4 -type f -name '*.img' ! -path "${target_img}" -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-)"
+source_img=""
+for candidate in "${gaia_images_img}" "${gaia_img}" "${legacy_img}"; do
+  if [[ -f "${candidate}" ]]; then
+    source_img="${candidate}"
+    break
+  fi
+done
+if [[ -z "${source_img}" ]]; then
+  source_img="$(find "${repo_root}/output" -maxdepth 4 -type f -name '*.img' ! -path "${target_img}" -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-)"
 fi
 
-if [[ -z "${final_img}" || ! -f "${final_img}" ]]; then
-  echo "Gaia build completed but no .img artifact was found under ${repo_root}/output" >&2
+source_img_xz=""
+for candidate in "${gaia_img_xz}" "${legacy_img_xz}"; do
+  if [[ -f "${candidate}" ]]; then
+    source_img_xz="${candidate}"
+    break
+  fi
+done
+if [[ -z "${source_img_xz}" ]]; then
+  source_img_xz="$(find "${repo_root}/output" -maxdepth 4 -type f -name '*.img.xz' ! -path "${target_img_xz}" -printf '%T@ %p\n' | sort -n | tail -n 1 | cut -d' ' -f2-)"
+fi
+
+if [[ -z "${source_img}" && -z "${source_img_xz}" ]]; then
+  echo "Gaia build completed but no .img or .img.xz artifact was found under ${repo_root}/output" >&2
   exit 1
 fi
 
-if [[ -f "${target_img}" && "${final_img}" -ef "${target_img}" ]]; then
-  if [[ "${compress_image}" == "1" ]]; then
-    target_img_xz="${target_img}.xz"
+if [[ -n "${source_img}" ]]; then
+  sync_artifact "${source_img}" "${target_img}"
+fi
+
+if [[ "${compress_image}" == "1" ]]; then
+  if [[ -n "${source_img_xz}" ]]; then
+    sync_artifact "${source_img_xz}" "${target_img_xz}"
+  else
     if ! command -v xz >/dev/null 2>&1; then
       echo "COMPRESS_IMAGE=1 but xz was not found in PATH." >&2
       exit 1
     fi
-    if [[ ! -f "${target_img_xz}" || "${target_img}" -nt "${target_img_xz}" ]]; then
-      compress_img_xz "${target_img}"
+    if [[ ! -f "${target_img}" ]]; then
+      echo "No raw image found to compress: ${target_img}" >&2
+      exit 1
     fi
-    echo "image=${target_img}"
-    echo "image_xz=${target_img_xz}"
-    exit 0
+    compress_img_xz "${target_img}"
   fi
-  echo "image=${target_img}"
-  exit 0
-fi
-
-cp -f "${final_img}" "${target_img}"
-if [[ "${compress_image}" == "1" ]]; then
-  target_img_xz="${target_img}.xz"
-  if ! command -v xz >/dev/null 2>&1; then
-    echo "COMPRESS_IMAGE=1 but xz was not found in PATH." >&2
-    exit 1
-  fi
-  compress_img_xz "${target_img}"
   echo "image=${target_img}"
   echo "image_xz=${target_img_xz}"
 else
+  if [[ ! -f "${target_img}" ]]; then
+    if [[ -z "${source_img_xz}" ]]; then
+      echo "No raw image available and COMPRESS_IMAGE=0 with no .img.xz source to decompress." >&2
+      exit 1
+    fi
+    if ! command -v xz >/dev/null 2>&1; then
+      echo "COMPRESS_IMAGE=0 requires xz to decompress ${source_img_xz} into ${target_img}." >&2
+      exit 1
+    fi
+    xz -dc "${source_img_xz}" > "${target_img}"
+  fi
   echo "image=${target_img}"
 fi
