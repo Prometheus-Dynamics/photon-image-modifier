@@ -1,0 +1,14 @@
+description = "Limelight 3G target layer."
+target = "limelight3g"
+
+[[stage.files]]
+id = "limelight3g-boot-config"
+src = "limelight/limelight3g/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["limelight3g-boot-config"]

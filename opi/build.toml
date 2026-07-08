@@ -1,0 +1,14 @@
+description = "Orange Pi target layer: PhotonVision big-core runtime policy."
+target = "opi"
+
+[[stage.files]]
+id = "opi-photonvision-service-override"
+src = "opi/assets/photonvision.service.d/override.conf"
+dest = "/etc/systemd/system/photonvision.service.d/override.conf"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["opi-photonvision-service-override"]

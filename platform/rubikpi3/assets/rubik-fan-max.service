@@ -1,0 +1,10 @@
+[Unit]
+Description=Force Rubik Pi fan to full speed
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rubik-fan-max.sh
+
+[Install]
+WantedBy=multi-user.target

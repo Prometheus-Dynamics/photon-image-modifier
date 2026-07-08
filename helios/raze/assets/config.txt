@@ -1,0 +1,6 @@
+arm_64bit=1
+dtoverlay=vc4-kms-v3d-pi5
+dtoverlay=ov9782
+camera_auto_detect=0
+disable_splash=1
+enable_uart=1

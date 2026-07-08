@@ -1,0 +1,14 @@
+description = "Generic Raspberry Pi target layer."
+target = "raspi"
+
+[[stage.files]]
+id = "raspi-boot-config"
+src = "raspi/raspi/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["raspi-boot-config"]

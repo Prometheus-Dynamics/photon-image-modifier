@@ -1,0 +1,9 @@
+[Unit]
+Description=Service that sets the CPU frequency governor
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'for governor in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do [ -e "$governor" ] && echo performance > "$governor"; done'
+
+[Install]
+WantedBy=multi-user.target

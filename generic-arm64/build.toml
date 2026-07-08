@@ -1,0 +1,2 @@
+description = "Generic ARM64 target. This intentionally adds no platform-specific firmware, boot config, or hardware files."
+target = "generic-arm64"

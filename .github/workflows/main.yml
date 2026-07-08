@@ -1,4 +1,4 @@
-name: Build driver
+name: Build images
 on:
   push:
     branches: [ main ]
@@ -16,139 +16,67 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: limelight
-            script: ./install_limelight.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: limelight3
-            script: ./install_limelight3.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: limelight3g
-            script: ./install_limelight3g.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: limelight4
-            script: ./install_limelight4.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: raspi
-            script: ./install_pi.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: raspi_dev
-            script: ./install_dev_pi.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: snakeyes
-            script: ./install_snakeyes.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: luma_p1
-            script: ./install_luma_p1.sh
-            base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-10-02/2025-10-01-raspios-trixie-arm64-lite.img.xz
-          - name: opi5
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-orangepi-5.img.xz
-          - name: opi5b
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-orangepi-5b.img.xz
-          - name: opi5plus
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-orangepi-5-plus.img.xz
-          - name: opi5pro
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-orangepi-5-pro.img.xz
-          - name: opi5max
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-orangepi-5-max.img.xz
-          - name: rock5c
-            script: ./install_opi5.sh
-            base_image: https://github.com/Joshua-Riek/ubuntu-rockchip/releases/download/v2.4.0/ubuntu-24.04-preinstalled-server-arm64-rock-5c.img.xz
-          - name: rubikpi3
-            script: ./install_rubikpi3.sh
-            base_image: https://people.canonical.com/~platform/images/qualcomm-iot/rubikpi3/ubuntu-server-24.04/x01/ubuntu-24.04-preinstalled-server-arm64+rubikpi3-20250926-145.yaml
-            root_location: "offset=569376768"
-            shrink_image: "no"
+        target:
+          - generic-arm64
+          - raspi
+          - raspi_dev
+          - dev-pi
+          - limelight
+          - limelight3
+          - limelight3g
+          - limelight4
+          - luma_p1
+          - snakeyes
+          - helios-raze
+          - opi
+          - rubikpi3
 
-    name: "Build for ${{ matrix.name }}"
+    name: "Gaia build for ${{ matrix.target }}"
 
     steps:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
     - name: Fetch tags
       run: git fetch --tags --force
 
-    - name: Generate version file
+    - name: Build Gaia
       run: |
+        git clone --depth=1 https://github.com/PhotonVision/Gaia-Image-Builder ../Gaia-Image-Builder
+        cargo build --manifest-path ../Gaia-Image-Builder/Cargo.toml --bin gaia
 
-        # Build the final JSON object
-        json_string=$(jq -n \
-          --arg date "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-          --arg commit_sha "${GITHUB_SHA}" \
-          --arg commit_tag "$(git describe --tags --abbrev=0 2>/dev/null || echo "untagged")" \
-          --arg image_name "${{ matrix.name }}" \
-          --arg image_source "${{ matrix.base_image }}" \
-          '{build_date: $date, commit_sha: $commit_sha, commit_tag: $commit_tag, image_name: $image_name, image_source: $image_source}')
-
-        echo "$json_string"
-
-        echo "$json_string" > image-version.json
-
-    - name: Install dependencies and build image
-      uses: photonvision/photon-image-runner@HEAD
-      id: install_deps
+    - name: Prepare PhotonVision artifact
       env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        minimum_free_mb: 2000
-        image_url: ${{ matrix.base_image }}
-        root_location: ${{ matrix.root_location || 'partition=2' }}
-        boot_partition:
-        shrink_image: ${{ matrix.shrink_image || 'yes' }}
-        commands: |
-            set -e
-            echo "Running ${{ matrix.script }}"
-            chmod +x "${{ matrix.script }}"
-            "./${{ matrix.script }}"
-            echo "Running install_common.sh"
-            chmod +x "./install_common.sh"
-            "./install_common.sh"
-
-    - name: Compress built image
-      # Compress the standard images
-      if: ${{ ! startsWith(matrix.name, 'rubik') }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        sudo mv ${{ steps.install_deps.outputs.image }} photonvision_${{ matrix.name }}.img
-        sudo xz -T 0 -v photonvision_${{ matrix.name }}.img
-        echo "artifact=photonvision_${{ matrix.name }}.img.xz" >> "$GITHUB_ENV"
-
-    - name: Tar built image
-      # Build the RubikPi3-specific tar file
-      if: ${{ startsWith(matrix.name, 'rubik') }}
-      run: |
-        imagedir=$(dirname ${{ steps.install_deps.outputs.image }})
-        target=photonvision_${{ matrix.name }}
-        tardir=${target}
-        mkdir --parents ${tardir}
-        echo "Contents of imagedir: ${imagedir}"
-        ls -la ${imagedir}
-        if ls ${imagedir}/*.tar.gz 1>/dev/null 2>&1; then
-          sudo tar -xzf ${imagedir}/*.tar.gz -C ${tardir} --strip-components=1
+        set -euo pipefail
+        mkdir -p artifacts
+        release_url="https://api.github.com/repos/photonvision/photonvision/releases/latest"
+        if [[ -n "${GH_TOKEN:-}" ]]; then
+          release_json="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" "$release_url")"
+        else
+          release_json="$(curl -fsSL "$release_url")"
         fi
-        sudo mv ${imagedir}/rawprogram*.xml ${tardir}/ 2>/dev/null || true
-        sudo mv ${imagedir}/dtb.bin ${tardir}/ 2>/dev/null || true
-        sudo mv ${imagedir}/*.img ${tardir}/ 2>/dev/null || true
-        sudo find ${tardir} -mindepth 2 -type f -exec mv {} ${tardir}/ \;
-        sudo find ${tardir} -mindepth 1 -type d -empty -delete
-        echo "Contents of tardir: ${tardir}"
-        ls -la ${tardir}
-        sudo tar -I 'xz -T0' --create --file=${target}.tar.xz ${tardir} --checkpoint=10000 --checkpoint-action=echo='%T'
-        echo "Contents of tar file:"
-        # Expenive operation (has to unzip the file), only use for debugging
-        # echo "Contents of tar file:"
-        # tar --list --file=${target}.tar.xz
-        echo "artifact=${target}.tar.xz" >> "$GITHUB_ENV"
+        download_url="$(jq -r '.assets[] | select(.name | test("linuxarm64\\.jar$")) | .browser_download_url' <<<"$release_json" | head -n1)"
+        test -n "$download_url"
+        curl -fL "$download_url" -o artifacts/photonvision-linuxarm64.jar
 
-    - uses: actions/upload-artifact@v7
+    - name: Run Gaia
+      run: |
+        ../Gaia-Image-Builder/target/debug/gaia run build.toml \
+          --set input.target="${{ matrix.target }}" \
+          --set input.profile=full \
+          --set input.version="$(git describe --tags --abbrev=0 2>/dev/null || echo latest)"
+
+    - name: Upload image artifacts
+      uses: actions/upload-artifact@v7
       with:
         archive: false
-        path: ${{ env.artifact }}
+        path: |
+          output/gaia/**/*.xz
+          output/gaia/**/*.img
+          output/gaia/**/*.tar
         if-no-files-found: error
         retention-days: 1
 
@@ -156,11 +84,8 @@ jobs:
     needs: [build]
     runs-on: ubuntu-24.04
     steps:
-      # Download literally every single artifact
       - uses: actions/download-artifact@v8
       - run: find
-      # Push to dev release and/or to a real release if tagged using semantic versioning
-      # See https://github.com/pyTooling/Actions/tree/dev/releaser
       - uses: pyTooling/Actions/releaser@v1.0.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -168,4 +93,6 @@ jobs:
           rm: true
           files: |
             **/*.xz
+            **/*.img
+            **/*.tar
         if: github.event_name == 'push'

@@ -1,0 +1,147 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 096de29..48d5b7b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -92,7 +92,7 @@ target_link_libraries(
+         ${OPENCV_LIB_PATH}
+         ${LIBDRM_LINK_LIBRARIES}
+ )
+-target_compile_options(photonlibcamera PRIVATE -Wall -Wextra -Wpedantic -Werror)
++target_compile_options(photonlibcamera PRIVATE -Wall -Wextra)
+ 
+ option(BUILD_CAMERA_MEME "Build the libcamera_meme test binary" ON)
+ if (BUILD_CAMERA_MEME)
+diff --git a/include/gl_hsv_thresholder.h b/include/gl_hsv_thresholder.h
+index a318719..19ae57e 100644
+--- a/include/gl_hsv_thresholder.h
++++ b/include/gl_hsv_thresholder.h
+@@ -30,10 +30,12 @@
+ #include <vector>
+ 
+ #include <EGL/egl.h>
++#include <EGL/eglext.h>
+ #include <GLES2/gl2.h>
+ 
+ #include "camera_model.h"
+ #include "headless_opengl.h"
++#include "raze_egl_compat.h"
+ 
+ enum class ProcessType : int32_t {
+     None = 0,
+diff --git a/include/headless_opengl.h b/include/headless_opengl.h
+index 4406789..47a6da0 100644
+--- a/include/headless_opengl.h
++++ b/include/headless_opengl.h
+@@ -18,6 +18,9 @@
+ #pragma once
+ 
+ #include <EGL/egl.h>
++#include <EGL/eglext.h>
++
++#include "raze_egl_compat.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/include/libcamera_opengl_utility.h b/include/libcamera_opengl_utility.h
+index 13cb41b..80a9987 100644
+--- a/include/libcamera_opengl_utility.h
++++ b/include/libcamera_opengl_utility.h
+@@ -23,8 +23,11 @@
+ #include <libcamera/color_space.h>
+ 
+ #include <EGL/egl.h>
++#include <EGL/eglext.h>
+ 
+ // clang-format on
+ 
++#include "raze_egl_compat.h"
++
+ EGLint rangeFromColorspace(const libcamera::ColorSpace &colorSpace);
+ EGLint encodingFromColorspace(const libcamera::ColorSpace &colorSpace);
+diff --git a/include/raze_egl_compat.h b/include/raze_egl_compat.h
+new file mode 100644
+index 0000000..70e4ab2
+--- /dev/null
++++ b/include/raze_egl_compat.h
+@@ -0,0 +1,81 @@
++#pragma once
++
++#ifndef EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR
++#define EGL_CONTEXT_OPENGL_DEBUG_BIT_KHR 0x00000001
++#endif
++
++#ifndef EGL_CONTEXT_FLAGS_KHR
++#define EGL_CONTEXT_FLAGS_KHR 0x30FC
++#endif
++
++#ifndef EGL_LINUX_DMA_BUF_EXT
++#define EGL_LINUX_DMA_BUF_EXT 0x3270
++#endif
++
++#ifndef EGL_LINUX_DRM_FOURCC_EXT
++#define EGL_LINUX_DRM_FOURCC_EXT 0x3271
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE0_FD_EXT
++#define EGL_DMA_BUF_PLANE0_FD_EXT 0x3272
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE0_OFFSET_EXT
++#define EGL_DMA_BUF_PLANE0_OFFSET_EXT 0x3273
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE0_PITCH_EXT
++#define EGL_DMA_BUF_PLANE0_PITCH_EXT 0x3274
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE1_FD_EXT
++#define EGL_DMA_BUF_PLANE1_FD_EXT 0x3275
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE1_OFFSET_EXT
++#define EGL_DMA_BUF_PLANE1_OFFSET_EXT 0x3276
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE1_PITCH_EXT
++#define EGL_DMA_BUF_PLANE1_PITCH_EXT 0x3277
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE2_FD_EXT
++#define EGL_DMA_BUF_PLANE2_FD_EXT 0x3278
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE2_OFFSET_EXT
++#define EGL_DMA_BUF_PLANE2_OFFSET_EXT 0x3279
++#endif
++
++#ifndef EGL_DMA_BUF_PLANE2_PITCH_EXT
++#define EGL_DMA_BUF_PLANE2_PITCH_EXT 0x327A
++#endif
++
++#ifndef EGL_YUV_COLOR_SPACE_HINT_EXT
++#define EGL_YUV_COLOR_SPACE_HINT_EXT 0x327B
++#endif
++
++#ifndef EGL_SAMPLE_RANGE_HINT_EXT
++#define EGL_SAMPLE_RANGE_HINT_EXT 0x327C
++#endif
++
++#ifndef EGL_ITU_REC601_EXT
++#define EGL_ITU_REC601_EXT 0x327F
++#endif
++
++#ifndef EGL_ITU_REC709_EXT
++#define EGL_ITU_REC709_EXT 0x3280
++#endif
++
++#ifndef EGL_ITU_REC2020_EXT
++#define EGL_ITU_REC2020_EXT 0x3281
++#endif
++
++#ifndef EGL_YUV_FULL_RANGE_EXT
++#define EGL_YUV_FULL_RANGE_EXT 0x3282
++#endif
++
++#ifndef EGL_YUV_NARROW_RANGE_EXT
++#define EGL_YUV_NARROW_RANGE_EXT 0x3283
++#endif

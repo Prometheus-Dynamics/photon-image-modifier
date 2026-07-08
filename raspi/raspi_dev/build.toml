@@ -1,0 +1,20 @@
+description = "Development Raspberry Pi target layer."
+target = "raspi_dev"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  ["BR2_PACKAGE_CMAKE", "y"],
+  ["BR2_PACKAGE_MAKE", "y"],
+  ["BR2_PACKAGE_GCC", "y"],
+  ["BR2_PACKAGE_OPENJDK_FULL_JDK", "y"],
+]
+
+[[stage.files]]
+id = "raspi-dev-boot-config"
+src = "raspi/raspi_dev/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[image.feed]
+stage_files = ["raspi-dev-boot-config"]

@@ -1,0 +1,44 @@
+description = "Shared Raspberry Pi platform layer: Pi firmware, boot conventions, network defaults, and camera/display runtime dependencies."
+target = "raspberry-pi"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  ["BR2_LINUX_KERNEL", "y"],
+  ["BR2_LINUX_KERNEL_DEFCONFIG", "\"bcm2712\""],
+  ["BR2_PACKAGE_RPI_FIRMWARE", "y"],
+  ["BR2_PACKAGE_RPI_FIRMWARE_INSTALL_DTB_OVERLAYS", "y"],
+  ["BR2_PACKAGE_RPI_USERLAND", "y"],
+  ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
+  ["BR2_PACKAGE_NET_TOOLS", "y"],
+  ["BR2_PACKAGE_DTC", "y"],
+  ["BR2_PACKAGE_LIBCAMERA", "y"],
+  ["BR2_PACKAGE_MESA3D", "y"],
+  ["BR2_PACKAGE_LIBDRM", "y"],
+  ["BR2_PACKAGE_LIBGBM", "y"],
+]
+
+[[stage.files]]
+id = "rpi-userconf"
+src = "platform/raspberry-pi/assets/userconf.txt"
+dest = "/boot/firmware/userconf.txt"
+origin = "static-asset"
+
+[[stage.files]]
+id = "rpi-dhcpcd-wait"
+src = "platform/raspberry-pi/assets/wait.conf"
+dest = "/etc/systemd/system/dhcpcd.service.d/wait.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "rpi-network-blacklist"
+src = "platform/raspberry-pi/assets/rpi-blacklist.conf"
+dest = "/etc/modprobe.d/blacklist.conf"
+origin = "static-asset"
+
+[image.feed]
+stage_files = [
+  "rpi-userconf",
+  "rpi-dhcpcd-wait",
+  "rpi-network-blacklist",
+]

@@ -1,0 +1,14 @@
+description = "Rubik Pi 3 target layer: Qualcomm runtime and PhotonVision big-core policy."
+target = "rubikpi3"
+
+[[stage.files]]
+id = "rubik-photonvision-service-override"
+src = "rubikpi3/assets/photonvision.service.d/override.conf"
+dest = "/etc/systemd/system/photonvision.service.d/override.conf"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["rubik-photonvision-service-override"]

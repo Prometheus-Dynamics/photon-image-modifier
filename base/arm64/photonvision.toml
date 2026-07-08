@@ -1,0 +1,40 @@
+description = "PhotonVision application payload."
+
+[[sources]]
+id = "photonvision-source"
+kind = "git"
+repo = "https://github.com/PhotonVision/photonvision.git"
+tag = "${input.photonvision_ref}"
+refresh = "auto"
+pin = "locked"
+
+[[artifacts]]
+id = "photonvision-jar"
+kind = "java"
+build_target = "photon-server/build/libs/photonvision-${input.photonvision_ref}-linuxarm64.jar"
+source = "photonvision-source"
+install_name = "photonvision.jar"
+install_class = "archive"
+install_dest_hint = "/opt/photonvision/photonvision.jar"
+output_path = "output/gaia/photonvision-${input.profile}-${input.target}/artifacts/photonvision-linuxarm64.jar"
+
+[[install]]
+id = "install-photonvision-jar"
+artifact = "photonvision-jar"
+dest = "/opt/photonvision/photonvision.jar"
+replace = true
+mode = 420
+owner = "root"
+group = "root"
+
+[[stage.services]]
+id = "photonvision-service"
+name = "photonvision.service"
+unit_path = "@shared_assets/systemd/photonvision.service"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+install_entries = ["install-photonvision-jar"]
+stage_services = ["photonvision-service"]

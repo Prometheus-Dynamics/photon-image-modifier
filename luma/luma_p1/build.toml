@@ -1,0 +1,23 @@
+description = "Luma P1 target layer: boot config and default PhotonVision database."
+target = "luma_p1"
+
+[[stage.files]]
+id = "luma-p1-boot-config"
+src = "luma/luma_p1/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[[stage.files]]
+id = "luma-p1-photon-db"
+src = "luma/luma_p1/assets/photon.sqlite"
+dest = "/opt/photonvision/photonvision_config/photon.sqlite"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = [
+  "luma-p1-boot-config",
+  "luma-p1-photon-db",
+]
