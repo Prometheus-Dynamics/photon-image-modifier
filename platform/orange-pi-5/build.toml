@@ -7,7 +7,6 @@ config_overrides = [
   ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
   ["BR2_PACKAGE_NET_TOOLS", "y"],
   ["BR2_PACKAGE_LIBDRM", "y"],
-  ["BR2_PACKAGE_LIBGBM", "y"],
   ["BR2_PACKAGE_MESA3D", "y"],
 ]
 

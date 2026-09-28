@@ -13,9 +13,16 @@ config_overrides = [
   ["BR2_PACKAGE_NET_TOOLS", "y"],
   ["BR2_PACKAGE_DTC", "y"],
   ["BR2_PACKAGE_LIBCAMERA", "y"],
+  # GPU stack for the libcamera GL driver: Mesa v3d (Pi 4/5, needs vc4 for KMS)
+  # with EGL, GLES and gbm. Without a Gallium driver Mesa installs no
+  # libEGL/libGLESv2/libgbm at all.
   ["BR2_PACKAGE_MESA3D", "y"],
+  ["BR2_PACKAGE_MESA3D_GALLIUM_DRIVER_V3D", "y"],
+  ["BR2_PACKAGE_MESA3D_GALLIUM_DRIVER_VC4", "y"],
+  ["BR2_PACKAGE_MESA3D_OPENGL_EGL", "y"],
+  ["BR2_PACKAGE_MESA3D_OPENGL_ES", "y"],
+  ["BR2_PACKAGE_MESA3D_GBM", "y"],
   ["BR2_PACKAGE_LIBDRM", "y"],
-  ["BR2_PACKAGE_LIBGBM", "y"],
 ]
 
 [[stage.files]]
