@@ -14,8 +14,7 @@ LIBCAMERA_DEPENDENCIES = \
 	host-python-jinja2 \
 	host-python-ply \
 	host-python-pyyaml \
-	libyaml \
-	gnutls
+	libyaml
 LIBCAMERA_CONF_OPTS = \
     -Dauto_features=disabled \
     -Dandroid=disabled \
@@ -49,6 +48,14 @@ ifeq ($(BR2_TOOLCHAIN_GCC_AT_LEAST_7),y)
 LIBCAMERA_CXXFLAGS = -faligned-new
 endif
 
+# IPA module signatures are verified with gnutls or OpenSSL's libcrypto (meson tries gnutls
+# first). Unsigned or badly signed modules run isolated in a proxy process per camera.
+ifeq ($(BR2_PACKAGE_GNUTLS),y)
+LIBCAMERA_DEPENDENCIES += gnutls
+else
+LIBCAMERA_DEPENDENCIES += openssl
+endif
+
 ifeq ($(BR2_PACKAGE_LIBCAMERA_PYTHON),y)
 LIBCAMERA_DEPENDENCIES += python3 python-pybind
 LIBCAMERA_CONF_OPTS += -Dpycamera=enabled
@@ -66,10 +73,6 @@ ifeq ($(BR2_PACKAGE_LIBCAMERA_PIPELINE_RPI_PISP),y)
 LIBCAMERA_DEPENDENCIES += \
 	libpisp \
 	libyuv \
-	lttng-libust \
-	liburcu \
-	numactl \
-	elfutils \
 	bzip2 \
 	jpeg
 endif
@@ -155,9 +158,11 @@ LIBCAMERA_CONF_OPTS += -Dudev=enabled
 LIBCAMERA_DEPENDENCIES += udev
 endif
 
-ifeq ($(BR2_PACKAGE_LTTNG_LIBUST),y)
+ifeq ($(BR2_PACKAGE_LIBCAMERA_TRACING),y)
 LIBCAMERA_CONF_OPTS += -Dtracing=enabled
 LIBCAMERA_DEPENDENCIES += lttng-libust
+else
+LIBCAMERA_CONF_OPTS += -Dtracing=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_LIBEXECINFO),y)
@@ -165,17 +170,23 @@ LIBCAMERA_DEPENDENCIES += libexecinfo
 LIBCAMERA_LDFLAGS = $(TARGET_LDFLAGS) -lexecinfo
 endif
 
-LIBCAMERA_STRIP_FIND_CMD = \
-	find $(MESON_BUILD_DIR)/src/ipa \
-	$(if $(call qstrip,$(BR2_STRIP_EXCLUDE_FILES)), \
-		-not \( $(call findfileclauses,$(call qstrip,$(BR2_STRIP_EXCLUDE_FILES))) \) ) \
-	-type f -name 'ipa_*.so' -print0
-
-define LIBCAMERA_BUILD_STRIP_IPA_SO
-	$(LIBCAMERA_STRIP_FIND_CMD) | xargs --no-run-if-empty -0 $(STRIPCMD)
+# libcamera only loads an IPA module in-process when its .sign matches the installed file;
+# otherwise it runs the IPA in a separate proxy process per camera. Meson signs the modules
+# at install time, but target-finalize strips them afterwards, which invalidates the
+# signatures. Strip them here (strip is idempotent, so target-finalize leaves them
+# unchanged) and sign the stripped files with the key built into libcamera.
+define LIBCAMERA_SIGN_TARGET_IPA_SO
+	for f in $(TARGET_DIR)/usr/lib/libcamera/ipa/ipa_*.so; do \
+		test -f "$$f" || continue; \
+		$(STRIPCMD) "$$f" && \
+		$(HOST_DIR)/bin/openssl dgst -sha256 \
+			-sign $(LIBCAMERA_BUILDDIR)/src/ipa-priv-key.pem \
+			-out "$$f.sign" "$$f" && \
+		chmod 0644 "$$f.sign" || exit 1; \
+	done
 endef
 
-LIBCAMERA_POST_BUILD_HOOKS += LIBCAMERA_BUILD_STRIP_IPA_SO
+LIBCAMERA_POST_INSTALL_TARGET_HOOKS += LIBCAMERA_SIGN_TARGET_IPA_SO
 
 # Ensure pipeline modules land in the target filesystem (RP1 needs rpi/pisp).
 # Meson sometimes skips installing pipeline/IPA data (notably rpi/pisp); force copy from build tree to staging/target.

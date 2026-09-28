@@ -10,9 +10,8 @@ menuconfig BR2_PACKAGE_LIBCAMERA
 	depends on BR2_INSTALL_LIBSTDCPP
 	depends on BR2_TOOLCHAIN_HAS_THREADS
 	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_9
-	depends on !BR2_STATIC_LIBS # gnutls
-	depends on BR2_USE_WCHAR # gnutls
-	select BR2_PACKAGE_GNUTLS
+	depends on !BR2_STATIC_LIBS
+	select BR2_PACKAGE_OPENSSL if !BR2_PACKAGE_GNUTLS # IPA signatures
 	select BR2_PACKAGE_LIBYAML
 	select BR2_PACKAGE_LIBCAMERA_PIPELINE_UVCVIDEO if !BR2_PACKAGE_LIBCAMERA_HAS_PIPELINE
 	help
@@ -80,10 +79,6 @@ config BR2_PACKAGE_LIBCAMERA_PIPELINE_RPI_PISP
 	select BR2_PACKAGE_LIBCAMERA_HAS_PIPELINE
 	select BR2_PACKAGE_LIBPISP
 	select BR2_PACKAGE_LIBYUV
-	select BR2_PACKAGE_LTTNG_LIBUST
-	select BR2_PACKAGE_LIBURCU
-	select BR2_PACKAGE_NUMACTL
-	select BR2_PACKAGE_ELFUTILS
 	select BR2_PACKAGE_BZIP2
 	select BR2_PACKAGE_JPEG
 	help
@@ -106,6 +101,15 @@ config BR2_PACKAGE_LIBCAMERA_PIPELINE_VIMC
 	help
 	  Pipeline for the vimc device.
 
+config BR2_PACKAGE_LIBCAMERA_TRACING
+	bool "lttng tracing"
+	depends on BR2_USE_WCHAR # lttng-libust
+	depends on BR2_PACKAGE_LIBURCU_ARCH_SUPPORTS # lttng-libust
+	select BR2_PACKAGE_LTTNG_LIBUST
+	help
+	  Build libcamera with LTTng tracepoints. Links lttng-ust
+	  (and liburcu, numactl) into every libcamera process.
+
 config BR2_PACKAGE_LIBCAMERA_COMPLIANCE
 	bool "lc-compliance test application"
 	depends on BR2_USE_WCHAR # gtest
@@ -125,7 +129,7 @@ comment "lc-compliance test application needs a toolchain w/ C++, wchar, threads
 
 endif # BR2_PACKAGE_LIBCAMERA
 
-comment "libcamera needs a toolchain w/ C++, threads, wchar, dynamic library, gcc >= 8"
+comment "libcamera needs a toolchain w/ C++, threads, dynamic library, gcc >= 9"
 	depends on BR2_PACKAGE_LIBCAMERA_ARCH_SUPPORTS
 	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_TOOLCHAIN_HAS_THREADS || \
-		!BR2_TOOLCHAIN_GCC_AT_LEAST_8 || BR2_STATIC_LIBS || !BR2_USE_WCHAR
+		!BR2_TOOLCHAIN_GCC_AT_LEAST_9 || BR2_STATIC_LIBS
