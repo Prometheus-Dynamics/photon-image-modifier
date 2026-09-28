@@ -1,22 +1,28 @@
 description = "PhotonVision application payload."
 
+# Targets other than helios-raze ship the official release jar. The release
+# tags cannot be rebuilt from source reproducibly: they reference dev builds of
+# rknn_jni, rubik_jni and photon-mrcal that are not published to any maven
+# repository. The download's sha256 is recorded in the source state.
 [[sources]]
 id = "photonvision-source"
-kind = "git"
-repo = "https://github.com/PhotonVision/photonvision.git"
-tag = "${input.photonvision_ref}"
+kind = "download"
+url = "https://github.com/PhotonVision/photonvision/releases/download/${input.photonvision_ref}/photonvision-${input.photonvision_ref}-linuxarm64.jar"
+output_path = "photonvision-${input.photonvision_ref}-linuxarm64.jar"
 refresh = "auto"
-pin = "locked"
 
+# Gaia has no prebuilt-artifact kind; a no-op java build publishes the
+# downloaded jar as the artifact the install below consumes.
 [[artifacts]]
 id = "photonvision-jar"
 kind = "java"
-build_target = "photon-server/build/libs/photonvision-${input.photonvision_ref}-linuxarm64.jar"
+build_target = "photonvision-${input.photonvision_ref}-linuxarm64.jar"
+build_command = ["true"]
 source = "photonvision-source"
 install_name = "photonvision.jar"
 install_class = "archive"
 install_dest_hint = "/opt/photonvision/photonvision.jar"
-output_path = "output/gaia/photonvision-${input.profile}-${input.target}/artifacts/photonvision-linuxarm64.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
 
 [[install]]
 id = "install-photonvision-jar"
