@@ -40,9 +40,11 @@ timeout_seconds = 14400
 [execution]
 jobs = 0
 
+# Every source, Buildroot and artifact command runs in this image; build it
+# from docker/build (see GAIA.md).
 [execution.docker]
 enabled = true
-image = "gaia-buildroot-smoke:latest"
+image = "photonvision-gaia-build:bookworm"
 
 [failure]
 rollback_on_error = true
