@@ -1,64 +1,76 @@
 description = "HeliOS Raze target layer: board boot files and OV9782 camera module policy."
 target = "helios-raze"
 
+# Both application sources are pinned to exact commits of the Prometheus
+# Dynamics forks, so every machine builds the same code. To move to newer
+# code, update the *_rev inputs in the root build.toml together with the
+# matching *_version inputs (see GAIA.md).
 [[sources]]
 id = "photonvision-source"
 kind = "git"
-repo = "https://github.com/Prometheus-Dynamics/photonvision.git"
-branch = "${input.raze_photonvision_ref}"
+repo = "${input.raze_photonvision_repo}"
+rev = "${input.raze_photonvision_rev}"
 refresh = "auto"
-pin = "locked"
 
 [[sources]]
 id = "photon-libcamera-gl-driver"
 kind = "git"
-repo = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
-branch = "${input.raze_libcamera_driver_ref}"
+repo = "${input.raze_libcamera_driver_repo}"
+rev = "${input.raze_libcamera_driver_rev}"
 refresh = "auto"
-pin = "locked"
 
+# The GPU camera driver JNI is cross-compiled with the Buildroot toolchain
+# against the image's own sysroot (libcamera, Mesa EGL/GLESv2, gbm), so it
+# links exactly the libraries that ship in the image. It runs after Buildroot
+# prepare, when that toolchain and sysroot exist, and publishes its jars to
+# the workspace maven repo that the PhotonVision build reads.
 [[artifacts]]
-id = "photon-libcamera-gl-driver-local"
+id = "photon-libcamera-gl-driver"
 kind = "java"
-build_target = "build/libs/work-linuxarm64.jar"
-build_command = [
-  "bash",
-  "-lc",
-  "trap 'docker run --rm -v \"$PWD:/work\" debian:bookworm chown -R \"$(id -u):$(id -g)\" /work/cmake_build /work/build /work/.gradle /work/.m2-arm64 2>/dev/null || true' EXIT; patch_file='${project.root_dir}/helios/raze/assets/patches/photon-libcamera-gl-driver/0001-raze-build-against-buildroot-sysroot.patch'; if git apply --reverse --check \"$patch_file\" >/dev/null 2>&1; then :; elif git apply --check \"$patch_file\" >/dev/null 2>&1; then git apply \"$patch_file\"; fi; ./tools/build_arm64_jni.sh",
-]
+build_target = "build/libs/photon-libcamera-gl-driver-linuxarm64.jar"
+build_command = ["./tools/build_arm64_jni.sh"]
 build_env = [
-  ["SYSROOT_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host/aarch64-buildroot-linux-gnu/sysroot"],
+  ["BUILDROOT_HOST_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host"],
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF"],
   ["GRADLE_EXTRA_ARGS", "-PversionString=${input.raze_libcamera_driver_version}"],
-  ["CLEAN_BUILD", "0"],
+  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
+  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
+  ["CLEAN_BUILD", "1"],
 ]
 after_image_prepare = true
 source = "photon-libcamera-gl-driver"
 install_name = "photon-libcamera-gl-driver.jar"
 install_class = "archive"
-output_path = "output/gaia/photonvision-${input.profile}-${input.target}/artifacts/photon-libcamera-gl-driver.jar"
+output_path = "${workspace.out_dir}/artifacts/photon-libcamera-gl-driver.jar"
 
 [artifacts.execution]
-backend = "host"
+backend = "docker"
 
 [[artifacts]]
 id = "photonvision-jar"
 kind = "java"
 build_target = "photon-server/build/libs/photonvision-${input.raze_photonvision_version}-linuxarm64.jar"
-build_command = [
-  "bash",
-  "-lc",
-  "patch_file='${project.root_dir}/helios/raze/assets/patches/photonvision/0001-raze-avoid-duplicate-targeting-native-extraction.patch'; if git apply --reverse --check \"$patch_file\" >/dev/null 2>&1; then :; elif git apply --check \"$patch_file\" >/dev/null 2>&1; then git apply \"$patch_file\"; fi; ./gradlew :photon-targeting:_GROUP_org_photonvision_photontargeting_ID_photontargeting-cpp_CLS-linuxarm64 -q -Dmaven.repo.local='${project.root_dir}/${workspace.build_dir}/m2' -PArchOverride=linuxarm64 -PversionString='${input.raze_photonvision_version}' -PlibcameraDriverVersion='${input.raze_libcamera_driver_version}' && ./gradlew :photon-server:shadowJar -q -Dmaven.repo.local='${project.root_dir}/${workspace.build_dir}/m2' -PArchOverride=linuxarm64 -PversionString='${input.raze_photonvision_version}' -PlibcameraDriverVersion='${input.raze_libcamera_driver_version}'",
+build_command = ["${project.root_dir}/helios/raze/scripts/build-photonvision-jar.sh"]
+build_env = [
+  ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
+  ["LIBCAMERA_DRIVER_VERSION", "${input.raze_libcamera_driver_version}"],
+  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  # The fork's photon-core no longer builds photon-targeting natives from
+  # processResources, so build the linuxarm64 ones first.
+  ["PHOTONVISION_PREBUILD", ":photon-targeting:_GROUP_org_photonvision_photontargeting_ID_photontargeting-cpp_CLS-linuxarm64"],
+  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
+  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
 ]
 source = "photonvision-source"
-dependencies = ["photon-libcamera-gl-driver-local"]
+dependencies = ["photon-libcamera-gl-driver"]
 install_name = "photonvision.jar"
 install_class = "archive"
 install_dest_hint = "/opt/photonvision/photonvision.jar"
-output_path = "output/gaia/photonvision-${input.profile}-${input.target}/artifacts/photonvision-linuxarm64.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
 
 [artifacts.execution]
-backend = "host"
+backend = "docker"
 
 [[stage.files]]
 id = "helios-raze-config"
@@ -105,14 +117,14 @@ config_overrides = [
   ["BR2_LINUX_KERNEL_CUSTOM_TARBALL", "y"],
   ["BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION", "\"https://github.com/raspberrypi/linux/archive/refs/tags/stable_20250916.tar.gz\""],
   ["BR2_GLOBAL_PATCH_DIR", "\"board/raspberrypi/patches ${project.root_dir}/helios/raze/assets/buildroot/patches\""],
-  ["BR2_LEGACY", "n"],
   ["BR2_LINUX_KERNEL_EXT_OV9782", "y"],
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/helios/raze/assets/config.txt\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/helios/raze/assets/cmdline.txt\""],
   ["BR2_TARGET_ROOTFS_EXT2", "y"],
   ["BR2_TARGET_ROOTFS_EXT2_4", "y"],
-  ["BR2_TARGET_ROOTFS_EXT2_SIZE", "\"512M\""],
+  # OpenJDK, Mesa and the PhotonVision jar do not fit in 512M.
+  ["BR2_TARGET_ROOTFS_EXT2_SIZE", "\"1G\""],
   ["BR2_PACKAGE_LIBCAMERA", "y"],
   ["BR2_PACKAGE_LIBCAMERA_V4L2", "y"],
   ["BR2_PACKAGE_LIBCAMERA_PIPELINE_RPI_PISP", "y"],

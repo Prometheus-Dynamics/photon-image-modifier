@@ -104,36 +104,37 @@ limit = 25
 cache_ttl_seconds = 3600
 fallback_choices = ["v2026.3.4"]
 
-[inputs.raze_photonvision_ref]
-description = "Prometheus Dynamics PhotonVision git branch or ref used by the HeliOS Raze target"
-kind = "enum"
-default = "ov9782"
+# HeliOS Raze application sources. The revs must be pushed to the repos before
+# the build works on other machines; point the *_repo inputs at local clones to
+# test unpushed commits. Keep each *_version equal to `git describe --tags`
+# of its rev (with the "dev-" prefix the PhotonVision build uses): the driver
+# version is the maven coordinate PhotonVision resolves the driver jars by.
+[inputs.raze_photonvision_repo]
+description = "PhotonVision git repository (URL or local path) used by the HeliOS Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 
-[inputs.raze_photonvision_ref.choices_from]
-kind = "git-branches"
-repo = "https://github.com/Prometheus-Dynamics/photonvision.git"
-include = ["ov9782", "main", "2027"]
-sort = "lexical-asc"
-fallback_choices = ["ov9782"]
+[inputs.raze_photonvision_rev]
+description = "PhotonVision commit built for HeliOS Raze (branch gaia-build-fix, based on ov9782)"
+kind = "string"
+default = "75ef7922e4ec8b6b048183e461fc9a74d79e2870"
 
 [inputs.raze_photonvision_version]
-description = "Version string forced into the Prometheus Dynamics PhotonVision jar name"
+description = "Version string forced into the HeliOS Raze PhotonVision jar; matches raze_photonvision_rev"
 kind = "string"
-default = "dev-v2026.2.2-8-g641c42c2"
+default = "dev-v2026.2.2-9-g75ef7922"
 
-[inputs.raze_libcamera_driver_ref]
-description = "Prometheus Dynamics photon-libcamera-gl-driver git branch or ref used by the HeliOS Raze target"
-kind = "enum"
-default = "ov9782"
+[inputs.raze_libcamera_driver_repo]
+description = "photon-libcamera-gl-driver git repository (URL or local path) used by the HeliOS Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
 
-[inputs.raze_libcamera_driver_ref.choices_from]
-kind = "git-branches"
-repo = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
-include = ["ov9782", "master"]
-sort = "lexical-asc"
-fallback_choices = ["ov9782"]
+[inputs.raze_libcamera_driver_rev]
+description = "photon-libcamera-gl-driver commit built for HeliOS Raze (branch gaia-build-fix)"
+kind = "string"
+default = "98611a11e5b2e6dcbe033a0a50682bf4a548d266"
 
 [inputs.raze_libcamera_driver_version]
-description = "Version string forced into the Prometheus Dynamics libcamera driver artifacts"
+description = "Version string forced into the HeliOS Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
 kind = "string"
-default = "dev-v2026.0.0-7-g3958ada"
+default = "dev-v2026.0.0-10-g98611a1"
