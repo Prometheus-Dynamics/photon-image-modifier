@@ -132,9 +132,9 @@ default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git
 [inputs.raze_libcamera_driver_rev]
 description = "photon-libcamera-gl-driver commit built for HeliOS Raze (branch gaia-build-fix)"
 kind = "string"
-default = "98611a11e5b2e6dcbe033a0a50682bf4a548d266"
+default = "661f90e51a92c2c28608aadf9dd2e041f4c97246"
 
 [inputs.raze_libcamera_driver_version]
 description = "Version string forced into the HeliOS Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
 kind = "string"
-default = "dev-v2026.0.0-10-g98611a1"
+default = "dev-v2026.0.0-11-g661f90e"
