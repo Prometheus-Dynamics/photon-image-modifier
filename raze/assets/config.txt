@@ -1,0 +1,9 @@
+# PhotonVision on Raze. The device configuration (camera, fan, LEDs, USB
+# port power, USB gadget, I2C, GPU) comes from the Raze device package in
+# raze-device.txt. To change one of its settings, copy the lines you want
+# from raze-device.txt into this file instead of including it.
+arm_64bit=1
+disable_splash=1
+enable_uart=1
+
+include raze-device.txt

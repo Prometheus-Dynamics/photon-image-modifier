@@ -17,10 +17,11 @@ Layout:
 
 - `base/arm64/`: shared ARM64 OS backing, universal packages, common
   PhotonVision application/service wiring, and common system assets.
-  Targets ship the official PhotonVision release jar for `input.photonvision_ref`.
+  Targets other than `raze` ship the official PhotonVision release jar for
+  `input.photonvision_ref`.
 - `platform/`: platform-family layers such as Raspberry Pi, Orange Pi 5, and
   Rubik Pi 3.
-- Root target folders such as `limelight/`, `luma_p1/`, and `rubikpi3/`:
+- Root target folders such as `limelight/`, `raze/`, and `rubikpi3/`:
   selectable target fragments and target assets.
 - `docker/build/`: the container every Gaia command runs in.
 
@@ -32,8 +33,14 @@ The legacy shell image-modifier path has been removed. Do not add new
 
 Buildroot `config_overrides` are not checked by `gaia validate`: kconfig
 silently drops symbols that do not exist in the pinned Buildroot release or
-whose dependencies are not met. After changing them, compare the overrides
-with `build/gaia/<build>/image/buildroot-output/.config`.
+whose dependencies are not met. Gaia 2.1 compares every override with the
+final `.config` after `olddefconfig` and fails the image step before the long
+`make` when one was dropped (`[providers.buildroot] override_check`, default
+`"error"`). Overrides are keyed by symbol and the last layer wins, so a target
+layer turns off a base-layer symbol it cannot have with `"n"`.
+
+The entrypoint requires Gaia 2.1.0 or later (`gaia_version`). Buildroot is
+pinned to a commit in `build.gaia.lock` (`gaia lock build.toml`).
 
 ## Build Container
 
@@ -49,15 +56,80 @@ It holds the Buildroot host prerequisites plus JDK 17, Node 22, pnpm and
 CMake for the Java artifacts. Gradle, pnpm and the WPILib arm64 toolchain are
 cached in `.gaia/docker-home/`.
 
-The Gaia binary must include `build_command`/`build_env` support for Java
-artifacts (Gaia-Image-Builder 409d87c or later); older 2.0.0 builds silently
-ignore those fields and run `./gradlew build` instead.
+## Raze
 
-## HeliOS Raze
+`raze` builds an image for the Prometheus Dynamics Raze (Raspberry Pi CM5
+with an OV9782 global-shutter camera). Everything the hardware needs comes
+from the Raze device package in the Atlas repository
+(`devices/raze/` in Atlas-Hardware-Manager), shared with every OS that runs
+on Raze; this repository only adds PhotonVision and the OS around it.
 
-`helios-raze` builds a Raspberry Pi CM5 image from Buildroot's
-`raspberrypicm5io_defconfig` with the OV9782 camera, plus two applications
-from the Prometheus Dynamics forks:
+### Layout
+
+| Import (in order) | When | What it brings |
+| --- | --- | --- |
+| `base/arm64/*.toml` | always | OS base (Buildroot, systemd, OpenJDK), identity, ops |
+| `platform/raspberry-pi/build.toml` | `full` | NetworkManager, Mesa, Pi tools, Wi-Fi/BT blacklist |
+| `atlas:devices/raze/gaia/device.toml` | `raze` | CM5 defconfig and kernel, OV9782 driver, libcamera/libpisp, `raze-device.txt` and overlays, device services |
+| `atlas:devices/raze/gaia/gpu.toml` | `raze`, `full` | Mesa V3D/VC4 with EGL, GLES and gbm for the libcamera GL driver |
+| `base/arm64/photonvision.toml` | `full` | PhotonVision service and jar install |
+| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, rootfs size, NetworkManager + systemd-resolved |
+| `raze/photonvision.toml` | `raze`, `full` | libcamera GL driver and PhotonVision jar built from the forks |
+
+Layers imported after the device layer override its defaults. The `atlas`
+source is declared in `raze/build.toml`, so other targets never fetch Atlas.
+
+The device package provides the fan, LED ring, USB port power, USB gadget
+networking (`usbbr0`, 172.31.250.1), the identity endpoint
+(`http://<device>:5899/.well-known/pd-device`) with its `_pd-device._tcp`
+mDNS advertisement, EEPROM files for Atlas, the OV9782 kernel driver, the
+libcamera/libpisp package overrides and the PiSP tuning. See
+`devices/README.md` in Atlas for the device services and how to turn each one
+off (all are defaults; `/etc/pd-device/*.env` overrides them).
+
+What stays here:
+
+- `raze/assets/config.txt`: the OS owns `config.txt`; it ends with
+  `include raze-device.txt`, which the device layer puts on the boot
+  partition. To change a device setting (fan curve, port power, camera
+  overlay), copy the line from `raze-device.txt` into `config.txt` instead
+  of including it.
+- `raze/assets/cmdline.txt`, the boot assembly tree `boot`, and the
+  partition layout.
+- `raze/assets/buildroot/local.mk` (`BR2_PACKAGE_OVERRIDE_FILE`, `full`
+  only): keeps rpi-userland's Broadcom EGL/GLES headers out of the sysroot
+  the GL driver is compiled against. It is not an external tree because the
+  combined `external_tree = "@source:atlas/...:<tree>"` value would sit in a
+  local layer, and Gaia 2.1 resolves `@source:` tokens in every local layer
+  for every target, so all targets would fetch Atlas.
+- The hostname stays `photonvision` (`/etc/hostname`); the device default
+  `raze-{serial8}` only applies over an unset or stock hostname.
+- mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved
+  (`connection.mdns=2` from the device package), which also advertises
+  `_pd-device._tcp`. Do not add avahi. `BR2_SYSTEM_DHCP` is cleared so
+  systemd-networkd does not run a second DHCP client on Ethernet.
+
+### Atlas pin and local development
+
+The `atlas` source is pinned by `rev` (a full commit) in `raze/build.toml`.
+Until that commit is pushed to Atlas-Hardware-Manager, every Raze command
+needs a local Atlas checkout:
+
+```bash
+gaia run build.toml --set input.target=raze --set input.profile=full \
+  --set sources.atlas.path=/path/to/Atlas-Hardware-Manager
+```
+
+The same `--set` works for `validate`, `plan` and `tui`. With it, Gaia reads
+the device layer from that directory instead of the pinned commit, so check
+the checkout is at the pinned commit. `atlas` has no entry in
+`build.gaia.lock`: sources pinned by `rev` need none (and `gaia lock` with a
+path override drops the entry anyway). To move to a new package version,
+update `rev` in `raze/build.toml`.
+
+### PhotonVision and the libcamera GL driver
+
+`raze` builds two applications from the Prometheus Dynamics forks:
 
 - `photon-libcamera-gl-driver`: the GPU camera driver JNI. It is
   cross-compiled with the Buildroot toolchain against the image sysroot after
@@ -96,13 +168,8 @@ and update the matching `*_rev` and `*_version` defaults in `build.toml`.
 To try unpushed commits, point the repo inputs at local clones:
 
 ```bash
-gaia run build.toml --set input.target=helios-raze --set input.profile=full \
+gaia run build.toml --set input.target=raze --set input.profile=full \
+  --set sources.atlas.path=$PWD/../Atlas-Hardware-Manager \
   --set input.raze_photonvision_repo=$PWD/../photonvision \
   --set input.raze_libcamera_driver_repo=$PWD/../photon-libcamera-gl-driver
 ```
-
-The Buildroot package overrides for Raze (`libcamera`, `libpisp`) live in
-`helios/raze/assets/buildroot/packages/` and follow the HeliOS product build:
-LTTng tracing is opt-in (`BR2_PACKAGE_LIBCAMERA_TRACING`), IPA signatures use
-OpenSSL unless gnutls is already in the image, and the stripped IPA modules
-are re-signed so they load in-process.

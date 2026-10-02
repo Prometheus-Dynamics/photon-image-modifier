@@ -1,0 +1,167 @@
+description = "Raze target, PhotonVision OS side: boot partition, config.txt and cmdline.txt, root filesystem and networking. Device support comes from the Raze device package (Atlas), imported before this layer."
+target = "raze"
+
+# The Raze device package (devices/raze/gaia/device.toml in Atlas, imported
+# from the root build.toml) brings the kernel, the OV9782 driver, libcamera
+# and libpisp, the boot overlays and raze-device.txt, and the device services
+# (identity endpoint, mDNS, USB gadget, LEDs, USB port power). This layer is
+# imported after it, so anything set here overrides the device defaults.
+
+# The Atlas repository holding the Raze device package. It is declared here
+# rather than in the root build.toml so that only Raze builds materialize it.
+# Pinned to a full commit (Raze package 1.0.3); see GAIA.md for building
+# against a local Atlas checkout.
+[[sources]]
+id = "atlas"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
+rev = "d1f91182351693f9dff8d0938954f5fc1c3ac5d4"
+
+[[stage.files]]
+id = "photonvision-raze-config"
+src = "raze/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-cmdline"
+src = "raze/assets/cmdline.txt"
+dest = "/boot/firmware/cmdline.txt"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+# defconfig, external_tree (OV9782 kernel extension, kernel hash,
+# libcamera/libpisp overrides) and the kernel come from the device package.
+config_overrides = [
+  # raspberrypicm5io_defconfig uses the external Bootlin toolchain, which has
+  # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
+  # exist with it, and Gaia's override check would report it as dropped.
+  ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
+  # The boot partition and sdcard.img are built by the assembly below.
+  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"\""],
+  ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
+  ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
+  ["BR2_TARGET_ROOTFS_EXT2", "y"],
+  ["BR2_TARGET_ROOTFS_EXT2_4", "y"],
+  # OpenJDK, Mesa and the PhotonVision jar do not fit in 512M.
+  ["BR2_TARGET_ROOTFS_EXT2_SIZE", "\"1G\""],
+  # NetworkManager owns Ethernet. It hands per-link mDNS (connection.mdns=2
+  # from the device package) to systemd-resolved, which also publishes the
+  # device's _pd-device._tcp service, so resolved must stay on and nothing
+  # else may answer on port 5353 (no avahi).
+  ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
+  ["BR2_PACKAGE_SYSTEMD_RESOLVED", "y"],
+  ["BR2_PACKAGE_AVAHI", "n"],
+  # The defconfig's BR2_SYSTEM_DHCP="eth0" would make systemd-networkd run a
+  # second DHCP client on the link NetworkManager manages.
+  ["BR2_SYSTEM_DHCP", "\"\""],
+]
+
+[[image.expected_images]]
+name = "sdcard.img"
+format = "raw"
+required = true
+
+[image.feed]
+stage_files = [
+  "photonvision-raze-config",
+  "photonvision-raze-cmdline",
+]
+
+# The OS owns the boot partition: the device package adds raze-device.txt,
+# its overlays and the stock overlays it loads to the tree with id "boot".
+[image.assembly]
+work_dir = "${workspace.build_dir}/assembly"
+out_dir = "$provider.images"
+
+[[image.assembly.trees]]
+id = "boot"
+path = "$assembly.work/boot"
+
+[[image.assembly.files]]
+tree = "boot"
+src = "raze/assets/config.txt"
+dest = "config.txt"
+
+[[image.assembly.files]]
+tree = "boot"
+src = "raze/assets/cmdline.txt"
+dest = "cmdline.txt"
+
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/build/rpi-firmware-*/boot/start4.elf"
+dest = "."
+
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/build/rpi-firmware-*/boot/fixup4.dat"
+dest = "."
+
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/images/bcm*.dtb"
+dest = "."
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/bcm2712d0.dtbo"
+dest = "overlays/bcm2712d0.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi.dtbo"
+dest = "overlays/disable-wifi.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi-pi5.dtbo"
+dest = "overlays/disable-wifi-pi5.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt.dtbo"
+dest = "overlays/disable-bt.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt-pi5.dtbo"
+dest = "overlays/disable-bt-pi5.dtbo"
+optional = true
+
+[[image.assembly.transforms]]
+kind = "gzip"
+src = "$provider.buildroot_output/images/Image"
+dest = "$assembly.tree.boot/kernel8.img"
+deterministic = true
+
+[[image.assembly.filesystems]]
+id = "boot"
+kind = "vfat"
+source_tree = "boot"
+output = "$provider.images/boot.vfat"
+size = "64M"
+
+[[image.assembly.disks]]
+id = "sdcard"
+output = "$provider.images/sdcard.img"
+partition_table = "mbr"
+signature = "0x5056525a"
+first_lba = 2048
+alignment_lba = 2048
+
+[[image.assembly.disks.partitions]]
+name = "boot"
+type_alias = "fat32-lba"
+bootable = true
+image = "$provider.images/boot.vfat"
+
+[[image.assembly.disks.partitions]]
+name = "rootfs"
+type_alias = "linux"
+image = "$provider.images/rootfs.ext4"

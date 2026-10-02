@@ -1,6 +1,6 @@
 description = "PhotonVision application payload."
 
-# Targets other than helios-raze ship the official release jar. The release
+# Targets other than raze ship the official release jar. The release
 # tags cannot be rebuilt from source reproducibly: they reference dev builds of
 # rknn_jni, rubik_jni and photon-mrcal that are not published to any maven
 # repository. The download's sha256 is recorded in the source state.

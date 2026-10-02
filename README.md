@@ -26,7 +26,7 @@ Selectors:
 - `input.profile`: `base-os` or `full`
 - `input.target`: `generic-arm64`, `raspi`, `raspi_dev`,
   `limelight`, `limelight3`, `limelight3g`, `limelight4`, `luma_p1`,
-  `snakeyes`, `helios-raze`, `opi`, or `rubikpi3`
+  `snakeyes`, `raze`, `opi`, or `rubikpi3`
 
 Layout:
 
@@ -37,8 +37,10 @@ Layout:
   final target fragments and target assets.
 - `docker/build/`: the container Gaia runs every build command in.
 
-`helios-raze` builds pinned commits of the Prometheus Dynamics PhotonVision
-and photon-libcamera-gl-driver forks; see [GAIA.md](GAIA.md#helios-raze) for
-how the pins work and how to bump them.
+`raze` takes its device support from the Raze device package in Atlas and
+builds pinned commits of the Prometheus Dynamics PhotonVision and
+photon-libcamera-gl-driver forks. Until the pinned Atlas commit is pushed it
+needs `--set sources.atlas.path=<Atlas checkout>`; see
+[GAIA.md](GAIA.md#raze).
 
 Legacy `install_*.sh` and `mount_*.sh` paths have been removed.

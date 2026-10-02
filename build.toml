@@ -1,3 +1,4 @@
+gaia_version = ">=2.1.0"
 build_name = "photonvision-${input.profile}-${input.target}"
 display_name = "PhotonVision Image"
 version = "${input.version}"
@@ -11,7 +12,6 @@ imports = [
   "base/arm64/identity.toml",
   "base/arm64/ops.toml",
 
-  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "helios-raze" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3g" } },
@@ -19,15 +19,25 @@ imports = [
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "luma_p1" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi_dev" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raze" } },
   { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "snakeyes" } },
 
   { path = "platform/orange-pi-5/build.toml", when = { profile = "full", target = "opi" } },
   { path = "platform/rubikpi3/build.toml", when = { profile = "full", target = "rubikpi3" } },
 
+  # Raze device support (kernel, OV9782, libcamera, boot overlays, device
+  # services) from the Atlas device package, after the OS base layers and
+  # before the PhotonVision layers that override its defaults. gpu.toml adds
+  # the Mesa EGL/GLES/gbm userspace the libcamera GL driver links. The
+  # "atlas" source is declared in raze/build.toml, so only Raze builds fetch it.
+  { source = "atlas", path = "devices/raze/gaia/device.toml", when = { target = "raze" } },
+  { source = "atlas", path = "devices/raze/gaia/gpu.toml", when = { profile = "full", target = "raze" } },
+
   { path = "base/arm64/photonvision.toml", when = { profile = "full" } },
 
   { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
-  { path = "helios/raze/build.toml", when = { profile = "full", target = "helios-raze" } },
+  { path = "raze/build.toml", when = { target = "raze" } },
+  { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
@@ -51,7 +61,6 @@ kind = "enum"
 default = "generic-arm64"
 choices = [
   "generic-arm64",
-  "helios-raze",
   "limelight",
   "limelight3",
   "limelight3g",
@@ -60,6 +69,7 @@ choices = [
   "opi",
   "raspi",
   "raspi_dev",
+  "raze",
   "rubikpi3",
   "snakeyes",
 ]
@@ -104,37 +114,37 @@ limit = 25
 cache_ttl_seconds = 3600
 fallback_choices = ["v2026.3.4"]
 
-# HeliOS Raze application sources. The revs must be pushed to the repos before
+# Raze application sources. The revs must be pushed to the repos before
 # the build works on other machines; point the *_repo inputs at local clones to
 # test unpushed commits. Keep each *_version equal to `git describe --tags`
 # of its rev (with the "dev-" prefix the PhotonVision build uses): the driver
 # version is the maven coordinate PhotonVision resolves the driver jars by.
 [inputs.raze_photonvision_repo]
-description = "PhotonVision git repository (URL or local path) used by the HeliOS Raze target"
+description = "PhotonVision git repository (URL or local path) used by the Raze target"
 kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 
 [inputs.raze_photonvision_rev]
-description = "PhotonVision commit built for HeliOS Raze (branch gaia-build-fix, based on ov9782)"
+description = "PhotonVision commit built for Raze (branch gaia-build-fix, based on ov9782)"
 kind = "string"
 default = "75ef7922e4ec8b6b048183e461fc9a74d79e2870"
 
 [inputs.raze_photonvision_version]
-description = "Version string forced into the HeliOS Raze PhotonVision jar; matches raze_photonvision_rev"
+description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
 kind = "string"
 default = "dev-v2026.2.2-9-g75ef7922"
 
 [inputs.raze_libcamera_driver_repo]
-description = "photon-libcamera-gl-driver git repository (URL or local path) used by the HeliOS Raze target"
+description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
 kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
 
 [inputs.raze_libcamera_driver_rev]
-description = "photon-libcamera-gl-driver commit built for HeliOS Raze (branch gaia-build-fix)"
+description = "photon-libcamera-gl-driver commit built for Raze (branch gaia-build-fix)"
 kind = "string"
 default = "661f90e51a92c2c28608aadf9dd2e041f4c97246"
 
 [inputs.raze_libcamera_driver_version]
-description = "Version string forced into the HeliOS Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
+description = "Version string forced into the Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
 kind = "string"
 default = "dev-v2026.0.0-11-g661f90e"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build PhotonVision's linuxarm64 fat jar from the PhotonVision checkout in the
-# current directory. The helios-raze photonvision-jar artifact runs this in
+# current directory. The raze photonvision-jar artifact runs this in
 # the build container.
 #
 # Environment (all optional):

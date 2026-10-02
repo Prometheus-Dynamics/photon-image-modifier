@@ -1,0 +1,84 @@
+description = "Raze target, PhotonVision application: the libcamera GL driver and the PhotonVision jar, built from the Prometheus Dynamics forks."
+target = "raze"
+
+# Both application sources are pinned to exact commits of the Prometheus
+# Dynamics forks, so every machine builds the same code. To move to newer
+# code, update the *_rev inputs in the root build.toml together with the
+# matching *_version inputs (see GAIA.md).
+[[sources]]
+id = "photonvision-source"
+kind = "git"
+repo = "${input.raze_photonvision_repo}"
+rev = "${input.raze_photonvision_rev}"
+refresh = "auto"
+
+[[sources]]
+id = "photon-libcamera-gl-driver"
+kind = "git"
+repo = "${input.raze_libcamera_driver_repo}"
+rev = "${input.raze_libcamera_driver_rev}"
+refresh = "auto"
+
+# The GPU camera driver JNI is cross-compiled with the Buildroot toolchain
+# against the image's own sysroot (libcamera, Mesa EGL/GLESv2, gbm), so it
+# links exactly the libraries that ship in the image. It runs after Buildroot
+# prepare, when that toolchain and sysroot exist, and publishes its jars to
+# the workspace maven repo that the PhotonVision build reads.
+[[artifacts]]
+id = "photon-libcamera-gl-driver"
+kind = "java"
+build_target = "build/libs/photon-libcamera-gl-driver-linuxarm64.jar"
+build_command = ["./tools/build_arm64_jni.sh"]
+build_env = [
+  ["BUILDROOT_HOST_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host"],
+  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF"],
+  ["GRADLE_EXTRA_ARGS", "-PversionString=${input.raze_libcamera_driver_version}"],
+  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
+  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
+  ["CLEAN_BUILD", "1"],
+]
+after_image_prepare = true
+source = "photon-libcamera-gl-driver"
+install_name = "photon-libcamera-gl-driver.jar"
+install_class = "archive"
+output_path = "${workspace.out_dir}/artifacts/photon-libcamera-gl-driver.jar"
+
+[artifacts.execution]
+backend = "docker"
+
+[[artifacts]]
+id = "photonvision-jar"
+kind = "java"
+build_target = "photon-server/build/libs/photonvision-${input.raze_photonvision_version}-linuxarm64.jar"
+build_command = ["${project.root_dir}/raze/scripts/build-photonvision-jar.sh"]
+build_env = [
+  ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
+  ["LIBCAMERA_DRIVER_VERSION", "${input.raze_libcamera_driver_version}"],
+  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  # The fork's photon-core no longer builds photon-targeting natives from
+  # processResources, so build the linuxarm64 ones first.
+  ["PHOTONVISION_PREBUILD", ":photon-targeting:_GROUP_org_photonvision_photontargeting_ID_photontargeting-cpp_CLS-linuxarm64"],
+  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
+  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
+]
+source = "photonvision-source"
+dependencies = ["photon-libcamera-gl-driver"]
+install_name = "photonvision.jar"
+install_class = "archive"
+install_dest_hint = "/opt/photonvision/photonvision.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
+
+[artifacts.execution]
+backend = "docker"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  # Keeps rpi-userland's Broadcom EGL/GLES headers out of the sysroot the
+  # libcamera GL driver is compiled against (see the file).
+  ["BR2_PACKAGE_OVERRIDE_FILE", "\"${project.root_dir}/raze/assets/buildroot/local.mk\""],
+  # libcamera's V4L2 compatibility layer (libcamerify), on top of the device
+  # package's libcamera with the PiSP pipeline.
+  ["BR2_PACKAGE_LIBCAMERA_V4L2", "y"],
+]
