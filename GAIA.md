@@ -96,12 +96,6 @@ What stays here:
   of including it.
 - `raze/assets/cmdline.txt`, the boot assembly tree `boot`, and the
   partition layout.
-- `raze/assets/buildroot/local.mk` (`BR2_PACKAGE_OVERRIDE_FILE`, `full`
-  only): keeps rpi-userland's Broadcom EGL/GLES headers out of the sysroot
-  the GL driver is compiled against. It is not an external tree because the
-  combined `external_tree = "@source:atlas/...:<tree>"` value would sit in a
-  local layer, and Gaia 2.1 resolves `@source:` tokens in every local layer
-  for every target, so all targets would fetch Atlas.
 - The hostname stays `photonvision` (`/etc/hostname`); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
 - mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved

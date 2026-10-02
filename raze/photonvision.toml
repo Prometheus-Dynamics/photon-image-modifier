@@ -75,9 +75,6 @@ backend = "docker"
 [image]
 kind = "buildroot"
 config_overrides = [
-  # Keeps rpi-userland's Broadcom EGL/GLES headers out of the sysroot the
-  # libcamera GL driver is compiled against (see the file).
-  ["BR2_PACKAGE_OVERRIDE_FILE", "\"${project.root_dir}/raze/assets/buildroot/local.mk\""],
   # libcamera's V4L2 compatibility layer (libcamerify), on top of the device
   # package's libcamera with the PiSP pipeline.
   ["BR2_PACKAGE_LIBCAMERA_V4L2", "y"],

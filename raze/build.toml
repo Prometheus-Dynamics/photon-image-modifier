@@ -9,13 +9,13 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.0.3); see GAIA.md for building
+# Pinned to a full commit (Raze package 1.0.4); see GAIA.md for building
 # against a local Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "d1f91182351693f9dff8d0938954f5fc1c3ac5d4"
+rev = "e677094af57c5e6eff116b7f6035a214f6e43241"
 
 [[stage.files]]
 id = "photonvision-raze-config"
