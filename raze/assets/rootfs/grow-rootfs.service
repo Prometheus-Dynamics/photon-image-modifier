@@ -1,0 +1,16 @@
+[Unit]
+Description=Grow the root filesystem to fill the boot disk
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target photonvision.service
+ConditionPathExists=!/var/lib/photonvision-os/rootfs-grown
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh
+ExecStartPost=/bin/mkdir -p /var/lib/photonvision-os
+ExecStartPost=/bin/touch /var/lib/photonvision-os/rootfs-grown
+
+[Install]
+WantedBy=sysinit.target

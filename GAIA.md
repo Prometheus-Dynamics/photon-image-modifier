@@ -73,7 +73,7 @@ on Raze; this repository only adds PhotonVision and the OS around it.
 | `atlas:devices/raze/gaia/device.toml` | `raze` | CM5 defconfig and kernel, OV9782 driver, libcamera/libpisp, `raze-device.txt` and overlays, device services |
 | `atlas:devices/raze/gaia/gpu.toml` | `raze`, `full` | Mesa V3D/VC4 with EGL, GLES and gbm for the libcamera GL driver |
 | `base/arm64/photonvision.toml` | `full` | PhotonVision service and jar install |
-| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, rootfs size, NetworkManager + systemd-resolved |
+| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, minimum-size rootfs and first-boot grow, NetworkManager + systemd-resolved |
 | `raze/photonvision.toml` | `raze`, `full` | libcamera GL driver and PhotonVision jar built from the forks |
 
 Layers imported after the device layer override its defaults. The `atlas`
@@ -96,6 +96,12 @@ What stays here:
   of including it.
 - `raze/assets/cmdline.txt`, the boot assembly tree `boot`, and the
   partition layout.
+- The root filesystem is sized to its content: Buildroot makes
+  `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs-ext4.sh` builds
+  the smallest `rootfs.ext4` that holds it (plus 32 MiB). On first boot
+  `grow-rootfs.service` grows the partition and filesystem to fill the eMMC.
+  The flashable output is `output/gaia/photonvision-full-raze/images/<build>-<version>.img.xz`
+  (also `sdcard.img`); Atlas flashes either.
 - The hostname stays `photonvision` (`/etc/hostname`); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
 - mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved

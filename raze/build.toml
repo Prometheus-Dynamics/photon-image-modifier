@@ -9,19 +9,32 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.0.4); see GAIA.md for building
+# Pinned to a full commit (Raze package 1.0.6); see GAIA.md for building
 # against a local Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "e677094af57c5e6eff116b7f6035a214f6e43241"
+rev = "a722abf9587cc3bc6ca7fbc2f166fed96d74bbda"
 
 [[stage.files]]
 id = "photonvision-raze-config"
 src = "raze/assets/config.txt"
 dest = "/boot/firmware/config.txt"
 origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-grow-rootfs"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/grow-rootfs.sh"
+dest = "/usr/lib/photonvision-os/grow-rootfs.sh"
+origin = "static-asset"
+
+# The image ships a small root partition (quick to download and flash); this
+# grows it and its filesystem to fill the eMMC on first boot.
+[[stage.services]]
+id = "photonvision-raze-grow-rootfs-service"
+name = "grow-rootfs.service"
+unit_path = "raze/assets/rootfs/grow-rootfs.service"
 
 [[stage.files]]
 id = "photonvision-raze-cmdline"
@@ -38,14 +51,19 @@ config_overrides = [
   # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
   # exist with it, and Gaia's override check would report it as dropped.
   ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
-  # The boot partition and sdcard.img are built by the assembly below.
-  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"\""],
+  # The boot partition and sdcard.img are built by the assembly below. The
+  # post-image script builds rootfs.ext4 from rootfs.tar at the smallest size
+  # that holds it (see the script).
+  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
-  ["BR2_TARGET_ROOTFS_EXT2", "y"],
-  ["BR2_TARGET_ROOTFS_EXT2_4", "y"],
-  # OpenJDK, Mesa and the PhotonVision jar do not fit in 512M.
-  ["BR2_TARGET_ROOTFS_EXT2_SIZE", "\"1G\""],
+  # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
+  # post-image script turns it into a minimum-size rootfs.ext4, and
+  # grow-rootfs.service fills the eMMC on first boot.
+  ["BR2_TARGET_ROOTFS_EXT2", "n"],
+  ["BR2_TARGET_ROOTFS_TAR", "y"],
+  ["BR2_TARGET_ROOTFS_TAR_NONE", "y"],
+  ["BR2_PACKAGE_HOST_E2FSPROGS", "y"],
   # NetworkManager owns Ethernet. It hands per-link mDNS (connection.mdns=2
   # from the device package) to systemd-resolved, which also publishes the
   # device's _pd-device._tcp service, so resolved must stay on and nothing
@@ -67,7 +85,9 @@ required = true
 stage_files = [
   "photonvision-raze-config",
   "photonvision-raze-cmdline",
+  "photonvision-raze-grow-rootfs",
 ]
+stage_services = ["photonvision-raze-grow-rootfs-service"]
 
 # The OS owns the boot partition: the device package adds raze-device.txt,
 # its overlays and the stock overlays it loads to the tree with id "boot".

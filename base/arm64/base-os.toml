@@ -52,6 +52,6 @@ required = true
 
 [image.output]
 collect_dir = "output/gaia/${build.name}/images"
-archive_name = "${build.name}-${build.version}.img"
-archive_format = "img.xz"
+# A name ending in .img.xz makes Gaia xz-compress the assembled disk image.
+archive_name = "${build.name}-${build.version}.img.xz"
 emit_report = true
