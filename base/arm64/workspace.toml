@@ -1,0 +1,53 @@
+[workspace]
+root_dir = "."
+build_dir = "build/gaia/${build.name}"
+out_dir = "output/gaia/${build.name}"
+
+[[workspace.named_paths]]
+alias = "shared_assets"
+path = "base/arm64/assets"
+kind = "host"
+
+[[workspace.named_paths]]
+alias = "artifacts"
+path = "artifacts"
+kind = "host"
+
+[reporting]
+summary = true
+provenance = true
+manifest = true
+
+[providers.git]
+allow_remote_resolution = true
+retry_attempts = 1
+retry_backoff_ms = 0
+retry_backoff_strategy = "fixed"
+timeout_seconds = 1800
+
+[providers.java]
+retry_attempts = 1
+retry_backoff_ms = 0
+retry_backoff_strategy = "fixed"
+timeout_seconds = 1800
+
+[providers.buildroot]
+retry_attempts = 1
+retry_backoff_ms = 0
+retry_backoff_strategy = "fixed"
+# A from-scratch build compiles OpenJDK; on a busy disk that alone can take hours.
+timeout_seconds = 28800
+
+[execution]
+jobs = 0
+
+# Every source, Buildroot and artifact command runs in this image; build it
+# from docker/build (see GAIA.md).
+[execution.docker]
+enabled = true
+image = "photonvision-gaia-build:bookworm"
+
+[failure]
+rollback_on_error = true
+preserve_failed_outputs = true
+rollback_domains = ["artifacts", "installs", "stage", "checkpoints"]

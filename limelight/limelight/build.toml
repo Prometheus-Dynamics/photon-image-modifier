@@ -1,0 +1,23 @@
+description = "Limelight target layer: Limelight boot config and Gloworm device-tree source."
+target = "limelight"
+
+[[stage.files]]
+id = "limelight-boot-config"
+src = "limelight/limelight/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[[stage.files]]
+id = "limelight-gloworm-dts"
+src = "limelight/limelight/assets/gloworm-dt.dts"
+dest = "/usr/share/photonvision/limelight/gloworm-dt.dts"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = [
+  "limelight-boot-config",
+  "limelight-gloworm-dts",
+]

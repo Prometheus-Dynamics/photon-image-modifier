@@ -1,0 +1,19 @@
+description = "Operational defaults shared by Gaia-built PhotonVision images."
+
+[[stage.files]]
+id = "journald-limit"
+src = "@shared_assets/etc/systemd/journald.conf.d/60-limit-log-size.conf"
+dest = "/etc/systemd/journald.conf.d/60-limit-log-size.conf"
+origin = "static-asset"
+
+[[stage.services]]
+id = "cpu-governor-service"
+name = "cpu_governor.service"
+unit_path = "@shared_assets/systemd/cpu_governor.service"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["journald-limit"]
+stage_services = ["cpu-governor-service"]

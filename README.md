@@ -1,40 +1,46 @@
-# photon-image-modifier
+# Photon Image Modifier
 
-This repo now includes a Gaia-native full image pipeline for PhotonVision HeliOS Raze under `gaia/`.
+This repository now builds images through Gaia only.
 
-## Default build path (Gaia)
-
-`build_helios_raze_image.sh` now defaults image creation to Gaia (`IMAGE_BUILDER=gaia`).
-
-Typical run:
+Run the interactive selector:
 
 ```bash
-./build_helios_raze_image.sh
+gaia tui build.toml
 ```
 
-In Gaia mode, the PhotonVision jar is now built from source as part of the build pipeline (`program.custom`) by default.
-
-You can still run the legacy workflow path by setting:
+Run a specific target:
 
 ```bash
-IMAGE_BUILDER=workflow ./build_helios_raze_image.sh
+gaia run build.toml --set input.target=limelight --set input.profile=full
 ```
 
-## Gaia build assets
+Gaia builds inside Docker. Build the build image once (see
+[GAIA.md](GAIA.md#build-container)):
 
-- Build entry: `gaia/builds/helios-raze.toml`
-- Configs: `gaia/configs/*.toml`
-- Buildroot external overrides (libcamera, ov9782, board scripts): `gaia/assets/buildroot/`
-- Runner: `gaia/scripts/build-helios-raze-image.sh`
+```bash
+docker build -t photonvision-gaia-build:bookworm docker/build
+```
 
-## Gaia runner env
+Selectors:
 
-- `PHOTONVISION_JAR_PATH` or `PHOTONVISION_JAR_URL`
-- Optional Gaia locator:
-  - `GAIA_BIN=/path/to/gaia`
-  - or `GAIA_REPO=/path/to/Gaia-Image-Builder`
+- `input.profile`: `base-os` or `full`
+- `input.target`: `generic-arm64`, `raspi`, `raspi_dev`,
+  `limelight`, `limelight3`, `limelight3g`, `limelight4`, `luma_p1`,
+  `snakeyes`, `raze`, `opi`, or `rubikpi3`
 
-Outputs:
+Layout:
 
-- `output/photonvision-helios-raze.img`
-- `output/photonvision_helios-raze.img` (compatibility copy)
+- `base/arm64/`: shared ARM64 OS, universal packages, PhotonVision app/service,
+  identity, and ops.
+- `platform/`: reusable board-family layers.
+- Root target folders such as `limelight/`, `luma_p1/`, and `rubikpi3/`:
+  final target fragments and target assets.
+- `docker/build/`: the container Gaia runs every build command in.
+
+`raze` takes its device support from the Raze device package in Atlas and
+builds pinned commits of the Prometheus Dynamics PhotonVision and
+photon-libcamera-gl-driver forks. Until the pinned Atlas commit is pushed it
+needs `--set sources.atlas.path=<Atlas checkout>`; see
+[GAIA.md](GAIA.md#raze).
+
+Legacy `install_*.sh` and `mount_*.sh` paths have been removed.

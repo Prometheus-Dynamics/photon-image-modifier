@@ -1,0 +1,36 @@
+description = "Shared Orange Pi 5 platform layer: cloud-init CIDATA network defaults and big-core PhotonVision policy."
+target = "orange-pi-5"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
+  ["BR2_PACKAGE_NET_TOOLS", "y"],
+  ["BR2_PACKAGE_LIBDRM", "y"],
+  ["BR2_PACKAGE_MESA3D", "y"],
+]
+
+[[stage.files]]
+id = "opi-cidata-meta"
+src = "platform/orange-pi-5/assets/CIDATA/meta-data"
+dest = "/CIDATA/meta-data"
+origin = "static-asset"
+
+[[stage.files]]
+id = "opi-cidata-network"
+src = "platform/orange-pi-5/assets/CIDATA/network-config"
+dest = "/CIDATA/network-config"
+origin = "static-asset"
+
+[[stage.files]]
+id = "opi-cidata-user-data"
+src = "platform/orange-pi-5/assets/CIDATA/user-data"
+dest = "/CIDATA/user-data"
+origin = "static-asset"
+
+[image.feed]
+stage_files = [
+  "opi-cidata-meta",
+  "opi-cidata-network",
+  "opi-cidata-user-data",
+]

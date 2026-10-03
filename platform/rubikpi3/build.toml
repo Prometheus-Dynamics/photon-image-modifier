@@ -1,0 +1,44 @@
+description = "Shared Rubik Pi 3 platform layer: Qualcomm runtime packages and board-wide service policy."
+target = "rubikpi3"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  ["BR2_PACKAGE_DTC", "y"],
+  ["BR2_PACKAGE_LIBDRM", "y"],
+  ["BR2_PACKAGE_LIBGBM", "y"],
+  ["BR2_PACKAGE_MESA3D", "y"],
+]
+
+[[stage.files]]
+id = "rubik-iris-vpu-modprobe"
+src = "platform/rubikpi3/assets/iris_vpu.conf"
+dest = "/etc/modprobe.d/iris_vpu.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "rubik-camera-path-fix"
+src = "platform/rubikpi3/assets/67-camera-path-fix.rules"
+dest = "/etc/udev/rules.d/67-camera-path-fix.rules"
+origin = "static-asset"
+
+[[stage.files]]
+id = "rubik-fan-max-script"
+src = "platform/rubikpi3/assets/rubik-fan-max.sh"
+dest = "/usr/local/sbin/rubik-fan-max.sh"
+origin = "static-asset"
+
+[[stage.services]]
+id = "rubik-fan-max-service"
+name = "rubik-fan-max.service"
+unit_path = "platform/rubikpi3/assets/rubik-fan-max.service"
+
+[image.feed]
+stage_files = [
+  "rubik-iris-vpu-modprobe",
+  "rubik-camera-path-fix",
+  "rubik-fan-max-script",
+]
+stage_services = [
+  "rubik-fan-max-service",
+]

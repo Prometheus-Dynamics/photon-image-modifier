@@ -1,0 +1,55 @@
+description = "Shared OS backing for PhotonVision targets. This is the expensive layer that should be reused across platform and application variants."
+
+[[sources]]
+id = "buildroot-source"
+kind = "git"
+repo = "https://github.com/buildroot/buildroot"
+tag = "2025.11.3"
+refresh = "never"
+pin = "locked"
+
+[image]
+kind = "buildroot"
+source = "buildroot-source"
+defconfig = "qemu_aarch64_virt_defconfig"
+external_tree_mode = "disabled"
+# Every symbol here must exist in the pinned Buildroot release: kconfig drops
+# unknown or unsatisfiable symbols without an error.
+config_overrides = [
+  ["BR2_aarch64", "y"],
+  ["BR2_TOOLCHAIN_BUILDROOT_CXX", "y"],
+  ["BR2_INIT_SYSTEMD", "y"],
+  ["BR2_INIT_BUSYBOX", "n"],
+  ["BR2_INIT_NONE", "n"],
+  ["BR2_TARGET_GENERIC_HOSTNAME", "\"photonvision\""],
+  ["BR2_TARGET_GENERIC_ISSUE", "\"Welcome to PhotonVision\""],
+  ["BR2_PACKAGE_BASH", "y"],
+  ["BR2_PACKAGE_BUSYBOX_SHOW_OTHERS", "y"],
+  ["BR2_PACKAGE_CA_CERTIFICATES", "y"],
+  ["BR2_PACKAGE_LIBCURL", "y"],
+  ["BR2_PACKAGE_LIBCURL_CURL", "y"],
+  ["BR2_PACKAGE_E2FSPROGS", "y"],
+  ["BR2_PACKAGE_E2FSPROGS_RESIZE2FS", "y"],
+  ["BR2_PACKAGE_LINUX_FIRMWARE", "y"],
+  ["BR2_PACKAGE_OPENSSH", "y"],
+  ["BR2_PACKAGE_PARTED", "y"],
+  ["BR2_PACKAGE_SQLITE", "y"],
+  ["BR2_PACKAGE_UTIL_LINUX", "y"],
+  ["BR2_PACKAGE_UTIL_LINUX_BINARIES", "y"],
+  ["BR2_PACKAGE_LIBV4L", "y"],
+  ["BR2_PACKAGE_LIBV4L_UTILS", "y"],
+  # Buildroot only offers OpenJDK with BR2_PACKAGE_XORG7 set; without it the
+  # option is silently dropped and the image has no Java runtime. XORG7 only
+  # unlocks the X11 client libraries OpenJDK links, not an X server.
+  ["BR2_PACKAGE_XORG7", "y"],
+  ["BR2_PACKAGE_OPENJDK", "y"],
+]
+
+[[image.expected_images]]
+name = "rootfs.ext4"
+format = "ext4"
+required = true
+
+[image.output]
+collect_dir = "output/gaia/${build.name}/images"
+emit_report = true

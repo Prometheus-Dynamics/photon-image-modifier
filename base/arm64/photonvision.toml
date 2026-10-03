@@ -1,0 +1,46 @@
+description = "PhotonVision application payload."
+
+# Targets other than raze ship the official release jar. The release
+# tags cannot be rebuilt from source reproducibly: they reference dev builds of
+# rknn_jni, rubik_jni and photon-mrcal that are not published to any maven
+# repository. The download's sha256 is recorded in the source state.
+[[sources]]
+id = "photonvision-source"
+kind = "download"
+url = "https://github.com/PhotonVision/photonvision/releases/download/${input.photonvision_ref}/photonvision-${input.photonvision_ref}-linuxarm64.jar"
+output_path = "photonvision-${input.photonvision_ref}-linuxarm64.jar"
+refresh = "auto"
+
+# Gaia has no prebuilt-artifact kind; a no-op java build publishes the
+# downloaded jar as the artifact the install below consumes.
+[[artifacts]]
+id = "photonvision-jar"
+kind = "java"
+build_target = "photonvision-${input.photonvision_ref}-linuxarm64.jar"
+build_command = ["true"]
+source = "photonvision-source"
+install_name = "photonvision.jar"
+install_class = "archive"
+install_dest_hint = "/opt/photonvision/photonvision.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
+
+[[install]]
+id = "install-photonvision-jar"
+artifact = "photonvision-jar"
+dest = "/opt/photonvision/photonvision.jar"
+replace = true
+mode = 420
+owner = "root"
+group = "root"
+
+[[stage.services]]
+id = "photonvision-service"
+name = "photonvision.service"
+unit_path = "@shared_assets/systemd/photonvision.service"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+install_entries = ["install-photonvision-jar"]
+stage_services = ["photonvision-service"]

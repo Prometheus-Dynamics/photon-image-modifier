@@ -1,0 +1,14 @@
+description = "SnakeEyes target layer: default PhotonVision database."
+target = "snakeyes"
+
+[[stage.files]]
+id = "snakeyes-photon-db"
+src = "snakeyes/assets/photon.sqlite"
+dest = "/opt/photonvision/photonvision_config/photon.sqlite"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["snakeyes-photon-db"]

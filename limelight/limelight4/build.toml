@@ -1,0 +1,14 @@
+description = "Limelight 4 target layer."
+target = "limelight4"
+
+[[stage.files]]
+id = "limelight4-boot-config"
+src = "limelight/limelight4/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = ["limelight4-boot-config"]

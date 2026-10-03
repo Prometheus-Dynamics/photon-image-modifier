@@ -1,4 +1,0 @@
-[workspace]
-root_dir = "."
-build_dir = "build/gaia"
-out_dir = "output/gaia"

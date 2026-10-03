@@ -1,0 +1,29 @@
+description = "PhotonVision identity files shared by all Gaia-built targets."
+
+[[stage.files]]
+id = "photonvision-issue"
+src = "@shared_assets/etc/issue"
+dest = "/etc/issue"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-os-release"
+src = "@shared_assets/etc/os-release"
+dest = "/etc/os-release"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-hostname"
+src = "@shared_assets/etc/hostname"
+dest = "/etc/hostname"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+
+[image.feed]
+stage_files = [
+  "photonvision-issue",
+  "photonvision-os-release",
+  "photonvision-hostname",
+]

@@ -1,0 +1,150 @@
+gaia_version = ">=2.1.0"
+build_name = "photonvision-${input.profile}-${input.target}"
+display_name = "PhotonVision Image"
+version = "${input.version}"
+description = "Top-level PhotonVision Gaia build. Select target and profile here; target folders are fragments, not build entrypoints."
+target = "${input.target}"
+profile = "${input.profile}"
+
+imports = [
+  "base/arm64/workspace.toml",
+  "base/arm64/base-os.toml",
+  "base/arm64/identity.toml",
+  "base/arm64/ops.toml",
+
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3g" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight4" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "luma_p1" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi_dev" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raze" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "snakeyes" } },
+
+  { path = "platform/orange-pi-5/build.toml", when = { profile = "full", target = "opi" } },
+  { path = "platform/rubikpi3/build.toml", when = { profile = "full", target = "rubikpi3" } },
+
+  # Raze device support (kernel, OV9782, libcamera, boot overlays, device
+  # services) from the Atlas device package, after the OS base layers and
+  # before the PhotonVision layers that override its defaults. gpu.toml adds
+  # the Mesa EGL/GLES/gbm userspace the libcamera GL driver links. The
+  # "atlas" source is declared in raze/build.toml, so only Raze builds fetch it.
+  { source = "atlas", path = "devices/raze/gaia/device.toml", when = { target = "raze" } },
+  { source = "atlas", path = "devices/raze/gaia/gpu.toml", when = { profile = "full", target = "raze" } },
+
+  { path = "base/arm64/photonvision.toml", when = { profile = "full" } },
+
+  { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
+  { path = "raze/build.toml", when = { target = "raze" } },
+  { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
+  { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
+  { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
+  { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
+  { path = "limelight/limelight4/build.toml", when = { profile = "full", target = "limelight4" } },
+  { path = "luma/luma_p1/build.toml", when = { profile = "full", target = "luma_p1" } },
+  { path = "opi/build.toml", when = { profile = "full", target = "opi" } },
+  { path = "raspi/raspi/build.toml", when = { profile = "full", target = "raspi" } },
+  { path = "raspi/raspi_dev/build.toml", when = { profile = "full", target = "raspi_dev" } },
+  { path = "rubikpi3/build.toml", when = { profile = "full", target = "rubikpi3" } },
+  { path = "snakeyes/build.toml", when = { profile = "full", target = "snakeyes" } },
+]
+
+[product]
+family = "photonvision"
+name = "${input.target}"
+sku = "photonvision-${input.target}"
+
+[inputs.target]
+description = "Build target"
+kind = "enum"
+default = "generic-arm64"
+choices = [
+  "generic-arm64",
+  "limelight",
+  "limelight3",
+  "limelight3g",
+  "limelight4",
+  "luma_p1",
+  "opi",
+  "raspi",
+  "raspi_dev",
+  "raze",
+  "rubikpi3",
+  "snakeyes",
+]
+
+[inputs.profile]
+description = "Build profile"
+kind = "enum"
+default = "full"
+choices = ["base-os", "full"]
+
+[inputs.version]
+description = "PhotonVision release or image version label"
+kind = "enum"
+default_from = "latest-stable"
+
+[inputs.version.choices_from]
+kind = "git-tags"
+repo = "https://github.com/PhotonVision/photonvision.git"
+include = ["v2026*"]
+exclude = ["*-alpha*", "*-beta*", "*-rc*"]
+sort = "version-desc"
+version_scheme = "semver"
+prefer_stable = true
+limit = 25
+cache_ttl_seconds = 3600
+fallback_choices = ["v2026.3.4"]
+
+[inputs.photonvision_ref]
+description = "Official PhotonVision git tag used to build photonvision.jar"
+kind = "enum"
+default_from = "latest-stable"
+
+[inputs.photonvision_ref.choices_from]
+kind = "git-tags"
+repo = "https://github.com/PhotonVision/photonvision.git"
+include = ["v2026*"]
+exclude = ["*-alpha*", "*-beta*", "*-rc*"]
+sort = "version-desc"
+version_scheme = "semver"
+prefer_stable = true
+limit = 25
+cache_ttl_seconds = 3600
+fallback_choices = ["v2026.3.4"]
+
+# Raze application sources. The revs must be pushed to the repos before
+# the build works on other machines; point the *_repo inputs at local clones to
+# test unpushed commits. Keep each *_version equal to `git describe --tags`
+# of its rev (with the "dev-" prefix the PhotonVision build uses): the driver
+# version is the maven coordinate PhotonVision resolves the driver jars by.
+[inputs.raze_photonvision_repo]
+description = "PhotonVision git repository (URL or local path) used by the Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
+
+[inputs.raze_photonvision_rev]
+description = "PhotonVision commit built for Raze (branch gaia-build-fix, based on ov9782)"
+kind = "string"
+default = "75ef7922e4ec8b6b048183e461fc9a74d79e2870"
+
+[inputs.raze_photonvision_version]
+description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
+kind = "string"
+default = "dev-v2026.2.2-9-g75ef7922"
+
+[inputs.raze_libcamera_driver_repo]
+description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
+
+[inputs.raze_libcamera_driver_rev]
+description = "photon-libcamera-gl-driver commit built for Raze (branch gaia-build-fix)"
+kind = "string"
+default = "661f90e51a92c2c28608aadf9dd2e041f4c97246"
+
+[inputs.raze_libcamera_driver_version]
+description = "Version string forced into the Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
+kind = "string"
+default = "dev-v2026.0.0-11-g661f90e"
