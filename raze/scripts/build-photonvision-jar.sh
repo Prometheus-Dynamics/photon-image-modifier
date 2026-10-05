@@ -57,8 +57,15 @@ fi
 ./gradlew "${args[@]}" :photon-targeting:jar :photon-server:shadowJar
 
 # The jar must carry the docs, or PhotonVision answers /docs/index.html with 404.
+# (List first: `unzip -l | grep -q` fails under pipefail when grep exits early.)
 jar=$(ls photon-server/build/libs/photonvision-*-linuxarm64.jar 2>/dev/null | head -1)
-if [ -f docs/requirements.txt ] && [ -n "${jar}" ] && ! unzip -l "${jar}" | grep -q "web/docs/index.html"; then
-  echo "build-photonvision-jar: ${jar} has no web/docs/index.html" >&2
-  exit 1
+if [ -f docs/requirements.txt ] && [ -n "${jar}" ]; then
+  listing=$(unzip -l "${jar}")
+  case "${listing}" in
+    *"web/docs/index.html"*) ;;
+    *)
+      echo "build-photonvision-jar: ${jar} has no web/docs/index.html" >&2
+      exit 1
+      ;;
+  esac
 fi
