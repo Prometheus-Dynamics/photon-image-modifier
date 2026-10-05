@@ -9,6 +9,9 @@
 #   MAVEN_LOCAL_REPO           maven local repo shared with the driver build
 #   PHOTONVISION_PREBUILD      gradle tasks to run in a separate invocation
 #                              before the jar (space separated)
+#
+# Also builds the offline docs (Sphinx, docs/) so the jar serves /docs/; needs
+# python3-venv and network access for pip on the first run.
 set -euo pipefail
 
 args=(--no-daemon -PArchOverride=linuxarm64)
@@ -32,4 +35,30 @@ if [ -n "${PHOTONVISION_PREBUILD:-}" ]; then
   ./gradlew "${args[@]}" ${PHOTONVISION_PREBUILD}
 fi
 
+# Offline docs: photon-server copies docs/build/html into the jar's web root
+# (served at /docs/) only if it exists, and a clean checkout has none, so build
+# it here. The Sphinx venv is cached in HOME per requirements file. Warnings
+# don't fail the build (upstream's -W is for the docs site, not for bundling).
+if [ -f docs/requirements.txt ]; then
+  req_hash=$(sha256sum docs/requirements.txt | cut -c1-16)
+  venv="${HOME:-/tmp}/.cache/photonvision-docs-venv-${req_hash}"
+  if [ ! -x "${venv}/bin/sphinx-build" ]; then
+    python3 -m venv "${venv}"
+    "${venv}/bin/pip" install --quiet --disable-pip-version-check -r docs/requirements.txt
+  fi
+  rm -rf docs/build/html
+  make -C docs html SPHINXBUILD="${venv}/bin/sphinx-build" SPHINXOPTS="--keep-going -q"
+  if [ ! -f docs/build/html/index.html ]; then
+    echo "build-photonvision-jar: docs/build/html/index.html was not produced" >&2
+    exit 1
+  fi
+fi
+
 ./gradlew "${args[@]}" :photon-targeting:jar :photon-server:shadowJar
+
+# The jar must carry the docs, or PhotonVision answers /docs/index.html with 404.
+jar=$(ls photon-server/build/libs/photonvision-*-linuxarm64.jar 2>/dev/null | head -1)
+if [ -f docs/requirements.txt ] && [ -n "${jar}" ] && ! unzip -l "${jar}" | grep -q "web/docs/index.html"; then
+  echo "build-photonvision-jar: ${jar} has no web/docs/index.html" >&2
+  exit 1
+fi

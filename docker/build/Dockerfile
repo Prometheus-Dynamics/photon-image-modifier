@@ -36,6 +36,7 @@ RUN apt-get update \
         perl \
         pkg-config \
         python3 \
+        python3-venv \
         rsync \
         sed \
         tar \

@@ -72,6 +72,13 @@ output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
 [artifacts.execution]
 backend = "docker"
 
+# The jar build also builds the offline docs (Sphinx in a venv), which needs
+# python3-venv; Gaia builds this image from the Dockerfile when it changes, so
+# the rest of the build keeps using the plain photonvision-gaia-build image.
+[artifacts.execution.docker]
+image = "photonvision-gaia-build"
+dockerfile = "docker/build/Dockerfile"
+
 [image]
 kind = "buildroot"
 config_overrides = [
