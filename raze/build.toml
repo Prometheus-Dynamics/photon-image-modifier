@@ -36,6 +36,32 @@ id = "photonvision-raze-grow-rootfs-service"
 name = "grow-rootfs.service"
 unit_path = "raze/assets/rootfs/grow-rootfs.service"
 
+# PhotonVision waits for the grow (it writes its natives on first start).
+[[stage.files]]
+id = "photonvision-raze-photonvision-grow-rootfs-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
+origin = "static-asset"
+
+# Presets: systemd-networkd and CUPS off (NetworkManager owns networking).
+[[stage.files]]
+id = "photonvision-raze-preset"
+src = "raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset"
+dest = "/usr/lib/systemd/system-preset/50-photonvision-os.preset"
+origin = "static-asset"
+
+# Image identity for /opt/photonvision/image-version and image-version.json,
+# which raze/assets/buildroot/post-image-rootfs-ext4.sh writes from this file
+# (PhotonVision's OsImageData reads them).
+[[stage.env_sets]]
+id = "photonvision-raze-image-env"
+name = "photonvision-image"
+entries = [
+  ["IMAGE_VERSION", "${build.version}"],
+  ["IMAGE_NAME", "${build.target}"],
+  ["IMAGE_SOURCE", "gaia-buildroot:${build.name}"],
+]
+
 [[stage.files]]
 id = "photonvision-raze-cmdline"
 src = "raze/assets/cmdline.txt"
@@ -52,13 +78,14 @@ config_overrides = [
   # exist with it, and Gaia's override check would report it as dropped.
   ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
   # The boot partition and sdcard.img are built by the assembly below. The
-  # post-image script builds rootfs.ext4 from rootfs.tar at the smallest size
-  # that holds it (see the script).
+  # post-image script builds rootfs.ext4 from rootfs.tar sized to its content
+  # plus 128 MiB free, after checking the kernel modules and writing the
+  # PhotonVision image-version files (see the script).
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
-  # post-image script turns it into a minimum-size rootfs.ext4, and
+  # post-image script turns it into a small rootfs.ext4, and
   # grow-rootfs.service fills the eMMC on first boot.
   ["BR2_TARGET_ROOTFS_EXT2", "n"],
   ["BR2_TARGET_ROOTFS_TAR", "y"],
@@ -72,7 +99,9 @@ config_overrides = [
   ["BR2_PACKAGE_SYSTEMD_RESOLVED", "y"],
   ["BR2_PACKAGE_AVAHI", "n"],
   # The defconfig's BR2_SYSTEM_DHCP="eth0" would make systemd-networkd run a
-  # second DHCP client on the link NetworkManager manages.
+  # second DHCP client on the link NetworkManager manages. systemd-networkd
+  # itself stays installed with systemd but is disabled by
+  # 50-photonvision-os.preset (staged above).
   ["BR2_SYSTEM_DHCP", "\"\""],
 ]
 
@@ -86,7 +115,10 @@ stage_files = [
   "photonvision-raze-config",
   "photonvision-raze-cmdline",
   "photonvision-raze-grow-rootfs",
+  "photonvision-raze-photonvision-grow-rootfs-dropin",
+  "photonvision-raze-preset",
 ]
+stage_env_sets = ["photonvision-raze-image-env"]
 stage_services = ["photonvision-raze-grow-rootfs-service"]
 
 # Raze is the only target that assembles a bootable disk; a name ending in

@@ -1,0 +1,18 @@
+# PhotonVision OS presets for Raze, applied when Buildroot runs
+# `systemctl preset-all` at image build time. They sort before the device
+# package (70-pd-device.preset) and systemd's own 90-systemd.preset, so they
+# win. Units no preset names are enabled, so anything unwanted is listed here.
+
+# NetworkManager owns Ethernet and the USB gadget is configured by
+# pd-device-usb-gadget.service: systemd-networkd (installed with Buildroot's
+# systemd) must not run as a second network manager.
+disable systemd-networkd.service
+disable systemd-networkd.socket
+disable systemd-networkd-wait-online.service
+disable systemd-networkd-persistent-storage.service
+
+# CUPS comes in only as an OpenJDK build dependency; nothing prints.
+disable cups.service
+disable cups.socket
+disable cups.path
+disable cups-lpd.socket

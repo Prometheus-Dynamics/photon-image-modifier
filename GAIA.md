@@ -73,7 +73,7 @@ on Raze; this repository only adds PhotonVision and the OS around it.
 | `atlas:devices/raze/gaia/device.toml` | `raze` | CM5 defconfig and kernel, OV9782 driver, libcamera/libpisp, `raze-device.txt` and overlays, device services |
 | `atlas:devices/raze/gaia/gpu.toml` | `raze`, `full` | Mesa V3D/VC4 with EGL, GLES and gbm for the libcamera GL driver |
 | `base/arm64/photonvision.toml` | `full` | PhotonVision service and jar install |
-| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, minimum-size rootfs and first-boot grow, NetworkManager + systemd-resolved |
+| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, rootfs sizing, module check and first-boot grow, NetworkManager + systemd-resolved |
 | `raze/photonvision.toml` | `raze`, `full` | libcamera GL driver and PhotonVision jar built from the forks |
 
 Layers imported after the device layer override its defaults. The `atlas`
@@ -98,16 +98,24 @@ What stays here:
   partition layout.
 - The root filesystem is sized to its content: Buildroot makes
   `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs-ext4.sh` builds
-  the smallest `rootfs.ext4` that holds it (plus 32 MiB). On first boot
-  `grow-rootfs.service` grows the partition and filesystem to fill the eMMC.
+  a `rootfs.ext4` with 128 MiB free (PhotonVision unpacks its natives on
+  first start). On every boot `grow-rootfs.service` grows the partition and
+  filesystem to fill the eMMC if they do not already; PhotonVision starts
+  after it. The same script checks that every kernel module of the kernel
+  build ships (Buildroot ignores a failed `modules_install`, which once left
+  58 of 1898 modules in the image), reruns depmod, and writes
+  `/opt/photonvision/image-version{,.json}` from the
+  `photonvision-image` env set.
   The flashable output is `output/gaia/photonvision-full-raze/images/<build>-<version>.img.xz`
   (also `sdcard.img`); Atlas flashes either.
 - The hostname stays `photonvision` (`/etc/hostname`); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
 - mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved
   (`connection.mdns=2` from the device package), which also advertises
-  `_pd-device._tcp`. Do not add avahi. `BR2_SYSTEM_DHCP` is cleared so
-  systemd-networkd does not run a second DHCP client on Ethernet.
+  `_pd-device._tcp`. Do not add avahi. `BR2_SYSTEM_DHCP` is cleared and
+  `raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset`
+  disables systemd-networkd (and CUPS, an OpenJDK build dependency), so
+  NetworkManager is the only network manager.
 
 ### Atlas pin and local development
 

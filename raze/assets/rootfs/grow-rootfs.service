@@ -1,16 +1,19 @@
 [Unit]
 Description=Grow the root filesystem to fill the boot disk
+Documentation=file:/usr/lib/photonvision-os/grow-rootfs.sh
 DefaultDependencies=no
 After=local-fs.target
-Before=sysinit.target photonvision.service
-ConditionPathExists=!/var/lib/photonvision-os/rootfs-grown
+Before=sysinit.target photonvision.service shutdown.target
+Conflicts=shutdown.target
 
+# Runs on every boot: the script is idempotent and only does work while the
+# partition or the filesystem is short of the disk, so a grow that could not
+# finish on one boot (e.g. the kernel kept the old partition size) completes
+# on the next.
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh
-ExecStartPost=/bin/mkdir -p /var/lib/photonvision-os
-ExecStartPost=/bin/touch /var/lib/photonvision-os/rootfs-grown
 
 [Install]
 WantedBy=sysinit.target
