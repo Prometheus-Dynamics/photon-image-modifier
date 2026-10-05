@@ -1,0 +1,12 @@
+[Unit]
+Description=Publish PhotonVision's web UI address for Atlas (manage_url)
+After=pd-device-hostname.service
+Before=pd-device-identity.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/photonvision-os/manage-url
+
+[Install]
+WantedBy=multi-user.target

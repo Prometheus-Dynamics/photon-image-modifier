@@ -161,6 +161,19 @@ EOF
 chmod 644 "$root/opt/photonvision/image-version" "$root/opt/photonvision/image-version.json"
 log "image-version: $IMAGE_VERSION;$IMAGE_NAME ($commit_sha)"
 
+# The device identity (Atlas) reports os-release VERSION_ID as the OS version;
+# make it the image version instead of the static placeholder.
+if [ -f "$root/etc/os-release" ] && [ "$IMAGE_VERSION" != unknown ]; then
+	sed -i "s|^VERSION_ID=.*|VERSION_ID=\"$IMAGE_VERSION\"|" "$root/etc/os-release"
+	grep -q '^VERSION=' "$root/etc/os-release" ||
+		printf 'VERSION="%s (%s)"\n' "$IMAGE_VERSION" "$IMAGE_NAME" >>"$root/etc/os-release"
+fi
+
+# Scripts staged by the recipe must be executable.
+for f in pv-leds manage-url grow-rootfs.sh; do
+	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
+done
+
 # --- Filesystem -------------------------------------------------------------
 
 fits() {

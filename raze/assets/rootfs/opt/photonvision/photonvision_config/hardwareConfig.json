@@ -1,0 +1,18 @@
+{
+  "deviceName": "Raze",
+  "deviceLogoPath": "",
+  "supportURL": "https://github.com/Prometheus-Dynamics",
+  "ledPins": [13],
+  "ledsCanDim": true,
+  "ledBrightnessRange": [0, 100],
+  "ledPWMFrequency": 0,
+  "statusRGBPins": [],
+  "statusRGBActiveHigh": false,
+  "getGPIOCommand": "/usr/lib/photonvision-os/pv-leds get {p}",
+  "setGPIOCommand": "/usr/lib/photonvision-os/pv-leds gpio {p} {s}",
+  "setPWMCommand": "/usr/lib/photonvision-os/pv-leds pwm {p} {v}",
+  "setPWMFrequencyCommand": "/usr/lib/photonvision-os/pv-leds freq {p} {f}",
+  "releaseGPIOCommand": "/usr/lib/photonvision-os/pv-leds release {p}",
+  "restartHardwareCommand": "",
+  "vendorFOV": -1
+}

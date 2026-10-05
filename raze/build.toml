@@ -9,13 +9,14 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.0.6); see GAIA.md for building
-# against a local Atlas checkout.
+# Pinned to a full commit (Raze package 1.0.7: raze-leds, locate action, SSH
+# key provisioning, serial console); see GAIA.md for building against a local
+# Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "a722abf9587cc3bc6ca7fbc2f166fed96d74bbda"
+rev = "95640cecd192881a8cfedba55763ae38ab17291a"
 
 [[stage.files]]
 id = "photonvision-raze-config"
@@ -49,6 +50,34 @@ id = "photonvision-raze-preset"
 src = "raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset"
 dest = "/usr/lib/systemd/system-preset/50-photonvision-os.preset"
 origin = "static-asset"
+
+# The LED ring as PhotonVision's vision LED: PhotonVision's custom GPIO
+# commands (from the default hardwareConfig.json) call pv-leds, which drives
+# the ring through the device package's raze-leds helper.
+[[stage.files]]
+id = "photonvision-raze-pv-leds"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds"
+dest = "/usr/lib/photonvision-os/pv-leds"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-hardware-config"
+src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.json"
+dest = "/opt/photonvision/photonvision_config/hardwareConfig.json"
+origin = "static-asset"
+
+# manage_url for Atlas ("Web UI"): http://<hostname>.local:5800/, written at
+# boot because the hostname is per board.
+[[stage.files]]
+id = "photonvision-raze-manage-url"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/manage-url"
+dest = "/usr/lib/photonvision-os/manage-url"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-manage-url-service"
+name = "photonvision-manage-url.service"
+unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
 
 # Image identity for /opt/photonvision/image-version and image-version.json,
 # which raze/assets/buildroot/post-image-rootfs-ext4.sh writes from this file
@@ -117,9 +146,12 @@ stage_files = [
   "photonvision-raze-grow-rootfs",
   "photonvision-raze-photonvision-grow-rootfs-dropin",
   "photonvision-raze-preset",
+  "photonvision-raze-pv-leds",
+  "photonvision-raze-hardware-config",
+  "photonvision-raze-manage-url",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service"]
 
 # Raze is the only target that assembles a bootable disk; a name ending in
 # .img.xz makes Gaia xz-compress it next to sdcard.img.
