@@ -170,7 +170,7 @@ if [ -f "$root/etc/os-release" ] && [ "$IMAGE_VERSION" != unknown ]; then
 fi
 
 # Scripts staged by the recipe must be executable.
-for f in pv-leds manage-url grow-rootfs.sh; do
+for f in pv-leds-ring manage-url grow-rootfs.sh; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
 

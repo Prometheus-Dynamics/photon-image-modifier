@@ -1,0 +1,101 @@
+#!/bin/bash
+# The Raze LED ring as PhotonVision's status light (and its vision LED).
+#
+# PhotonVision drives "LEDs" through the custom GPIO commands in
+# hardwareConfig.json; those commands only write the pin state to a small file
+# in $STATE (a bash builtin, so no extra process per update):
+#   pin 13            vision LED   (0.0-1.0 brightness, or true/false)
+#   pins 101 102 103  status RGB   (true/false; PhotonVision blinks them)
+# This loop samples those files a few times a second using builtins only (no
+# fork per tick) and calls raze-leds only when the ring's look changes:
+#   vision LED on  -> white at its brightness
+#   otherwise      -> PhotonVision's status colour, blinking when it blinks:
+#     blue = targets visible, blinking green = connected, no targets,
+#     blinking blue = no NetworkTables, targets visible,
+#     blinking yellow = no NetworkTables, no targets, blinking red = error.
+set -u
+
+LEDS=${PV_LEDS_HELPER:-/usr/lib/pd-device/raze-leds}
+STATE=${PV_LEDS_STATE:-/run/photonvision-os}
+TICK=0.15
+WINDOW=4 # samples kept per channel, to tell steady from blinking
+PV_LEDS_STATUS_DIM=40
+# shellcheck source=/dev/null
+[ -r /etc/default/pv-leds ] && . /etc/default/pv-leds
+
+mkdir -p "$STATE"
+# A never-ready fd to sleep on with `read -t` (one fork, at start).
+exec {SLEEP_FD}<> <(:)
+
+value=""
+read_pin() { # pin -> $value ("" if unset)
+	value=""
+	[ -r "$STATE/led-$1" ] && read -r value <"$STATE/led-$1"
+}
+
+lit() { # $1 value -> success when on
+	case "$1" in
+	true | 1) return 0 ;;
+	"" | false | 0 | 0.0 | 0.00) return 1 ;;
+	esac
+	[[ "$1" =~ ^0*\.?0*$ ]] && return 1
+	return 0
+}
+
+pct=0
+percent() { # 0.0-1.0 or true -> $pct (integer 0-100), builtins only
+	case "$1" in true | 1 | 1.0) pct=100; return ;; esac
+	local int=${1%%.*} frac=${1#*.}
+	[ "$frac" = "$1" ] && frac=0
+	frac="${frac}00"
+	pct=$((10#${int:-0} * 100 + 10#${frac:0:2}))
+	((pct > 100)) && pct=100
+}
+
+hist_r="" hist_g="" hist_b=""
+push() { # var bit: keep the last WINDOW bits as a string
+	local -n h=$1
+	h="${h}$2"
+	((${#h} > WINDOW)) && h=${h: -WINDOW}
+}
+
+last=""
+apply() { # look, then the raze-leds commands to get there
+	[ "$1" = "$last" ] && return
+	last=$1
+	shift
+	"$@"
+}
+
+while :; do
+	read_pin 13
+	vision=$value
+	read_pin 101; lit "$value" && push hist_r 1 || push hist_r 0
+	read_pin 102; lit "$value" && push hist_g 1 || push hist_g 0
+	read_pin 103; lit "$value" && push hist_b 1 || push hist_b 0
+
+	if lit "$vision"; then
+		percent "$vision"
+		apply "vision:$pct" sh -c "'$LEDS' color 255 255 255 255 && '$LEDS' dim $pct && '$LEDS' on"
+	else
+		cr=0 cg=0 cb=0 blink=0
+		[[ $hist_r == *1* ]] && cr=1
+		[[ $hist_g == *1* ]] && cg=1
+		[[ $hist_b == *1* ]] && cb=1
+		[[ $cr == 1 && $hist_r == *0* ]] && blink=1
+		[[ $cg == 1 && $hist_g == *0* ]] && blink=1
+		[[ $cb == 1 && $hist_b == *0* ]] && blink=1
+		if [ "$cr$cg$cb" = 000 ]; then
+			apply "off" "$LEDS" off
+		else
+			red=$((cr * 255))
+			green=$((cg * (cr ? 180 : 255))) # red+green reads as yellow, not orange
+			blue=$((cb * 255))
+			look="status:$cr$cg$cb:$blink"
+			cmd="'$LEDS' color $red $green $blue && '$LEDS' dim $PV_LEDS_STATUS_DIM && '$LEDS' on"
+			[ "$blink" = 1 ] && cmd="$cmd && '$LEDS' blink 2"
+			apply "$look" sh -c "$cmd"
+		fi
+	fi
+	read -r -t "$TICK" -u "$SLEEP_FD" _ || true
+done

@@ -1,0 +1,15 @@
+[Unit]
+Description=Raze LED ring as PhotonVision's status light
+Documentation=file:/usr/lib/photonvision-os/pv-leds-ring
+After=raze-leds-reprobe.service
+Before=photonvision.service
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/photonvision-os/pv-leds-ring
+Restart=always
+RestartSec=2
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

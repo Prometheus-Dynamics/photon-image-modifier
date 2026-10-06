@@ -51,14 +51,28 @@ src = "raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.prese
 dest = "/usr/lib/systemd/system-preset/50-photonvision-os.preset"
 origin = "static-asset"
 
-# The LED ring as PhotonVision's vision LED: PhotonVision's custom GPIO
-# commands (from the default hardwareConfig.json) call pv-leds, which drives
-# the ring through the device package's raze-leds helper.
+# The LED ring as PhotonVision's status light (and vision LED), with no
+# PhotonVision changes: the default hardwareConfig.json maps PhotonVision's
+# status RGB pins (101-103) and vision LED (pin 13) to custom GPIO commands
+# that only write the pin state to /run/photonvision-os; pv-leds-ring turns
+# that into ring colours through the device package's raze-leds helper,
+# calling it only when the look changes.
 [[stage.files]]
-id = "photonvision-raze-pv-leds"
-src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds"
-dest = "/usr/lib/photonvision-os/pv-leds"
+id = "photonvision-raze-pv-leds-ring"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds-ring"
+dest = "/usr/lib/photonvision-os/pv-leds-ring"
 origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-leds-tmpfiles"
+src = "raze/assets/rootfs/usr/lib/tmpfiles.d/photonvision-os.conf"
+dest = "/usr/lib/tmpfiles.d/photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-leds-service"
+name = "photonvision-leds.service"
+unit_path = "raze/assets/rootfs/photonvision-leds.service"
 
 [[stage.files]]
 id = "photonvision-raze-hardware-config"
@@ -146,12 +160,13 @@ stage_files = [
   "photonvision-raze-grow-rootfs",
   "photonvision-raze-photonvision-grow-rootfs-dropin",
   "photonvision-raze-preset",
-  "photonvision-raze-pv-leds",
+  "photonvision-raze-pv-leds-ring",
+  "photonvision-raze-leds-tmpfiles",
   "photonvision-raze-hardware-config",
   "photonvision-raze-manage-url",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service"]
 
 # Raze is the only target that assembles a bootable disk; a name ending in
 # .img.xz makes Gaia xz-compress it next to sdcard.img.
