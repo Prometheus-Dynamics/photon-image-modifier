@@ -122,9 +122,9 @@ id = "photonvision-raze-manage-url-service"
 name = "photonvision-manage-url.service"
 unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
 
-# Image identity for /opt/photonvision/image-version and image-version.json,
+# Image identity for /opt/photonvision/image-metadata.json,
 # which raze/assets/buildroot/post-image-rootfs-ext4.sh writes from this file
-# (PhotonVision's OsImageData reads them).
+# (PhotonVision's OsImageData reads it).
 [[stage.env_sets]]
 id = "photonvision-raze-image-env"
 name = "photonvision-image"
@@ -164,7 +164,7 @@ config_overrides = [
   # The boot partition and sdcard.img are built by the assembly below. The
   # post-image script builds rootfs.ext4 from rootfs.tar sized to its content
   # plus 128 MiB free, after checking the kernel modules and writing the
-  # PhotonVision image-version files (see the script).
+  # PhotonVision image-metadata.json (see the script).
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
   # orion-node runs as the orion user; the image has no systemd-sysusers to

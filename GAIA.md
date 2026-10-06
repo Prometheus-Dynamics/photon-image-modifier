@@ -105,7 +105,7 @@ What stays here:
   after it. The same script checks that every kernel module of the kernel
   build ships (Buildroot ignores a failed `modules_install`, which once left
   58 of 1898 modules in the image), reruns depmod, and writes
-  `/opt/photonvision/image-version{,.json}` from the
+  `/opt/photonvision/image-metadata.json` from the
   `photonvision-image` env set.
   The flashable output is `output/gaia/photonvision-full-raze/images/<build>-<version>.img.xz`
   (also `sdcard.img`); Atlas flashes either.

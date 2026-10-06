@@ -15,8 +15,9 @@
 #   ships it (this happened: 58 of 1898 modules). A short tree is reinstalled
 #   from the kernel build here, depmod is rerun, and the modules the OS loads
 #   are required to be present.
-# - /opt/photonvision/image-version and image-version.json are written from
-#   /etc/default/photonvision-image.env (a Gaia env set in raze/build.toml).
+# - /opt/photonvision/image-metadata.json (read by PhotonVision's OsImageData)
+#   is written from /etc/default/photonvision-image.env (a Gaia env set in
+#   raze/build.toml).
 #
 # The filesystem is sized to its content plus real free space (headroom_mib,
 # not counting the root-reserved blocks): PhotonVision writes its WPILib
@@ -143,7 +144,7 @@ if [ -r "$image_env" ]; then
 	# shellcheck disable=SC1090
 	. "$image_env"
 else
-	log "warning: $image_env is missing; writing image-version with unknown fields"
+	log "warning: $image_env is missing; writing image-metadata with unknown fields"
 fi
 commit_sha=$(git -c safe.directory='*' -C "$project_root" rev-parse HEAD 2>/dev/null || echo unknown)
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
@@ -155,13 +156,14 @@ fi
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
 mkdir -p "$root/opt/photonvision"
-# Legacy format read by OsImageData.IMAGE_VERSION: "<version>;<image name>".
-printf '%s;%s\n' "$IMAGE_VERSION" "$IMAGE_NAME" >"$root/opt/photonvision/image-version"
-cat >"$root/opt/photonvision/image-version.json" <<EOF
+# PhotonVision 2027 reads image-metadata.json (it no longer reads the
+# image-version files older images had).
+rm -f "$root/opt/photonvision/image-version" "$root/opt/photonvision/image-version.json"
+cat >"$root/opt/photonvision/image-metadata.json" <<EOF
 {"build_date": "$(json_escape "$build_date")", "commit_sha": "$(json_escape "$commit_sha")", "commit_tag": "$(json_escape "$IMAGE_VERSION")", "image_name": "$(json_escape "$IMAGE_NAME")", "image_source": "$(json_escape "$IMAGE_SOURCE")", "device_package_commit": "$(json_escape "$DEVICE_PACKAGE_COMMIT")", "orion_commit": "$(json_escape "$ORION_COMMIT")"}
 EOF
-chmod 644 "$root/opt/photonvision/image-version" "$root/opt/photonvision/image-version.json"
-log "image-version: $IMAGE_VERSION;$IMAGE_NAME ($commit_sha)"
+chmod 644 "$root/opt/photonvision/image-metadata.json"
+log "image-metadata: $IMAGE_VERSION $IMAGE_NAME ($commit_sha)"
 
 # The device identity (Atlas) reports os-release VERSION_ID as the OS version,
 # and Orion's host facts read IMAGE_ID/IMAGE_VERSION: make them the image's.
