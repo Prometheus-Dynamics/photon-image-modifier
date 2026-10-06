@@ -128,9 +128,9 @@ unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
 id = "photonvision-raze-image-env"
 name = "photonvision-image"
 entries = [
-  # The Raze jar's own version (the image's PhotonVision build), the same
-  # VERSION the update bundle carries.
-  ["IMAGE_VERSION", "${input.raze_photonvision_version}"],
+  # The Raze jar's own version plus this repository's describe, unique per
+  # image build; the same VERSION the update bundle carries.
+  ["IMAGE_VERSION", "${input.raze_photonvision_version}+${project.describe}"],
   ["IMAGE_NAME", "${build.target}"],
   ["IMAGE_SOURCE", "gaia-buildroot:${build.name}"],
   ["DEVICE_PACKAGE_COMMIT", "${source.atlas.commit}"],
@@ -390,7 +390,7 @@ name = "manifest.env"
 entries = [
   ["MODEL", "raze"],
   ["OS", "photonvision"],
-  ["VERSION", "${input.raze_photonvision_version}"],
+  ["VERSION", "${input.raze_photonvision_version}+${project.describe}"],
   ["BOOT_SHA256", "${assembly.sha256:$assembly.work/boot.vfat.zst}"],
   ["ROOTFS_SHA256", "${assembly.sha256:$assembly.work/rootfs.ext4.zst}"],
 ]
