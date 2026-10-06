@@ -166,9 +166,9 @@ config_overrides = [
   # PhotonVision image-version files (see the script).
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
-  # Users services run as (orion for orion-node); the image has no
-  # systemd-sysusers to create them at boot.
-  ["BR2_ROOTFS_USERS_TABLES", "\"${project.root_dir}/raze/assets/buildroot/users.table\""],
+  # orion-node runs as the orion user; the image has no systemd-sysusers to
+  # create it at boot, so it comes from Orion's own users table.
+  ["BR2_ROOTFS_USERS_TABLES", "\"${source.orion.path}/packaging/buildroot/orion-users.table\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
   # post-image script turns it into a small rootfs.ext4, and
