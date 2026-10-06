@@ -45,7 +45,7 @@ jobs = 0
 # from docker/build (see GAIA.md).
 [execution.docker]
 enabled = true
-image = "photonvision-gaia-build:bookworm"
+image = "photonvision-gaia-build:trixie"
 
 [failure]
 rollback_on_error = true

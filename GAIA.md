@@ -49,11 +49,12 @@ Gaia runs source fetching, Buildroot and the artifact builds in Docker
 Docker and a current Gaia. Build the image once:
 
 ```bash
-docker build -t photonvision-gaia-build:bookworm docker/build
+docker build -t photonvision-gaia-build:trixie docker/build
 ```
 
-It holds the Buildroot host prerequisites plus JDK 17, Node 22, pnpm and
-CMake for the Java artifacts. Gradle, pnpm and the WPILib arm64 toolchain are
+It holds the Buildroot host prerequisites plus JDK 25, Node 24, pnpm and
+CMake for the Java artifacts (PhotonVision 2027 builds with a Java 25
+toolchain). Gradle, pnpm and the WPILib arm64 toolchain are
 cached in `.gaia/docker-home/`.
 
 ## Raze
@@ -159,10 +160,11 @@ The version strings must match their revs: use `dev-` plus
 coordinate PhotonVision resolves the driver by. Build changes the forks need
 are commits in the forks, not patches applied by this repository.
 
-The pinned revs are the `gaia-build-fix` branches of the forks. The driver
-branch is based on `3958ada` rather than the current `ov9782` tip: the tip
-moved to WPILib 2027 and Java 25, which the 2026 PhotonVision fork and
-Buildroot's OpenJDK (17 or 21) cannot run.
+The pinned revs are the `raze-2027` branches of the forks: PhotonVision on
+upstream main (2027, WPILib 2027 alpha, Java 25) with the Raze changes, and
+the driver with the OV9782 and Buildroot cross-build changes, built against
+the device package's libcamera 0.7. The image runs them on Buildroot's
+OpenJDK 25 (`BR2_PACKAGE_OPENJDK_VERSION_25` in `base/arm64/base-os.toml`).
 
 To bump a fork, take the new commit and its describe string:
 

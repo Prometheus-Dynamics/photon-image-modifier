@@ -4,7 +4,7 @@ description = "Shared OS backing for PhotonVision targets. This is the expensive
 id = "buildroot-source"
 kind = "git"
 repo = "https://github.com/buildroot/buildroot"
-tag = "2025.11.3"
+tag = "2026.08"
 refresh = "never"
 pin = "locked"
 
@@ -38,11 +38,11 @@ config_overrides = [
   ["BR2_PACKAGE_UTIL_LINUX_BINARIES", "y"],
   ["BR2_PACKAGE_LIBV4L", "y"],
   ["BR2_PACKAGE_LIBV4L_UTILS", "y"],
-  # Buildroot only offers OpenJDK with BR2_PACKAGE_XORG7 set; without it the
-  # option is silently dropped and the image has no Java runtime. XORG7 only
-  # unlocks the X11 client libraries OpenJDK links, not an X server.
-  ["BR2_PACKAGE_XORG7", "y"],
+  # Buildroot 2026.08 builds OpenJDK headless (it no longer needs XORG7).
+  # PhotonVision 2027 and its WPILib need Java 25; pin it rather than rely on
+  # Buildroot's default.
   ["BR2_PACKAGE_OPENJDK", "y"],
+  ["BR2_PACKAGE_OPENJDK_VERSION_25", "y"],
 ]
 
 [[image.expected_images]]

@@ -2,12 +2,14 @@
 # the Java artifacts (the PhotonVision fat jar and the photon-libcamera-gl-driver
 # JNI jar).
 #
-#   docker build -t photonvision-gaia-build:bookworm docker/build
+#   docker build -t photonvision-gaia-build:trixie docker/build
 #
 # Gaia runs every command in this image as the workspace owner, with HOME set
 # to <workspace>/.gaia/docker-home, so Gradle, pnpm and toolchain caches persist
 # in the workspace between builds.
-FROM node:22-bookworm-slim
+# Debian trixie for OpenJDK 25 (PhotonVision 2027 and its WPILib build with a
+# Java 25 toolchain) and Node 24 (photon-client's engines field).
+FROM node:24-trixie-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -31,7 +33,7 @@ RUN apt-get update \
         make \
         mtools \
         ninja-build \
-        openjdk-17-jdk-headless \
+        openjdk-25-jdk-headless \
         patch \
         perl \
         pkg-config \
@@ -45,8 +47,9 @@ RUN apt-get update \
         xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# PhotonVision builds its web UI with pnpm through Gradle.
-RUN npm install -g pnpm@10 \
+# PhotonVision builds its web UI with pnpm through Gradle (which pins its own
+# pnpm version); the global one is for running the client build by hand.
+RUN npm install -g pnpm@11 \
     && npm cache clean --force
 
 WORKDIR /workspace

@@ -8,7 +8,10 @@ config_overrides = [
   ["BR2_LINUX_KERNEL_DEFCONFIG", "\"bcm2712\""],
   ["BR2_PACKAGE_RPI_FIRMWARE", "y"],
   ["BR2_PACKAGE_RPI_FIRMWARE_INSTALL_DTB_OVERLAYS", "y"],
-  ["BR2_PACKAGE_RPI_USERLAND", "y"],
+  # Buildroot 2026.08 removed rpi-userland (setting it now selects
+  # BR2_LEGACY). Raze gets vcgencmd from the device package's rpi-utils; the
+  # other Pi targets have no vcgencmd, so PhotonVision's Pi metrics (throttle,
+  # GPU memory) report errors there.
   ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
   ["BR2_PACKAGE_NET_TOOLS", "y"],
   ["BR2_PACKAGE_DTC", "y"],

@@ -18,7 +18,7 @@ Gaia builds inside Docker. Build the build image once (see
 [GAIA.md](GAIA.md#build-container)):
 
 ```bash
-docker build -t photonvision-gaia-build:bookworm docker/build
+docker build -t photonvision-gaia-build:trixie docker/build
 ```
 
 Selectors:
