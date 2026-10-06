@@ -92,14 +92,17 @@ default_from = "latest-stable"
 [inputs.version.choices_from]
 kind = "git-tags"
 repo = "https://github.com/PhotonVision/photonvision.git"
-include = ["v2026*"]
-exclude = ["*-alpha*", "*-beta*", "*-rc*"]
+# 2027 pre-releases are selectable; prefer_stable keeps the default on the
+# newest stable release. v2026.7 is the April Fools release: it sorts above
+# v2026.3.4 and would otherwise become the default.
+include = ["v2026*", "v2027*"]
+exclude = ["v2026.7"]
 sort = "version-desc"
 version_scheme = "semver"
 prefer_stable = true
 limit = 25
 cache_ttl_seconds = 3600
-fallback_choices = ["v2026.3.4"]
+fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
 
 [inputs.photonvision_ref]
 description = "Official PhotonVision git tag used to build photonvision.jar"
@@ -109,14 +112,17 @@ default_from = "latest-stable"
 [inputs.photonvision_ref.choices_from]
 kind = "git-tags"
 repo = "https://github.com/PhotonVision/photonvision.git"
-include = ["v2026*"]
-exclude = ["*-alpha*", "*-beta*", "*-rc*"]
+# 2027 pre-releases are selectable; prefer_stable keeps the default on the
+# newest stable release. v2026.7 is the April Fools release: it sorts above
+# v2026.3.4 and would otherwise become the default.
+include = ["v2026*", "v2027*"]
+exclude = ["v2026.7"]
 sort = "version-desc"
 version_scheme = "semver"
 prefer_stable = true
 limit = 25
 cache_ttl_seconds = 3600
-fallback_choices = ["v2026.3.4"]
+fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
 
 # Raze application sources. The revs must be pushed to the repos before
 # the build works on other machines; point the *_repo inputs at local clones to
