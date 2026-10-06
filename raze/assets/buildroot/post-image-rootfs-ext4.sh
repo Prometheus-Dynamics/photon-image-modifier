@@ -31,12 +31,13 @@ headroom_mib=128
 mkfs_opts="-b 4096 -O ^64bit -L rootfs"
 
 # Modules the OS loads by name (modules-load.d, the USB gadget script, the
-# LED ring), plus the crypto modules other modules depend on. Their absence
-# fails the build.
+# LED ring). Their absence fails the build. Their own dependencies are
+# resolved by depmod below and checked against the kernel build's
+# modules.order; they are not listed here because the kernel renames and
+# builds in crypto helpers between versions (7.x has SHA-1 and AES built in).
 required_modules="
 	libcomposite u_ether u_serial usb_f_ecm usb_f_ncm usb_f_rndis usb_f_acm
 	usb_f_mass_storage i2c-dev rp1-pio ws2812-pio-rp1
-	sha1_generic gf128mul libaes ghash-generic
 "
 
 if [ "${1:-}" != "--in-fakeroot" ]; then
