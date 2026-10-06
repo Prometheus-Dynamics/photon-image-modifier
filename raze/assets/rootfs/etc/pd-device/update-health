@@ -1,0 +1,16 @@
+#!/bin/sh
+# Health check for the device package's A/B updater (pd-device-update-confirm):
+# exit 0 keeps the trial boot, anything else rolls back to the previous slot.
+# PhotonVision is healthy when its service is active and its web server
+# answers on port 5800; it can take a while to unpack natives on first start.
+i=0
+while [ "$i" -lt 60 ]; do
+	if systemctl is-active --quiet photonvision.service &&
+		wget -q -T 3 -O /dev/null http://127.0.0.1:5800/ 2>/dev/null; then
+		exit 0
+	fi
+	i=$((i + 1))
+	sleep 2
+done
+echo "update-health: photonvision.service or :5800 not healthy after 120 s" >&2
+exit 1

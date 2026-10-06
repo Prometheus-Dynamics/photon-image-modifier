@@ -137,6 +137,8 @@ image_env="$root/etc/default/photonvision-image.env"
 IMAGE_VERSION=unknown
 IMAGE_NAME=unknown
 IMAGE_SOURCE=unknown
+DEVICE_PACKAGE_COMMIT=unknown
+ORION_COMMIT=unknown
 if [ -r "$image_env" ]; then
 	# shellcheck disable=SC1090
 	. "$image_env"
@@ -156,23 +158,27 @@ mkdir -p "$root/opt/photonvision"
 # Legacy format read by OsImageData.IMAGE_VERSION: "<version>;<image name>".
 printf '%s;%s\n' "$IMAGE_VERSION" "$IMAGE_NAME" >"$root/opt/photonvision/image-version"
 cat >"$root/opt/photonvision/image-version.json" <<EOF
-{"build_date": "$(json_escape "$build_date")", "commit_sha": "$(json_escape "$commit_sha")", "commit_tag": "$(json_escape "$IMAGE_VERSION")", "image_name": "$(json_escape "$IMAGE_NAME")", "image_source": "$(json_escape "$IMAGE_SOURCE")"}
+{"build_date": "$(json_escape "$build_date")", "commit_sha": "$(json_escape "$commit_sha")", "commit_tag": "$(json_escape "$IMAGE_VERSION")", "image_name": "$(json_escape "$IMAGE_NAME")", "image_source": "$(json_escape "$IMAGE_SOURCE")", "device_package_commit": "$(json_escape "$DEVICE_PACKAGE_COMMIT")", "orion_commit": "$(json_escape "$ORION_COMMIT")"}
 EOF
 chmod 644 "$root/opt/photonvision/image-version" "$root/opt/photonvision/image-version.json"
 log "image-version: $IMAGE_VERSION;$IMAGE_NAME ($commit_sha)"
 
-# The device identity (Atlas) reports os-release VERSION_ID as the OS version;
-# make it the image version instead of the static placeholder.
-if [ -f "$root/etc/os-release" ] && [ "$IMAGE_VERSION" != unknown ]; then
-	sed -i "s|^VERSION_ID=.*|VERSION_ID=\"$IMAGE_VERSION\"|" "$root/etc/os-release"
-	grep -q '^VERSION=' "$root/etc/os-release" ||
-		printf 'VERSION="%s (%s)"\n' "$IMAGE_VERSION" "$IMAGE_NAME" >>"$root/etc/os-release"
+# The device identity (Atlas) reports os-release VERSION_ID as the OS version,
+# and Orion's host facts read IMAGE_ID/IMAGE_VERSION: make them the image's.
+# /etc/os-release may be a symlink into /usr/lib.
+os_release="$root/etc/os-release"
+[ -L "$os_release" ] && os_release="$root/$(readlink "$os_release" | sed 's|^\.\./||; s|^/||')"
+if [ -f "$os_release" ] && [ "$IMAGE_VERSION" != unknown ]; then
+	sed -i -e '/^VERSION_ID=/d' -e '/^VERSION=/d' -e '/^IMAGE_ID=/d' -e '/^IMAGE_VERSION=/d' "$os_release"
+	printf 'VERSION_ID="%s"\nVERSION="%s (%s)"\nIMAGE_ID="photonvision-%s"\nIMAGE_VERSION="%s"\n' \
+		"$IMAGE_VERSION" "$IMAGE_VERSION" "$IMAGE_NAME" "$IMAGE_NAME" "$IMAGE_VERSION" >>"$os_release"
 fi
 
 # Scripts staged by the recipe must be executable.
 for f in pv-leds-ring manage-url grow-rootfs.sh; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
+[ -f "$root/etc/pd-device/update-health" ] && chmod 755 "$root/etc/pd-device/update-health"
 
 # --- Filesystem -------------------------------------------------------------
 

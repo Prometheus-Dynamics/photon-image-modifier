@@ -1,0 +1,6 @@
+# Buildroot makeusers table (BR2_ROOTFS_USERS_TABLES). The image has no
+# systemd-sysusers, so users that services expect are created at build time.
+# Columns: username uid group gid password home shell groups comment.
+#
+# orion-node.service runs as orion (Orion packaging/buildroot/orion-users.table).
+orion -1 orion -1 * /var/lib/orion /bin/false dialout Orion node

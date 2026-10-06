@@ -9,14 +9,22 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.0.7: raze-leds, locate action, SSH
-# key provisioning, serial console); see GAIA.md for building against a local
-# Atlas checkout.
+# Pinned to a full commit (Raze package 1.0.9: fan at normal polarity with a
+# 50 % floor, A/B update writer, hardware watchdog); see GAIA.md for building
+# against a local Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "95640cecd192881a8cfedba55763ae38ab17291a"
+rev = "e12e22d5f384a4b0975c84c7a279b2f723991cc3"
+
+# orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
+# the board an Orion node for host facts, actions and, later, updates.
+[[sources]]
+id = "orion"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Orion.git"
+rev = "98bb58affa9a8863417304af841bdfb727e0a5ca"
 
 [[stage.files]]
 id = "photonvision-raze-config"
@@ -103,7 +111,17 @@ entries = [
   ["IMAGE_VERSION", "${build.version}"],
   ["IMAGE_NAME", "${build.target}"],
   ["IMAGE_SOURCE", "gaia-buildroot:${build.name}"],
+  ["DEVICE_PACKAGE_COMMIT", "${source.atlas.commit}"],
+  ["ORION_COMMIT", "${source.orion.commit}"],
 ]
+
+# Health check for the device package's A/B updater: a trial boot is kept only
+# when PhotonVision is running and its web server answers.
+[[stage.files]]
+id = "photonvision-raze-update-health"
+src = "raze/assets/rootfs/etc/pd-device/update-health"
+dest = "/etc/pd-device/update-health"
+origin = "static-asset"
 
 [[stage.files]]
 id = "photonvision-raze-cmdline"
@@ -126,6 +144,9 @@ config_overrides = [
   # PhotonVision image-version files (see the script).
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
+  # Users services run as (orion for orion-node); the image has no
+  # systemd-sysusers to create them at boot.
+  ["BR2_ROOTFS_USERS_TABLES", "\"${project.root_dir}/raze/assets/buildroot/users.table\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
   # post-image script turns it into a small rootfs.ext4, and
@@ -164,6 +185,7 @@ stage_files = [
   "photonvision-raze-leds-tmpfiles",
   "photonvision-raze-hardware-config",
   "photonvision-raze-manage-url",
+  "photonvision-raze-update-health",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
 stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service"]

@@ -35,6 +35,10 @@ imports = [
 
   { path = "base/arm64/photonvision.toml", when = { profile = "full" } },
 
+  # orion-node from Orion's own Gaia layer; the "orion" source is declared in
+  # raze/build.toml.
+  { source = "orion", path = "packaging/gaia/orion-node.toml", when = { target = "raze" } },
+
   { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
   { path = "raze/build.toml", when = { target = "raze" } },
   { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
