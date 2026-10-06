@@ -56,9 +56,6 @@ build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
   ["LIBCAMERA_DRIVER_VERSION", "${input.raze_libcamera_driver_version}"],
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
-  # The fork's photon-core no longer builds photon-targeting natives from
-  # processResources, so build the linuxarm64 ones first.
-  ["PHOTONVISION_PREBUILD", ":photon-targeting:_GROUP_org_photonvision_photontargeting_ID_photontargeting-cpp_CLS-linuxarm64"],
   ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
   ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
 ]

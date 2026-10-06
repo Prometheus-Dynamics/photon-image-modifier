@@ -135,14 +135,14 @@ kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 
 [inputs.raze_photonvision_rev]
-description = "PhotonVision commit built for Raze (branch raze-hardware-config, based on ov9782)"
+description = "PhotonVision commit built for Raze (branch raze-2027: upstream main plus the Raze changes)"
 kind = "string"
-default = "7c3f8ab5b14b8196fcc48830c66f88fbaf8c3042"
+default = "c9548d91ae1bfd3f3ac8410d0b85b6b6649b2f1a"
 
 [inputs.raze_photonvision_version]
 description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
 kind = "string"
-default = "dev-v2026.2.2-10-g7c3f8ab5"
+default = "dev-v2027.0.0-alpha-2-94-gc9548d91"
 
 [inputs.raze_libcamera_driver_repo]
 description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
@@ -150,11 +150,11 @@ kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
 
 [inputs.raze_libcamera_driver_rev]
-description = "photon-libcamera-gl-driver commit built for Raze (branch gaia-build-fix)"
+description = "photon-libcamera-gl-driver commit built for Raze (branch raze-2027: ov9782 plus gaia-build-fix)"
 kind = "string"
-default = "661f90e51a92c2c28608aadf9dd2e041f4c97246"
+default = "057ab3bc58321cfb8a373b29b69ef8b3b2d3d03d"
 
 [inputs.raze_libcamera_driver_version]
 description = "Version string forced into the Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
 kind = "string"
-default = "dev-v2026.0.0-11-g661f90e"
+default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
