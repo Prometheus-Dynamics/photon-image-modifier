@@ -175,6 +175,13 @@ if [ -f "$os_release" ] && [ "$IMAGE_VERSION" != unknown ]; then
 fi
 
 # Scripts staged by the recipe must be executable.
+# The device package reports its commit from /etc/pd-device/device-package.env,
+# which the OS writes (the package cannot know the importing recipe's source).
+if [ "$DEVICE_PACKAGE_COMMIT" != unknown ]; then
+	mkdir -p "$root/etc/pd-device"
+	printf 'PD_DEVICE_PACKAGE_COMMIT=%s\n' "$DEVICE_PACKAGE_COMMIT" >"$root/etc/pd-device/device-package.env"
+fi
+
 # /data (p7 on the A/B layout) holds what an update must keep: PhotonVision's
 # settings and the SSH host keys (data-setup). nofail: a board flashed with an
 # older two-partition layout still boots.
