@@ -9,14 +9,14 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.0.9: fan at normal polarity with a
-# 50 % floor, A/B update writer, hardware watchdog); see GAIA.md for building
-# against a local Atlas checkout.
+# Pinned to a full commit (Raze package 1.0.10: fan at normal polarity with a
+# 70 % floor, LED ring as 24-bit RGB, A/B update writer, hardware watchdog);
+# see GAIA.md for building against a local Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "e12e22d5f384a4b0975c84c7a279b2f723991cc3"
+rev = "f98489fa20f17fc626a3d0977073a71f6f559338"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
