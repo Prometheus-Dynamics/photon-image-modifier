@@ -39,7 +39,7 @@ final `.config` after `olddefconfig` and fails the image step before the long
 `"error"`). Overrides are keyed by symbol and the last layer wins, so a target
 layer turns off a base-layer symbol it cannot have with `"n"`.
 
-The entrypoint requires Gaia 2.1.0 or later (`gaia_version`). Buildroot is
+The entrypoint requires Gaia 2.2.0 or later (`gaia_version`; the Raze A/B disk assembly and update bundle need 2.2). Buildroot is
 pinned to a commit in `build.gaia.lock` (`gaia lock build.toml`).
 
 ## Build Container
