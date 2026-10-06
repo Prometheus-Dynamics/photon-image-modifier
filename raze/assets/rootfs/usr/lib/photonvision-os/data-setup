@@ -1,0 +1,53 @@
+#!/bin/sh
+# Prepare /data, the partition kept across A/B updates (p7), before
+# PhotonVision and sshd start:
+#
+#   - PhotonVision's settings directory lives in /data/photonvision_config
+#     and is bind-mounted over /opt/photonvision/photonvision_config. The
+#     first boot seeds it from the image; the image's hardwareConfig.json is
+#     copied in on every boot, so an update brings the current hardware
+#     defaults (PhotonVision only reads it when its database has none).
+#   - SSH host keys are kept in /data/ssh, so a board keeps its host key
+#     across updates instead of getting a new one per root slot.
+set -eu
+
+log() { echo "data-setup: $*"; }
+
+data=/data
+image_config=/opt/photonvision/photonvision_config
+defaults=/usr/share/photonvision-os/photonvision_config
+
+if ! mountpoint -q "$data"; then
+	log "$data is not mounted; leaving PhotonVision's settings on the root filesystem"
+	exit 0
+fi
+
+# PhotonVision settings.
+mkdir -p "$data/photonvision_config"
+if [ ! -e "$data/photonvision_config/.seeded" ]; then
+	log "seeding $data/photonvision_config from the image"
+	cp -a "$defaults/." "$data/photonvision_config/"
+	: >"$data/photonvision_config/.seeded"
+fi
+cp "$defaults/hardwareConfig.json" "$data/photonvision_config/hardwareConfig.json"
+mkdir -p "$image_config"
+mountpoint -q "$image_config" || mount --bind "$data/photonvision_config" "$image_config"
+
+# SSH host keys: keep the first set this board generated (sshd would only
+# generate them when it starts, after this).
+mkdir -p "$data/ssh"
+chmod 700 "$data/ssh"
+if ! ls "$data"/ssh/ssh_host_*_key >/dev/null 2>&1; then
+	ssh-keygen -A
+fi
+for key in /etc/ssh/ssh_host_*_key; do
+	[ -e "$key" ] || continue
+	name=$(basename "$key")
+	if [ ! -e "$data/ssh/$name" ]; then
+		cp -p "$key" "$key.pub" "$data/ssh/"
+	fi
+done
+for key in "$data"/ssh/ssh_host_*_key; do
+	[ -e "$key" ] || continue
+	cp -p "$key" "$key.pub" /etc/ssh/
+done

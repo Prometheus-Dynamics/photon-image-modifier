@@ -88,6 +88,26 @@ src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.js
 dest = "/opt/photonvision/photonvision_config/hardwareConfig.json"
 origin = "static-asset"
 
+# /data, the partition kept across A/B updates: data-setup seeds PhotonVision's
+# settings there from these defaults and bind-mounts them over
+# /opt/photonvision/photonvision_config, and keeps the SSH host keys.
+[[stage.files]]
+id = "photonvision-raze-hardware-config-default"
+src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.json"
+dest = "/usr/share/photonvision-os/photonvision_config/hardwareConfig.json"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-data-setup"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/data-setup"
+dest = "/usr/lib/photonvision-os/data-setup"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-data-setup-service"
+name = "photonvision-data-setup.service"
+unit_path = "raze/assets/rootfs/photonvision-data-setup.service"
+
 # manage_url for Atlas ("Web UI"): http://<hostname>.local:5800/, written at
 # boot because the hostname is per board.
 [[stage.files]]
@@ -108,7 +128,9 @@ unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
 id = "photonvision-raze-image-env"
 name = "photonvision-image"
 entries = [
-  ["IMAGE_VERSION", "${build.version}"],
+  # The Raze jar's own version (the image's PhotonVision build), the same
+  # VERSION the update bundle carries.
+  ["IMAGE_VERSION", "${input.raze_photonvision_version}"],
   ["IMAGE_NAME", "${build.target}"],
   ["IMAGE_SOURCE", "gaia-buildroot:${build.name}"],
   ["DEVICE_PACKAGE_COMMIT", "${source.atlas.commit}"],
@@ -186,14 +208,16 @@ stage_files = [
   "photonvision-raze-hardware-config",
   "photonvision-raze-manage-url",
   "photonvision-raze-update-health",
+  "photonvision-raze-hardware-config-default",
+  "photonvision-raze-data-setup",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service"]
 
 # Raze is the only target that assembles a bootable disk; a name ending in
 # .img.xz makes Gaia xz-compress it next to sdcard.img.
 [image.output]
-archive_name = "${build.name}-${build.version}.img.xz"
+archive_name = "${build.name}-${input.raze_photonvision_version}.img.xz"
 
 # The OS owns the boot partition: the device package adds raze-device.txt,
 # its overlays and the stock overlays it loads to the tree with id "boot".
@@ -266,13 +290,40 @@ src = "$provider.buildroot_output/images/Image"
 dest = "$assembly.tree.boot/kernel8.img"
 deterministic = true
 
+# p1: autoboot.txt only. The bootloader reads it first: boot A (p2) by
+# default, boot B (p3) once on a tryboot. The device package's update writer
+# rewrites it, keeps its state there (pd-update.env), and reads opt-in SSH keys
+# from pd-device/authorized_keys on it, so p1 is shared by both slots.
+[[image.assembly.trees]]
+id = "autoboot"
+path = "$assembly.work/autoboot"
+
+[[image.assembly.files]]
+tree = "autoboot"
+src = "raze/assets/autoboot.txt"
+dest = "autoboot.txt"
+
+[[image.assembly.filesystems]]
+id = "autoboot"
+kind = "vfat"
+source_tree = "autoboot"
+output = "$assembly.work/autoboot.vfat"
+size = "16M"
+
+# One boot image serves both boot slots: the update writer rewrites root= in
+# the slot it writes (cmdline.txt here says root A, /dev/mmcblk0p5).
 [[image.assembly.filesystems]]
 id = "boot"
 kind = "vfat"
 source_tree = "boot"
 output = "$provider.images/boot.vfat"
-size = "64M"
+size = "128M"
 
+# A/B layout for the device package's update writer (Atlas docs/ota.md):
+# p1 autoboot, p2/p3 boot A/B, p4 extended (added by Gaia), p5/p6 root A/B
+# (2 GiB each), p7 /data (64 MiB here, grown to fill the eMMC on first boot).
+# Slot B ships empty. Unwritten space stays sparse, so the .img.xz stays
+# small.
 [[image.assembly.disks]]
 id = "sdcard"
 output = "$provider.images/sdcard.img"
@@ -282,12 +333,72 @@ first_lba = 2048
 alignment_lba = 2048
 
 [[image.assembly.disks.partitions]]
-name = "boot"
+name = "autoboot"
 type_alias = "fat32-lba"
 bootable = true
-image = "$provider.images/boot.vfat"
+image = "$assembly.work/autoboot.vfat"
+size = "16M"
 
 [[image.assembly.disks.partitions]]
-name = "rootfs"
+name = "boot-a"
+type_alias = "fat32-lba"
+image = "$provider.images/boot.vfat"
+size = "128M"
+
+[[image.assembly.disks.partitions]]
+name = "boot-b"
+type_alias = "fat32-lba"
+image = "$provider.images/boot.vfat"
+size = "128M"
+
+[[image.assembly.disks.partitions]]
+name = "rootfs-a"
 type_alias = "linux"
 image = "$provider.images/rootfs.ext4"
+size = "2G"
+
+[[image.assembly.disks.partitions]]
+name = "rootfs-b"
+type_alias = "linux"
+size = "2G"
+wipe = true
+
+[[image.assembly.disks.partitions]]
+name = "data"
+type_alias = "linux"
+image = "$provider.images/data.ext4"
+
+# Update bundle for running boards (<name>.pdupdate): the two slot images and
+# a manifest the update writer checks (MODEL must match the device package's
+# PD_DEVICE_MODEL; the hashes are of the .zst members).
+[[image.assembly.transforms]]
+kind = "zstd"
+src = "$provider.images/boot.vfat"
+dest = "$assembly.work/boot.vfat.zst"
+
+[[image.assembly.transforms]]
+kind = "zstd"
+src = "$provider.images/rootfs.ext4"
+dest = "$assembly.work/rootfs.ext4.zst"
+
+[[image.assembly.archives]]
+id = "update"
+output = "$provider.images/${build.name}-${input.raze_photonvision_version}.pdupdate"
+
+[[image.assembly.archives.members]]
+name = "manifest.env"
+entries = [
+  ["MODEL", "raze"],
+  ["OS", "photonvision"],
+  ["VERSION", "${input.raze_photonvision_version}"],
+  ["BOOT_SHA256", "${assembly.sha256:$assembly.work/boot.vfat.zst}"],
+  ["ROOTFS_SHA256", "${assembly.sha256:$assembly.work/rootfs.ext4.zst}"],
+]
+
+[[image.assembly.archives.members]]
+name = "boot.vfat.zst"
+src = "$assembly.work/boot.vfat.zst"
+
+[[image.assembly.archives.members]]
+name = "rootfs.ext4.zst"
+src = "$assembly.work/rootfs.ext4.zst"

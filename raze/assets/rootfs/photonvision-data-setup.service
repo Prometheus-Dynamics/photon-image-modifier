@@ -1,0 +1,16 @@
+[Unit]
+Description=Prepare /data (PhotonVision settings, SSH host keys) for this boot
+Documentation=file:/usr/lib/photonvision-os/data-setup
+DefaultDependencies=no
+RequiresMountsFor=/data
+After=local-fs.target grow-rootfs.service
+Before=photonvision.service sshd.service shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/photonvision-os/data-setup
+
+[Install]
+WantedBy=sysinit.target

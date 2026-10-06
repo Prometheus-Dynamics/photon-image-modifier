@@ -175,7 +175,14 @@ if [ -f "$os_release" ] && [ "$IMAGE_VERSION" != unknown ]; then
 fi
 
 # Scripts staged by the recipe must be executable.
-for f in pv-leds-ring manage-url grow-rootfs.sh; do
+# /data (p7 on the A/B layout) holds what an update must keep: PhotonVision's
+# settings and the SSH host keys (data-setup). nofail: a board flashed with an
+# older two-partition layout still boots.
+mkdir -p "$root/data"
+grep -q '[[:space:]]/data[[:space:]]' "$root/etc/fstab" 2>/dev/null ||
+	printf '/dev/mmcblk0p7\t/data\text4\tdefaults,noatime,nofail,x-systemd.device-timeout=10s\t0\t2\n' >>"$root/etc/fstab"
+
+for f in pv-leds-ring manage-url grow-rootfs.sh data-setup; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
 [ -f "$root/etc/pd-device/update-health" ] && chmod 755 "$root/etc/pd-device/update-health"
@@ -222,3 +229,14 @@ while :; do
 done
 rm -f "$tarball"
 log "rootfs.ext4 is ${size} MiB (content needs ${hi} MiB; ${avail} MiB free)"
+
+# The A/B layout puts each root filesystem in a fixed 2 GiB slot.
+[ "$size" -le 2048 ] || die "rootfs.ext4 (${size} MiB) does not fit a 2 GiB root slot"
+
+# An empty /data filesystem for p7; grow-rootfs.service grows it to fill the
+# eMMC on first boot.
+data_image="$BINARIES_DIR/data.ext4"
+rm -f "$data_image"
+truncate -s 64M "$data_image"
+mkfs.ext4 -q -F -b 4096 -O ^64bit -L data "$data_image"
+log "data.ext4 is 64 MiB (grown on first boot)"

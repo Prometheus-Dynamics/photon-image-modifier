@@ -1,7 +1,8 @@
 [Unit]
-Description=Grow the root filesystem to fill the boot disk
+Description=Grow the root filesystem to its slot and /data to fill the boot disk
 Documentation=file:/usr/lib/photonvision-os/grow-rootfs.sh
 DefaultDependencies=no
+RequiresMountsFor=/data
 After=local-fs.target
 Before=sysinit.target photonvision.service shutdown.target
 Conflicts=shutdown.target
@@ -13,7 +14,7 @@ Conflicts=shutdown.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh
+ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh / /data
 
 [Install]
 WantedBy=sysinit.target
