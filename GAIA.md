@@ -70,12 +70,12 @@ on Raze; this repository only adds PhotonVision and the OS around it.
 
 | Import (in order) | When | What it brings |
 | --- | --- | --- |
-| `base/arm64/*.toml` | always | OS base (Buildroot, systemd, OpenJDK), identity, ops |
+| `base/arm64/*.toml` | always | OS base (Buildroot, systemd, OpenJDK; Raze turns OpenJDK off), identity, ops |
 | `platform/raspberry-pi/build.toml` | `full` | NetworkManager, Mesa, Pi tools, Wi-Fi/BT blacklist |
 | `atlas:devices/raze/gaia/device.toml` | `raze` | CM5 defconfig and kernel, OV9782 driver, libcamera/libpisp, `raze-device.txt` and overlays, device services |
 | `atlas:devices/raze/gaia/gpu.toml` | `raze`, `full` | Mesa V3D/VC4 with EGL, GLES and gbm for the libcamera GL driver |
 | `base/arm64/photonvision.toml` | `full` | PhotonVision service and jar install |
-| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, rootfs sizing, module check and first-boot grow, NetworkManager + systemd-resolved |
+| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, the read-only EROFS root and its writable paths, the jlink'd Java runtime, module check and first-boot grow of `/data`, NetworkManager + systemd-resolved |
 | `raze/photonvision.toml` | `raze`, `full` | libcamera GL driver and PhotonVision jar built from the forks |
 
 Layers imported after the device layer override its defaults. The `atlas`
@@ -98,26 +98,88 @@ What stays here:
   of including it.
 - `raze/assets/cmdline.txt`, the boot assembly tree `boot`, and the
   partition layout.
-- The root filesystem is sized to its content: Buildroot makes
-  `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs-ext4.sh` builds
-  a `rootfs.ext4` with 128 MiB free (PhotonVision unpacks its natives on
-  first start). On every boot `grow-rootfs.service` grows the partition and
-  filesystem to fill the eMMC if they do not already; PhotonVision starts
-  after it. The same script checks that every kernel module of the kernel
-  build ships (Buildroot ignores a failed `modules_install`, which once left
-  58 of 1898 modules in the image), reruns depmod, and writes
-  `/opt/photonvision/image-metadata.json` from the
-  `photonvision-image` env set.
+- The root filesystem is a read-only, LZMA-compressed EROFS image
+  (`rootfs.erofs`) in a 512 MiB slot; see "Read-only root" below. Buildroot
+  makes `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs.sh` turns
+  it into `rootfs.erofs` and an empty `data.ext4`, failing the build if the
+  root does not fit its slot. The same script checks that every kernel
+  module of the kernel build ships (Buildroot ignores a failed
+  `modules_install`, which once left 58 of 1898 modules in the image),
+  reruns depmod, writes `/opt/photonvision/image-metadata.json` from the
+  `photonvision-image` env set, and packs PhotonVision's jar
+  (`pack-photonvision-jar.py`, below). On every boot `grow-rootfs.service`
+  grows `/data` (p7) to fill the eMMC if it does not already; PhotonVision
+  starts after it.
   The flashable output is `output/gaia/photonvision-full-raze/images/<build>-<version>.img.xz`
   (also `sdcard.img`); Atlas flashes either.
-- The hostname stays `photonvision` (`/etc/hostname`); the device default
+- The hostname stays `photonvision` (`/etc/hostname`, a link to
+  `/data/etc/hostname` seeded from the image); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
 - mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved
   (`connection.mdns=2` from the device package), which also advertises
   `_pd-device._tcp`. Do not add avahi. `BR2_SYSTEM_DHCP` is cleared and
   `raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset`
-  disables systemd-networkd (and CUPS, an OpenJDK build dependency), so
-  NetworkManager is the only network manager.
+  disables systemd-networkd, so NetworkManager is the only network manager.
+
+### Read-only root
+
+The root slots hold EROFS (`rootfstype=erofs ro` in `cmdline.txt`; the
+kernel support comes from the device package, 1.5.0 or later). Nothing
+writes to `/` at run time. `photonvision-data-early.service` runs before
+`local-fs.target`, after `/data` (p7, mounted with
+`x-systemd.before=local-fs.target`) and makes the writable places:
+
+| Written at run time | Where it goes | How |
+| --- | --- | --- |
+| `/var` (NetworkManager leases and `secret_key`, Orion's `/var/lib/orion`, systemd timers, random seed, timesync) | `/data/var` | bind-mounted by data-early; each boot copies in what the image's `/var` has and `/data/var` lacks (`BR2_INIT_SYSTEMD_VAR_NONE`) |
+| static hostname (PhotonVision runs `hostnamectl set-hostname` and writes `/etc/hostname`) | `/data/etc/hostname` | `/etc/hostname` links there; systemd-hostnamed writes it through `SYSTEMD_ETC_HOSTNAME`; data-early seeds it from `/usr/share/photonvision-os/hostname` and sets the kernel hostname; os-release `DEFAULT_HOSTNAME` covers early boot |
+| NetworkManager profiles (`nmcli`, PhotonVision's DHCP/static settings) | `/data/NetworkManager/system-connections` | `keyfile.path` in `/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf` |
+| SSH host keys | `/data/ssh` | `HostKey` lines in `/etc/ssh/sshd_config.d/40-photonvision-os.conf`, generated once by data-setup; `ssh-keygen -A` is removed from `sshd.service`; `sshd_config` gets `Include /etc/ssh/sshd_config.d/*.conf` first (the device package's authorized keys in `/run` need it too) |
+| PhotonVision settings, database, logs, snapshots | `/data/photonvision_config` | bind-mounted over `/opt/photonvision/photonvision_config` by data-setup |
+| PhotonVision's WPILib/OpenCV natives | nowhere | unpacked into the image at build time (`/usr/lib/photonvision/wpilib`, linked from `/root/.wpilib`); the loader finds them with the right MD5s and writes nothing |
+| sqlite-jdbc, diozero, JNA native unpacking, uploads | `/tmp` (tmpfs) | `-Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna` in `photonvision.service.d/20-read-only-root.conf` |
+| `/etc/machine-id` | transient | the image ships it empty: systemd generates one per boot and mounts it over the file (not a first boot) |
+| journal | RAM | `Storage=volatile`, 32 MiB (`journald.conf.d/40-photonvision-os.conf`); PhotonVision's own logs persist on `/data` |
+| `manage-url` for Atlas | `/run/pd-device/manage-url` | `/etc/pd-device/manage-url` links there |
+| `systemd-update-done` stamps | in the image | `/etc/.updated` and `/var/.updated` are written at build time, so `ConditionNeedsUpdate=` units do not run every boot |
+
+If `/data` does not mount, data-early mounts a tmpfs there: the board boots
+and works, but keeps nothing across a reboot. PhotonVision's offline update
+(uploading a jar in the UI) cannot replace the jar on a read-only root;
+updates go through the device package's A/B updater.
+
+### Java runtime
+
+Raze does not build OpenJDK. The `photonvision-jre` package
+(`raze/assets/buildroot/external/package/photonvision-jre`, a `BR2_EXTERNAL`
+tree listed after the device package's in `raze/build.toml`) downloads
+Eclipse Temurin 25.0.4.1+1's prebuilt aarch64 jmods and the host JDK of the
+same release (pinned by sha256), runs `jlink`, strips the natives with the
+target toolchain, and installs the runtime to `/usr/lib/jvm`
+(`/usr/bin/java`). The modules, from `jdeps --print-module-deps` on the jar
+plus a margin, are listed and explained in `photonvision-jre.mk`:
+
+```
+java.base java.desktop java.instrument java.logging java.management
+java.naming java.security.jgss java.sql jdk.unsupported jdk.zipfs
+jdk.management jdk.net jdk.crypto.ec
+```
+
+The module image is not compressed by jlink (`--compress=zip-0`): EROFS's
+LZMA packs it smaller than zip-9 does (the runtime takes about 20 MiB of the
+image against 34 MiB, 89 MiB unpacked), and classes load without inflating.
+
+### PhotonVision jar
+
+The jar artifact is PhotonVision's normal linuxarm64 shadow jar. The image's
+copy is packed by `raze/assets/buildroot/pack-photonvision-jar.py`: natives
+for other platforms (sqlite-jdbc, JNA, diozero), the RKNN and TFLite object
+detection backends and models (PhotonVision loads them only on RK3588 and
+QCS6490), and the web UI's source maps are dropped; the natives are unpacked
+and stripped into the image; every entry is stored uncompressed for the
+filesystem's LZMA. The bundled offline docs stay: they are the largest part
+of the jar (about 59 MB, mostly PNG screenshots and MP4 clips that do not
+compress further).
 
 ### Atlas pin and local development
 
@@ -164,8 +226,8 @@ are commits in the forks, not patches applied by this repository.
 The pinned revs are the `raze-2027` branches of the forks: PhotonVision on
 upstream main (2027, WPILib 2027 alpha, Java 25) with the Raze changes, and
 the driver with the OV9782 and Buildroot cross-build changes, built against
-the device package's libcamera 0.7. The image runs them on Buildroot's
-OpenJDK 25 (`BR2_PACKAGE_OPENJDK_VERSION_25` in `base/arm64/base-os.toml`).
+the device package's libcamera 0.7. The image runs them on the jlink'd
+Temurin 25 runtime described above.
 
 To bump a fork, take the new commit and its describe string:
 
