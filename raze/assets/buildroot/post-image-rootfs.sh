@@ -207,9 +207,15 @@ fi
 # written at run time (data-early, data-setup). It is mounted before
 # local-fs.target, so before the device package's services; nofail: if it is
 # missing, data-early puts a tmpfs there and the board still boots.
+# The root line stays "ro" (Buildroot writes it so without
+# BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW; enforced here so systemd-remount-fs
+# never tries rw on EROFS).
 mkdir -p "$root/data"
-grep -q '[[:space:]]/data[[:space:]]' "$root/etc/fstab" 2>/dev/null ||
-	printf '/dev/mmcblk0p7\t/data\text4\tdefaults,noatime,nofail,x-systemd.device-timeout=10s,x-systemd.before=local-fs.target\t0\t2\n' >>"$root/etc/fstab"
+touch "$root/etc/fstab"
+sed -i -e '/[[:space:]]\/data[[:space:]]/d' \
+	-e 's|^\(/dev/root[[:space:]][[:space:]]*/[[:space:]][[:space:]]*[^[:space:]]*[[:space:]][[:space:]]*\)rw|\1ro|' \
+	"$root/etc/fstab"
+printf '/dev/mmcblk0p7\t/data\text4\tdefaults,noatime,nofail,x-systemd.device-timeout=10s,x-systemd.before=local-fs.target\t0\t2\n' >>"$root/etc/fstab"
 
 for f in pv-leds-ring manage-url grow-rootfs.sh data-setup data-early; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
