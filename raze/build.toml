@@ -9,15 +9,16 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.4.0: Buildroot 2026.08, kernel
-# rpi-7.2.y, firmware 1.20260915, libcamera v0.7.2+rpt20260817 and libpisp
-# v1.7.0, vcgencmd from rpi-utils); see GAIA.md for building against a local
-# Atlas checkout.
+# Pinned to a full commit (Raze package 1.5.0: Buildroot 2026.08, kernel
+# rpi-7.2.y with built-in EROFS and the Raze trims, firmware 1.20260915,
+# libcamera v0.7.2+rpt20260817 and libpisp v1.7.0, no udev hwdb, read-only
+# root safe services); see GAIA.md for building against a local Atlas
+# checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "696d3ad320b54456187cefa3f5a2647438115056"
+rev = "695d172fd943da1b6e2bc570a7b5e89d11b1a444"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -40,14 +41,14 @@ src = "raze/assets/rootfs/usr/lib/photonvision-os/grow-rootfs.sh"
 dest = "/usr/lib/photonvision-os/grow-rootfs.sh"
 origin = "static-asset"
 
-# The image ships a small root partition (quick to download and flash); this
-# grows it and its filesystem to fill the eMMC on first boot.
+# The root is a read-only EROFS image in a fixed 512 MiB slot; this grows
+# /data (p7) and its filesystem to fill the eMMC on first boot.
 [[stage.services]]
 id = "photonvision-raze-grow-rootfs-service"
 name = "grow-rootfs.service"
 unit_path = "raze/assets/rootfs/grow-rootfs.service"
 
-# PhotonVision waits for the grow (it writes its natives on first start).
+# PhotonVision waits for the grow (it writes its settings and logs to /data).
 [[stage.files]]
 id = "photonvision-raze-photonvision-grow-rootfs-dropin"
 src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
@@ -84,15 +85,6 @@ id = "photonvision-raze-leds-service"
 name = "photonvision-leds.service"
 unit_path = "raze/assets/rootfs/photonvision-leds.service"
 
-# PhotonVision's natives are unpacked into the image at build time (the
-# post-image script, pack-photonvision-jar.py); libraries that unpack their
-# own (sqlite-jdbc, diozero, JNA) use /tmp.
-[[stage.files]]
-id = "photonvision-raze-photonvision-read-only-dropin"
-src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
-dest = "/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
-origin = "static-asset"
-
 [[stage.files]]
 id = "photonvision-raze-hardware-config"
 src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.json"
@@ -119,6 +111,60 @@ id = "photonvision-raze-data-setup-service"
 name = "photonvision-data-setup.service"
 unit_path = "raze/assets/rootfs/photonvision-data-setup.service"
 
+# The read-only (EROFS) root: everything written at run time goes to /data or
+# /run. data-early (before local-fs.target) mounts /data/var on /var (a tmpfs
+# on /data if p7 is missing), seeds and applies the static hostname kept in
+# /data/etc/hostname, and makes the NetworkManager and SSH directories. The
+# drop-ins point hostnamed, NetworkManager, sshd, journald and PhotonVision
+# at those places. The post-image script makes the links in /etc and packs
+# PhotonVision's jar (see its "Read-only root" section for the full list).
+[[stage.files]]
+id = "photonvision-raze-data-early"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/data-early"
+dest = "/usr/lib/photonvision-os/data-early"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-data-early-service"
+name = "photonvision-data-early.service"
+unit_path = "raze/assets/rootfs/photonvision-data-early.service"
+
+[[stage.files]]
+id = "photonvision-raze-hostnamed-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/systemd-hostnamed.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/systemd-hostnamed.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-networkmanager-conf"
+src = "raze/assets/rootfs/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-sshd-config"
+src = "raze/assets/rootfs/etc/ssh/sshd_config.d/40-photonvision-os.conf"
+dest = "/etc/ssh/sshd_config.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-sshd-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/sshd.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/sshd.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-journald-conf"
+src = "raze/assets/rootfs/usr/lib/systemd/journald.conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/journald.conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-photonvision-read-only-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+origin = "static-asset"
+
 # manage_url for Atlas ("Web UI"): http://<hostname>.local:5800/, written at
 # boot because the hostname is per board.
 [[stage.files]]
@@ -133,7 +179,7 @@ name = "photonvision-manage-url.service"
 unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
 
 # Image identity for /opt/photonvision/image-metadata.json,
-# which raze/assets/buildroot/post-image-rootfs-ext4.sh writes from this file
+# which raze/assets/buildroot/post-image-rootfs.sh writes from this file
 # (PhotonVision's OsImageData reads it).
 [[stage.env_sets]]
 id = "photonvision-raze-image-env"
@@ -184,22 +230,29 @@ config_overrides = [
   # exist with it, and Gaia's override check would report it as dropped.
   ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
   # The boot partition and sdcard.img are built by the assembly below. The
-  # post-image script builds rootfs.ext4 from rootfs.tar sized to its content
-  # plus 128 MiB free, after checking the kernel modules and writing the
-  # PhotonVision image-metadata.json (see the script).
-  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs-ext4.sh\""],
+  # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
+  # checking the kernel modules, writing the PhotonVision image-metadata.json,
+  # packing PhotonVision's jar and pointing run-time writes at /data or /run
+  # (see the script).
+  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs.sh\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
   # orion-node runs as the orion user; the image has no systemd-sysusers to
   # create it at boot, so it comes from Orion's own users table.
   ["BR2_ROOTFS_USERS_TABLES", "\"${source.orion.path}/packaging/buildroot/orion-users.table\""],
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
-  # post-image script turns it into a small rootfs.ext4, and
-  # grow-rootfs.service fills the eMMC on first boot.
+  # post-image script turns it into rootfs.erofs (host erofs-utils, LZMA) and
+  # makes data.ext4 (host e2fsprogs).
   ["BR2_TARGET_ROOTFS_EXT2", "n"],
   ["BR2_TARGET_ROOTFS_TAR", "y"],
   ["BR2_TARGET_ROOTFS_TAR_NONE", "y"],
   ["BR2_PACKAGE_HOST_E2FSPROGS", "y"],
+  ["BR2_PACKAGE_HOST_EROFS_UTILS", "y"],
+  # The root stays read-only (fstab "ro", cmdline "rootfstype=erofs ro"), and
+  # /var is left alone by Buildroot: data-early bind-mounts /data/var on it,
+  # seeded from the image's /var.
+  ["BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW", "n"],
+  ["BR2_INIT_SYSTEMD_VAR_NONE", "y"],
   # Java: a jlink'd runtime from Temurin's prebuilt aarch64 jmods
   # (raze/assets/buildroot/external/package/photonvision-jre) instead of
   # compiling OpenJDK, which was the longest step of a clean build and
@@ -227,6 +280,18 @@ name = "sdcard.img"
 format = "raw"
 required = true
 
+# The root filesystem is rootfs.erofs (post-image script), not the base
+# layer's rootfs.ext4.
+[[image.expected_images]]
+name = "rootfs.ext4"
+format = "ext4"
+required = false
+
+[[image.expected_images]]
+name = "rootfs.erofs"
+format = "erofs"
+required = true
+
 [image.feed]
 stage_files = [
   "photonvision-raze-config",
@@ -242,10 +307,16 @@ stage_files = [
   "photonvision-raze-update-pre-reboot",
   "photonvision-raze-hardware-config-default",
   "photonvision-raze-data-setup",
+  "photonvision-raze-data-early",
+  "photonvision-raze-hostnamed-dropin",
+  "photonvision-raze-networkmanager-conf",
+  "photonvision-raze-sshd-config",
+  "photonvision-raze-sshd-dropin",
+  "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
 
 # Raze is the only target that assembles a bootable disk; a name ending in
 # .img.xz makes Gaia xz-compress it next to sdcard.img.
@@ -354,7 +425,9 @@ size = "128M"
 
 # A/B layout for the device package's update writer (Atlas docs/ota.md):
 # p1 autoboot, p2/p3 boot A/B, p4 extended (added by Gaia), p5/p6 root A/B
-# (2 GiB each), p7 /data (64 MiB here, grown to fill the eMMC on first boot).
+# (512 MiB each, read-only EROFS; the post-image script fails a root image
+# that does not fit), p7 /data (64 MiB here, grown to fill the eMMC on first
+# boot).
 # Slot B ships empty. Unwritten space stays sparse, so the .img.xz stays
 # small.
 [[image.assembly.disks]]
@@ -387,13 +460,13 @@ size = "128M"
 [[image.assembly.disks.partitions]]
 name = "rootfs-a"
 type_alias = "linux"
-image = "$provider.images/rootfs.ext4"
-size = "2G"
+image = "$provider.images/rootfs.erofs"
+size = "512M"
 
 [[image.assembly.disks.partitions]]
 name = "rootfs-b"
 type_alias = "linux"
-size = "2G"
+size = "512M"
 wipe = true
 
 [[image.assembly.disks.partitions]]

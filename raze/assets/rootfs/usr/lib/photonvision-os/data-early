@@ -1,0 +1,54 @@
+#!/bin/sh
+# Make the writable parts of a read-only (EROFS) root available, early in
+# boot: after /data is mounted (or has failed to mount) and before
+# local-fs.target, so every ordinary service sees them.
+#
+#   /data             p7, ext4, kept across A/B updates. If it did not mount
+#                     (missing or damaged partition), a tmpfs takes its place
+#                     so the board still boots and works, without keeping
+#                     anything across a reboot.
+#   /var              bind mount of /data/var. Each boot copies in whatever
+#                     the image's /var has that /data/var lacks (new packages
+#                     after an update), never overwriting what is there.
+#   /data/etc/hostname
+#                     the static hostname (/etc/hostname links here;
+#                     systemd-hostnamed writes it through
+#                     SYSTEMD_ETC_HOSTNAME). Seeded from the image default and
+#                     applied to the kernel here, since PID 1 found the link
+#                     dangling and used os-release's DEFAULT_HOSTNAME.
+#   /data/NetworkManager/system-connections
+#                     NetworkManager's keyfile directory (nmcli, PhotonVision's
+#                     static IP settings).
+#   /data/ssh         SSH host keys (data-setup creates them).
+set -eu
+
+log() { echo "data-early: $*"; }
+
+data=/data
+
+if ! mountpoint -q "$data"; then
+	log "warning: $data is not mounted; using a tmpfs, so settings will not survive a reboot"
+	mount -t tmpfs -o mode=0755,nosuid,nodev,size=25% tmpfs "$data"
+fi
+
+mkdir -p "$data/var" "$data/etc" "$data/ssh" "$data/NetworkManager/system-connections"
+chmod 0755 "$data/var" "$data/etc"
+chmod 0700 "$data/ssh" "$data/NetworkManager/system-connections"
+
+# /var: fill in what is missing, then mount it over the image's copy.
+if ! mountpoint -q /var; then
+	# -n keeps existing files; newer GNU cp exits non-zero when it skipped
+	# any, which is the normal case here.
+	cp -a -n /var/. "$data/var/" 2>/dev/null || true
+	mount --bind "$data/var" /var
+fi
+
+# Static hostname.
+if [ ! -s "$data/etc/hostname" ]; then
+	cp /usr/share/photonvision-os/hostname "$data/etc/hostname"
+fi
+name=$(tr -d ' \t\r\n' <"$data/etc/hostname")
+if [ -n "$name" ] && [ "$name" != "$(cat /proc/sys/kernel/hostname)" ]; then
+	printf '%s' "$name" >/proc/sys/kernel/hostname
+	log "hostname $name"
+fi

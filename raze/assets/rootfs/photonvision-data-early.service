@@ -1,0 +1,18 @@
+[Unit]
+Description=Writable state on /data for the read-only root (/var, hostname, network settings)
+Documentation=file:/usr/lib/photonvision-os/data-early
+DefaultDependencies=no
+After=data.mount systemd-remount-fs.service
+Wants=data.mount
+Before=local-fs.target shutdown.target
+Before=systemd-tmpfiles-setup.service systemd-journal-flush.service systemd-hostnamed.service
+Before=pd-device-hostname.service pd-device-ssh-keys.service pd-device-usb-gadget.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/photonvision-os/data-early
+
+[Install]
+WantedBy=local-fs.target

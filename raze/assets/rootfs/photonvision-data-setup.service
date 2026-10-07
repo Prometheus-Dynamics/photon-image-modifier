@@ -2,8 +2,8 @@
 Description=Prepare /data (PhotonVision settings, SSH host keys) for this boot
 Documentation=file:/usr/lib/photonvision-os/data-setup
 DefaultDependencies=no
-RequiresMountsFor=/data
-After=local-fs.target grow-rootfs.service
+Requires=photonvision-data-early.service
+After=local-fs.target photonvision-data-early.service grow-rootfs.service
 Before=photonvision.service sshd.service shutdown.target
 Conflicts=shutdown.target
 

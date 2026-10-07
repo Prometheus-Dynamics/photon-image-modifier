@@ -1,12 +1,14 @@
 [Unit]
-Description=Grow the root filesystem to its slot and /data to fill the boot disk
+Description=Grow /data to fill the boot disk
 Documentation=file:/usr/lib/photonvision-os/grow-rootfs.sh
 DefaultDependencies=no
 RequiresMountsFor=/data
-After=local-fs.target
+After=local-fs.target photonvision-data-early.service
 Before=sysinit.target photonvision.service shutdown.target
 Conflicts=shutdown.target
 
+# The root filesystem is read-only EROFS in a fixed 512 MiB slot and is never
+# grown; /data (p7, the last partition) is grown to the end of the eMMC.
 # Runs on every boot: the script is idempotent and only does work while the
 # partition or the filesystem is short of the disk, so a grow that could not
 # finish on one boot (e.g. the kernel kept the old partition size) completes
@@ -14,7 +16,7 @@ Conflicts=shutdown.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh / /data
+ExecStart=/usr/lib/photonvision-os/grow-rootfs.sh /data
 
 [Install]
 WantedBy=sysinit.target

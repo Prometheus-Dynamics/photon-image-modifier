@@ -2,11 +2,11 @@
 # Grow filesystems to fill their partitions, and the last partition to fill
 # the boot disk: grow-rootfs.sh [<mountpoint>...] (default /).
 #
-# On the A/B layout the root slots (p5/p6) have a fixed size and the image's
-# root filesystem is smaller, so the root filesystem is grown to its slot;
-# /data (p7, the last partition) is grown to the end of the eMMC. A logical
-# partition can only grow inside its extended partition, so that (p4) is
-# grown first.
+# On the A/B layout the root slots (p5/p6) hold a read-only EROFS image of a
+# fixed size, which this skips (it only grows ext2/3/4); grow-rootfs.service
+# passes /data (p7, the last partition), which is grown to the end of the
+# eMMC. A logical partition can only grow inside its extended partition, so
+# that (p4) is grown first.
 #
 # Two independent steps per mountpoint, both idempotent, run on every boot:
 #
