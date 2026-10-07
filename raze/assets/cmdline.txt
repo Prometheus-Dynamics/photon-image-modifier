@@ -1,1 +1,1 @@
-console=serial0,115200 console=tty1 root=/dev/mmcblk0p5 rootfstype=erofs ro rootwait quiet splash systemd.unified_cgroup_hierarchy=1
+console=serial0,115200 console=tty1 root=/dev/mmcblk0p5 rootfstype=erofs ro rootwait panic=5 quiet splash systemd.unified_cgroup_hierarchy=1
