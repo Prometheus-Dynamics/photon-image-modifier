@@ -196,6 +196,7 @@ for f in pv-leds-ring manage-url grow-rootfs.sh data-setup; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
 [ -f "$root/etc/pd-device/update-health" ] && chmod 755 "$root/etc/pd-device/update-health"
+[ -f "$root/etc/pd-device/update.d/pre-reboot" ] && chmod 755 "$root/etc/pd-device/update.d/pre-reboot"
 
 # --- Filesystem -------------------------------------------------------------
 

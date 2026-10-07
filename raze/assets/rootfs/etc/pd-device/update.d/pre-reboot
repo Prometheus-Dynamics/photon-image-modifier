@@ -1,0 +1,5 @@
+#!/bin/sh
+# Device package updater hook, run by `update apply` before the trial reboot:
+# stop PhotonVision cleanly so it flushes its settings database to /data.
+# A failure keeps the update staged and the board running.
+systemctl stop photonvision.service

@@ -9,7 +9,7 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.1.1: Buildroot 2026.08, kernel
+# Pinned to a full commit (Raze package 1.4.0: Buildroot 2026.08, kernel
 # rpi-7.2.y, firmware 1.20260915, libcamera v0.7.2+rpt20260817 and libpisp
 # v1.7.0, vcgencmd from rpi-utils); see GAIA.md for building against a local
 # Atlas checkout.
@@ -17,7 +17,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "c881c60fb03e977c42948a4dd898d032f55d3d92"
+rev = "696d3ad320b54456187cefa3f5a2647438115056"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -138,12 +138,20 @@ entries = [
   ["ORION_COMMIT", "${source.orion.commit}"],
 ]
 
-# Health check for the device package's A/B updater: a trial boot is kept only
-# when PhotonVision is running and its web server answers.
+# The device package's A/B updater takes the same .img.xz that is flashed: it
+# copies boot A and root A from the image into the inactive slot. The image
+# supplies a health check (a trial boot is kept only when PhotonVision runs and
+# its web server answers) and a pre-reboot hook that stops PhotonVision cleanly.
 [[stage.files]]
 id = "photonvision-raze-update-health"
 src = "raze/assets/rootfs/etc/pd-device/update-health"
 dest = "/etc/pd-device/update-health"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-update-pre-reboot"
+src = "raze/assets/rootfs/etc/pd-device/update.d/pre-reboot"
+dest = "/etc/pd-device/update.d/pre-reboot"
 origin = "static-asset"
 
 [[stage.files]]
@@ -209,6 +217,7 @@ stage_files = [
   "photonvision-raze-hardware-config",
   "photonvision-raze-manage-url",
   "photonvision-raze-update-health",
+  "photonvision-raze-update-pre-reboot",
   "photonvision-raze-hardware-config-default",
   "photonvision-raze-data-setup",
 ]
@@ -368,38 +377,3 @@ wipe = true
 name = "data"
 type_alias = "linux"
 image = "$provider.images/data.ext4"
-
-# Update bundle for running boards (<name>.pdupdate): the two slot images and
-# a manifest the update writer checks (MODEL must match the device package's
-# PD_DEVICE_MODEL; the hashes are of the .zst members).
-[[image.assembly.transforms]]
-kind = "zstd"
-src = "$provider.images/boot.vfat"
-dest = "$assembly.work/boot.vfat.zst"
-
-[[image.assembly.transforms]]
-kind = "zstd"
-src = "$provider.images/rootfs.ext4"
-dest = "$assembly.work/rootfs.ext4.zst"
-
-[[image.assembly.archives]]
-id = "update"
-output = "$provider.images/${build.name}-${input.raze_photonvision_version}.pdupdate"
-
-[[image.assembly.archives.members]]
-name = "manifest.env"
-entries = [
-  ["MODEL", "raze"],
-  ["OS", "photonvision"],
-  ["VERSION", "${input.raze_photonvision_version}+${project.describe}"],
-  ["BOOT_SHA256", "${assembly.sha256:$assembly.work/boot.vfat.zst}"],
-  ["ROOTFS_SHA256", "${assembly.sha256:$assembly.work/rootfs.ext4.zst}"],
-]
-
-[[image.assembly.archives.members]]
-name = "boot.vfat.zst"
-src = "$assembly.work/boot.vfat.zst"
-
-[[image.assembly.archives.members]]
-name = "rootfs.ext4.zst"
-src = "$assembly.work/rootfs.ext4.zst"
