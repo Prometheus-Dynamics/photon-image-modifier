@@ -84,6 +84,15 @@ id = "photonvision-raze-leds-service"
 name = "photonvision-leds.service"
 unit_path = "raze/assets/rootfs/photonvision-leds.service"
 
+# PhotonVision's natives are unpacked into the image at build time (the
+# post-image script, pack-photonvision-jar.py); libraries that unpack their
+# own (sqlite-jdbc, diozero, JNA) use /tmp.
+[[stage.files]]
+id = "photonvision-raze-photonvision-read-only-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+origin = "static-asset"
+
 [[stage.files]]
 id = "photonvision-raze-hardware-config"
 src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.json"
@@ -233,6 +242,7 @@ stage_files = [
   "photonvision-raze-update-pre-reboot",
   "photonvision-raze-hardware-config-default",
   "photonvision-raze-data-setup",
+  "photonvision-raze-photonvision-read-only-dropin",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
 stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service"]

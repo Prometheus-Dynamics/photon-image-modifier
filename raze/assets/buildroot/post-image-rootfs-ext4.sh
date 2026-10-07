@@ -18,10 +18,15 @@
 # - /opt/photonvision/image-metadata.json (read by PhotonVision's OsImageData)
 #   is written from /etc/default/photonvision-image.env (a Gaia env set in
 #   raze/build.toml).
+# - PhotonVision's jar is packed by pack-photonvision-jar.py: natives for
+#   other platforms and the RKNN/TFLite backends dropped, its WPILib/OpenCV
+#   natives unpacked into /usr/lib/photonvision/wpilib (linked from
+#   /root/.wpilib, where its native loader looks, so it writes nothing on
+#   start), entries stored uncompressed.
 #
 # The filesystem is sized to its content plus real free space (headroom_mib,
-# not counting the root-reserved blocks): PhotonVision writes its WPILib
-# natives and settings on first start, and must not depend on
+# not counting the root-reserved blocks): PhotonVision writes its settings
+# on first start, and must not depend on
 # grow-rootfs.service having grown the filesystem first. The disk assembly
 # sizes the root partition from this file; the unused blocks are zeros, so
 # the .img.xz download barely grows.
@@ -66,6 +71,15 @@ br2_config_value() {
 	sed -n "s/^$1=\"\{0,1\}\([^\"]*\)\"\{0,1\}\$/\1/p" "$BR2_CONFIG"
 }
 
+# The target toolchain's tool prefix, e.g. $HOST_DIR/bin/aarch64-linux-.
+cross_prefix() {
+	_arch=$(br2_config_value BR2_ARCH)
+	_prefix=$(br2_config_value BR2_TOOLCHAIN_EXTERNAL_PREFIX | sed "s/\$(ARCH)/$_arch/")
+	[ -n "$_prefix" ] || _prefix="$_arch-buildroot-linux-gnu"
+	[ -x "$HOST_DIR/bin/$_prefix-gcc" ] || die "no cross compiler $HOST_DIR/bin/$_prefix-gcc"
+	echo "$HOST_DIR/bin/$_prefix-"
+}
+
 # --- Kernel modules ---------------------------------------------------------
 
 linux_dir=
@@ -105,9 +119,7 @@ if [ -n "$linux_dir" ] && grep -q '^CONFIG_MODULES=y' "$linux_dir/.config"; then
 		x86_64 | i?86) karch=x86 ;;
 		*) karch=$arch ;;
 		esac
-		prefix=$(br2_config_value BR2_TOOLCHAIN_EXTERNAL_PREFIX | sed "s/\$(ARCH)/$arch/")
-		[ -n "$prefix" ] || die "cannot work out the cross compiler prefix from $BR2_CONFIG"
-		make -C "$linux_dir" ARCH="$karch" CROSS_COMPILE="$HOST_DIR/bin/$prefix-" \
+		make -C "$linux_dir" ARCH="$karch" CROSS_COMPILE="$(cross_prefix)" \
 			INSTALL_MOD_PATH="$root" INSTALL_MOD_STRIP=1 \
 			DEPMOD="$HOST_DIR/sbin/depmod" modules_install >"$work/modules_install.log" 2>&1 ||
 			{
@@ -197,6 +209,22 @@ for f in pv-leds-ring manage-url grow-rootfs.sh data-setup; do
 done
 [ -f "$root/etc/pd-device/update-health" ] && chmod 755 "$root/etc/pd-device/update-health"
 [ -f "$root/etc/pd-device/update.d/pre-reboot" ] && chmod 755 "$root/etc/pd-device/update.d/pre-reboot"
+
+# --- PhotonVision jar ------------------------------------------------------
+
+jar="$root/opt/photonvision/photonvision.jar"
+if [ -f "$jar" ]; then
+	python3 "$(dirname "$0")/pack-photonvision-jar.py" --jar "$jar" \
+		--nativecache "$root/usr/lib/photonvision/wpilib/nativecache" \
+		--strip "$(cross_prefix)strip" || die "packing $jar failed"
+	chmod 644 "$jar"
+	# The service runs as root: its native loader looks in
+	# /root/.wpilib/nativecache.
+	rm -rf "$root/root/.wpilib"
+	ln -s /usr/lib/photonvision/wpilib "$root/root/.wpilib"
+else
+	log "warning: no $jar (base-os profile?); skipping the jar"
+fi
 
 # --- Filesystem -------------------------------------------------------------
 
