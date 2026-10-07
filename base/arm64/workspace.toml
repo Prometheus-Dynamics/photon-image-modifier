@@ -25,6 +25,14 @@ retry_backoff_ms = 0
 retry_backoff_strategy = "fixed"
 timeout_seconds = 1800
 
+# orion-node is a cargo build inside Docker (toolchain download on first use);
+# on a busy disk the default 300 s is not enough.
+[providers.rust]
+retry_attempts = 1
+retry_backoff_ms = 0
+retry_backoff_strategy = "fixed"
+timeout_seconds = 3600
+
 [providers.java]
 retry_attempts = 1
 retry_backoff_ms = 0
