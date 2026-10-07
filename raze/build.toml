@@ -68,7 +68,10 @@ origin = "static-asset"
 # status RGB pins (101-103) and vision LED (pin 13) to custom GPIO commands
 # that only write the pin state to /run/photonvision-os; pv-leds-ring turns
 # that into ring colours through the device package's raze-leds helper,
-# calling it only when the look changes.
+# calling it only when the look changes. The status colours follow
+# PhotonVision's LED brightness slider, read from its settings database with
+# the sqlite3 CLI (BR2_PACKAGE_SQLITE in base/arm64/base-os.toml installs it)
+# whenever the database changes.
 [[stage.files]]
 id = "photonvision-raze-pv-leds-ring"
 src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds-ring"

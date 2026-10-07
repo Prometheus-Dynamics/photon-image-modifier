@@ -13,13 +13,18 @@
 #     blue = targets visible, blinking green = connected, no targets,
 #     blinking blue = no NetworkTables, targets visible,
 #     blinking yellow = no NetworkTables, no targets, blinking red = error.
+# The status colours follow PhotonVision's LED brightness slider: PhotonVision
+# only drives the vision LED with it, but saves it to its settings database
+# (hardwareSettings.ledBrightnessPercentage), which is re-read whenever the
+# database file changes.
 set -u
 
 LEDS=${PV_LEDS_HELPER:-/usr/lib/pd-device/raze-leds}
 STATE=${PV_LEDS_STATE:-/run/photonvision-os}
 TICK=0.15
 WINDOW=4 # samples kept per channel, to tell steady from blinking
-PV_LEDS_STATUS_DIM=40
+PV_LEDS_STATUS_DIM=40 # used until PhotonVision's saved brightness is known
+PV_SETTINGS_DB=/opt/photonvision/photonvision_config/photon.sqlite
 # shellcheck source=/dev/null
 [ -r /etc/default/pv-leds ] && . /etc/default/pv-leds
 
@@ -52,6 +57,23 @@ percent() { # 0.0-1.0 or true -> $pct (integer 0-100), builtins only
 	((pct > 100)) && pct=100
 }
 
+# The slider value, refreshed only when the settings database is newer than
+# our stamp (a builtin test, so no fork per tick).
+DB_STAMP=$STATE/.settings-read
+status_dim=$PV_LEDS_STATUS_DIM
+refresh_dim() {
+	[ -r "$PV_SETTINGS_DB" ] || return
+	[ "$PV_SETTINGS_DB" -nt "$DB_STAMP" ] || return
+	: >"$DB_STAMP"
+	local v
+	v=$(sqlite3 -readonly "$PV_SETTINGS_DB" \
+		"select json_extract(contents, '$.ledBrightnessPercentage') from global where config_name='hardwareSettings'" 2>/dev/null) || return
+	case "$v" in '' | *[!0-9]*) return ;; esac
+	((v > 100)) && v=100
+	((v < 1)) && v=1
+	status_dim=$v
+}
+
 hist_r="" hist_g="" hist_b=""
 push() { # var bit: keep the last WINDOW bits as a string
 	local -n h=$1
@@ -68,6 +90,7 @@ apply() { # look, then the raze-leds commands to get there
 }
 
 while :; do
+	refresh_dim
 	read_pin 13
 	vision=$value
 	read_pin 101; lit "$value" && push hist_r 1 || push hist_r 0
@@ -91,8 +114,8 @@ while :; do
 			red=$((cr * 255))
 			green=$((cg * (cr ? 180 : 255))) # red+green reads as yellow, not orange
 			blue=$((cb * 255))
-			look="status:$cr$cg$cb:$blink"
-			cmd="'$LEDS' color $red $green $blue && '$LEDS' dim $PV_LEDS_STATUS_DIM && '$LEDS' on"
+			look="status:$cr$cg$cb:$blink:$status_dim"
+			cmd="'$LEDS' color $red $green $blue && '$LEDS' dim $status_dim && '$LEDS' on"
 			[ "$blink" = 1 ] && cmd="$cmd && '$LEDS' blink 2"
 			apply "$look" sh -c "$cmd"
 		fi
