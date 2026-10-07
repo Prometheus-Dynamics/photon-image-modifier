@@ -33,13 +33,14 @@ The legacy shell image-modifier path has been removed. Do not add new
 
 Buildroot `config_overrides` are not checked by `gaia validate`: kconfig
 silently drops symbols that do not exist in the pinned Buildroot release or
-whose dependencies are not met. Gaia 2.1 compares every override with the
+whose dependencies are not met. Gaia compares every override with the
 final `.config` after `olddefconfig` and fails the image step before the long
 `make` when one was dropped (`[providers.buildroot] override_check`, default
 `"error"`). Overrides are keyed by symbol and the last layer wins, so a target
 layer turns off a base-layer symbol it cannot have with `"n"`.
 
-The entrypoint requires Gaia 2.3.0 or later (`gaia_version`; the Raze A/B disk assembly and update bundle need 2.2, `${source.orion.path}` in config values 2.3). Buildroot is
+The entrypoint requires Gaia 2.0.0 or later (`gaia_version`; Gaia reset its
+version to 2.0.0, so builds from its current main satisfy it). Buildroot is
 pinned to a commit in `build.gaia.lock` (`gaia lock build.toml`).
 
 ## Build Container

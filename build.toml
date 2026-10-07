@@ -1,4 +1,4 @@
-gaia_version = ">=2.3.0"
+gaia_version = ">=2.0.0"
 build_name = "photonvision-${input.profile}-${input.target}"
 display_name = "PhotonVision Image"
 version = "${input.version}"

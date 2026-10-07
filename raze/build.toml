@@ -21,11 +21,12 @@ rev = "696d3ad320b54456187cefa3f5a2647438115056"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
+# 154fab0: aa13499 with the layer accepting Gaia 2.0.0.
 [[sources]]
 id = "orion"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Orion.git"
-rev = "aa134992b7209800d085573e0540799c9f92b4cf"
+rev = "154fab0611ebe4b29fef7bde1f900e715ea11503"
 
 [[stage.files]]
 id = "photonvision-raze-config"

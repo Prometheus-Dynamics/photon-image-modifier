@@ -35,8 +35,18 @@ timeout_seconds = 1800
 retry_attempts = 1
 retry_backoff_ms = 0
 retry_backoff_strategy = "fixed"
-# A from-scratch build compiles OpenJDK; on a busy disk that alone can take hours.
+# A from-scratch build compiles OpenJDK on targets that use Buildroot's
+# OpenJDK (Raze links a prebuilt runtime instead); on a busy disk that alone
+# can take hours.
 timeout_seconds = 28800
+# make -j sized by Gaia's core split, independent packages built in parallel
+# (BR2_PER_PACKAGE_DIRECTORIES), and a compiler cache shared by every build.
+local_jobs = 0
+parallel_packages = true
+
+[providers.buildroot.ccache]
+enabled = true
+max_size = "50G"
 
 [execution]
 jobs = 0
