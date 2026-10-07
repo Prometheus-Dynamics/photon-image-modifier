@@ -115,6 +115,8 @@ What stays here:
 - The hostname stays `photonvision` (`/etc/hostname`, a link to
   `/data/etc/hostname` seeded from the image); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
+- `nmcli` is built (`BR2_PACKAGE_NETWORK_MANAGER_CLI`): PhotonVision's
+  network settings use it.
 - mDNS: NetworkManager owns Ethernet and hands mDNS to systemd-resolved
   (`connection.mdns=2` from the device package), which also advertises
   `_pd-device._tcp`. Do not add avahi. `BR2_SYSTEM_DHCP` is cleared and
@@ -140,6 +142,7 @@ writes to `/` at run time. `photonvision-data-early.service` runs before
 | sqlite-jdbc, diozero, JNA native unpacking, uploads | `/tmp` (tmpfs) | `-Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna` in `photonvision.service.d/20-read-only-root.conf` |
 | `/etc/machine-id` | transient | the image ships it empty: systemd generates one per boot and mounts it over the file (not a first boot) |
 | journal | RAM | `Storage=volatile`, 32 MiB (`journald.conf.d/40-photonvision-os.conf`); PhotonVision's own logs persist on `/data` |
+| time (no RTC battery) | `/data/var/lib/systemd/timesync/clock` | timesyncd starts after data-early, saves every 30 s and retries NTP every 30 s (`timesyncd.conf.d/40-photonvision-os.conf`); a NetworkManager dispatcher script passes DHCP's NTP servers and restarts it when a link comes up; `/usr/lib/clock-epoch` keeps the clock from starting before the image's build time |
 | `manage-url` for Atlas | `/run/pd-device/manage-url` | `/etc/pd-device/manage-url` links there |
 | `systemd-update-done` stamps | in the image | `/etc/.updated` and `/var/.updated` are written at build time, so `ConditionNeedsUpdate=` units do not run every boot |
 

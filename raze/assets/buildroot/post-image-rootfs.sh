@@ -290,6 +290,11 @@ for stamp in "$root/etc/.updated" "$root/var/.updated"; do
 	printf '# This file was created by systemd-update-done. Its only\n# purpose is to hold a timestamp of the time this directory\n# was updated. See man:systemd-update-done.service(8).\nTIMESTAMP_NSEC=%s000000000\n' "$usr_epoch" >"$stamp"
 done
 
+# No RTC battery: systemd never sets the clock earlier than the mtime of
+# /usr/lib/clock-epoch, which mkfs.erofs -T makes the image's build time
+# (timesyncd's clock file on /data then keeps it moving forward).
+: >"$root/usr/lib/clock-epoch"
+
 # --- Filesystem -------------------------------------------------------------
 
 rm -f "$image"

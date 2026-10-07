@@ -1,0 +1,20 @@
+#!/bin/sh
+# NetworkManager dispatcher: when a link comes up or full connectivity
+# appears, hand DHCP's NTP servers (if any) to systemd-timesyncd and restart
+# it, so it syncs right away instead of at its next retry.
+# $1 interface, $2 action; DHCP4_NTP_SERVERS and CONNECTIVITY_STATE from NM.
+action=${2:-}
+case "$action" in
+up | dhcp4-change | connectivity-change) ;;
+*) exit 0 ;;
+esac
+[ "$action" != connectivity-change ] || [ "${CONNECTIVITY_STATE:-}" = FULL ] || exit 0
+
+conf=/run/systemd/timesyncd.conf.d/50-networkmanager.conf
+servers=$(printf '%s' "${DHCP4_NTP_SERVERS:-}" | tr -s ' ')
+if [ -n "$servers" ]; then
+	mkdir -p "${conf%/*}"
+	new=$(printf '[Time]\nNTP=%s\n' "$servers")
+	[ "$(cat "$conf" 2>/dev/null)" = "$new" ] || printf '%s\n' "$new" >"$conf"
+fi
+systemctl try-restart systemd-timesyncd.service

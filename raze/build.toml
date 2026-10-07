@@ -9,8 +9,9 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.5.0: Buildroot 2026.08, kernel
-# rpi-7.2.y with built-in EROFS and the Raze trims, firmware 1.20260915,
+# Pinned to a full commit (Raze package 1.5.0 plus explicit 4 KiB kernel
+# pages, 741cb84: Buildroot 2026.08, kernel rpi-7.2.y with built-in EROFS and
+# the Raze trims, firmware 1.20260915,
 # libcamera v0.7.2+rpt20260817 and libpisp v1.7.0, no udev hwdb, read-only
 # root safe services); see GAIA.md for building against a local Atlas
 # checkout.
@@ -18,7 +19,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "695d172fd943da1b6e2bc570a7b5e89d11b1a444"
+rev = "741cb84286b0c5425a8337a139ae8c38625db837"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -159,6 +160,29 @@ src = "raze/assets/rootfs/usr/lib/systemd/journald.conf.d/40-photonvision-os.con
 dest = "/usr/lib/systemd/journald.conf.d/40-photonvision-os.conf"
 origin = "static-asset"
 
+# No RTC battery: timesyncd's clock file (on /data via /var) keeps time from
+# going backwards across reboots, it saves and retries every 30 s, and
+# NetworkManager's dispatcher gives it DHCP's NTP servers and restarts it
+# when a link comes up.
+[[stage.files]]
+id = "photonvision-raze-timesyncd-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/systemd-timesyncd.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/systemd-timesyncd.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-timesyncd-conf"
+src = "raze/assets/rootfs/usr/lib/systemd/timesyncd.conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/timesyncd.conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-nm-dispatcher-timesync"
+src = "raze/assets/rootfs/usr/lib/NetworkManager/dispatcher.d/40-photonvision-timesync"
+dest = "/usr/lib/NetworkManager/dispatcher.d/40-photonvision-timesync"
+origin = "static-asset"
+mode = 493
+
 [[stage.files]]
 id = "photonvision-raze-photonvision-read-only-dropin"
 src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
@@ -266,6 +290,9 @@ config_overrides = [
   # device's _pd-device._tcp service, so resolved must stay on and nothing
   # else may answer on port 5353 (no avahi).
   ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
+  # nmcli: PhotonVision reads interfaces and sets DHCP/static addressing
+  # through it ("Cannot manage network without nmcli!" otherwise).
+  ["BR2_PACKAGE_NETWORK_MANAGER_CLI", "y"],
   ["BR2_PACKAGE_SYSTEMD_RESOLVED", "y"],
   ["BR2_PACKAGE_AVAHI", "n"],
   # The defconfig's BR2_SYSTEM_DHCP="eth0" would make systemd-networkd run a
@@ -314,6 +341,9 @@ stage_files = [
   "photonvision-raze-sshd-dropin",
   "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",
+  "photonvision-raze-timesyncd-dropin",
+  "photonvision-raze-timesyncd-conf",
+  "photonvision-raze-nm-dispatcher-timesync",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
 stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
