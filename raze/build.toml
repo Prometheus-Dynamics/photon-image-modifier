@@ -54,7 +54,7 @@ src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-
 dest = "/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
 origin = "static-asset"
 
-# Presets: systemd-networkd and CUPS off (NetworkManager owns networking).
+# Presets: systemd-networkd off (NetworkManager owns networking).
 [[stage.files]]
 id = "photonvision-raze-preset"
 src = "raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset"
@@ -163,8 +163,12 @@ origin = "static-asset"
 
 [image]
 kind = "buildroot"
-# defconfig, external_tree (OV9782 kernel extension, kernel hash,
-# libcamera/libpisp overrides) and the kernel come from the device package.
+# defconfig and the kernel come from the device package. Its BR2_EXTERNAL
+# tree (OV9782 kernel extension, kernel config fragment, libcamera/libpisp
+# overrides) is listed here with this repository's (the photonvision-jre
+# package): a layer's external_tree replaces the earlier one, so keep the
+# device package's path in step with devices/raze/gaia/kernel.toml.
+external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external"
 config_overrides = [
   # raspberrypicm5io_defconfig uses the external Bootlin toolchain, which has
   # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
@@ -187,6 +191,14 @@ config_overrides = [
   ["BR2_TARGET_ROOTFS_TAR", "y"],
   ["BR2_TARGET_ROOTFS_TAR_NONE", "y"],
   ["BR2_PACKAGE_HOST_E2FSPROGS", "y"],
+  # Java: a jlink'd runtime from Temurin's prebuilt aarch64 jmods
+  # (raze/assets/buildroot/external/package/photonvision-jre) instead of
+  # compiling OpenJDK, which was the longest step of a clean build and
+  # shipped a 124 MB unstripped JDK. Nothing else in the image needs OpenJDK
+  # or what it selected (CUPS, ALSA, fontconfig, X11 headers).
+  ["BR2_PACKAGE_OPENJDK", "n"],
+  ["BR2_PACKAGE_OPENJDK_VERSION_25", "n"],
+  ["BR2_PACKAGE_PHOTONVISION_JRE", "y"],
   # NetworkManager owns Ethernet. It hands per-link mDNS (connection.mdns=2
   # from the device package) to systemd-resolved, which also publishes the
   # device's _pd-device._tcp service, so resolved must stay on and nothing

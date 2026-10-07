@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_PHOTONVISION_OS_PATH/package/photonvision-jre/Config.in"
