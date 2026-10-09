@@ -9,26 +9,38 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (Raze package 1.5.0 plus explicit 4 KiB kernel
-# pages, 741cb84: Buildroot 2026.08, kernel rpi-7.2.y with built-in EROFS and
-# the Raze trims, firmware 1.20260915,
-# libcamera v0.7.2+rpt20260817 and libpisp v1.7.0, no udev hwdb, read-only
-# root safe services); see GAIA.md for building against a local Atlas
-# checkout.
+# Pinned to a full commit (e12b079: Buildroot 2026.08, kernel rpi-7.2.y with
+# built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
+# v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
+# services, the board-* names, lemnosd as the hardware service and
+# board-agent for Orion update control); see GAIA.md for building against a
+# local Atlas checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "0b5d7f31d8e7de5c5d5be1231f2a8887c3873f01"
+rev = "e12b079bb22489e80bf29e674d5d79818b49824f"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
-# 154fab0: aa13499 with the layer accepting Gaia 2.0.0.
+# ec91d0a: observed-state watches, same-address reconnects and F64 config
+# values; the same wire fingerprint as the c22fa42 board-agent in the device
+# package.
 [[sources]]
 id = "orion"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Orion.git"
-rev = "154fab0611ebe4b29fef7bde1f900e715ea11503"
+rev = "ec91d0a6999389a0aaef0cd11e05c9e419b96b99"
+
+# lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
+# device package's lemnos.toml layer. Gaia lets only local files declare
+# import sources, so the Lemnos pin lives here, at the commit the device
+# package is tested with (Atlas devices/README.md).
+[[sources]]
+id = "lemnos"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
+rev = "62c3caf677c4bf9cef47fcb02b36d0e98f3248ef"
 
 [[stage.files]]
 id = "photonvision-raze-config"
