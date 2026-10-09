@@ -9,7 +9,7 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (42d91e2: Buildroot 2026.08, kernel rpi-7.2.y
+# Pinned to a full commit (934f538: Buildroot 2026.08, kernel rpi-7.2.y
 # with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
 # v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
 # services, the board-* names, lemnosd as the hardware service, board-agent
@@ -20,7 +20,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "42d91e2fd6c7dd3442d37f1fb562f9da83d119f4"
+rev = "934f5381a252c1b48619f7552b94eca147644054"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
