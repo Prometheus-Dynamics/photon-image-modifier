@@ -42,6 +42,10 @@ if ! mountpoint -q /var; then
 	cp -a -n /var/. "$data/var/" 2>/dev/null || true
 	mount --bind "$data/var" /var
 fi
+# sshd's privilege separation directory: sshd refuses to start without it,
+# and a fresh /data/var may not have it.
+mkdir -p /var/empty
+chmod 0755 /var/empty
 
 # Static hostname.
 if [ ! -s "$data/etc/hostname" ]; then
