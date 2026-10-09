@@ -395,12 +395,12 @@ dest = "cmdline.txt"
 
 [[image.assembly.files]]
 tree = "boot"
-src_glob = "$provider.buildroot_output/build/rpi-firmware-*/boot/start4.elf"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/start4.elf"
 dest = "."
 
 [[image.assembly.files]]
 tree = "boot"
-src_glob = "$provider.buildroot_output/build/rpi-firmware-*/boot/fixup4.dat"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/fixup4.dat"
 dest = "."
 
 [[image.assembly.files]]
