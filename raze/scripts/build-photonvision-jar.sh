@@ -46,11 +46,25 @@ if [ -f docs/requirements.txt ]; then
     python3 -m venv "${venv}"
     "${venv}/bin/pip" install --quiet --disable-pip-version-check -r docs/requirements.txt
   fi
-  rm -rf docs/build/html
-  make -C docs html SPHINXBUILD="${venv}/bin/sphinx-build" SPHINXOPTS="--keep-going -q"
-  if [ ! -f docs/build/html/index.html ]; then
-    echo "build-photonvision-jar: docs/build/html/index.html was not produced" >&2
-    exit 1
+  # Rebuild only when the docs sources (or the Sphinx requirements) change:
+  # regenerating them rewrites docs/build/html, a Gradle input of
+  # photon-server, which would otherwise re-run classes and shadowJar on every
+  # build.
+  docs_hash=$(
+    {
+      echo "${req_hash}"
+      find docs -path docs/build -prune -o -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
+    } | sha256sum | cut -c1-32
+  )
+  stamp=docs/build/.html-source-hash
+  if [ ! -f docs/build/html/index.html ] || [ "$(cat "${stamp}" 2>/dev/null)" != "${docs_hash}" ]; then
+    rm -rf docs/build/html
+    make -C docs html SPHINXBUILD="${venv}/bin/sphinx-build" SPHINXOPTS="--keep-going -q"
+    if [ ! -f docs/build/html/index.html ]; then
+      echo "build-photonvision-jar: docs/build/html/index.html was not produced" >&2
+      exit 1
+    fi
+    printf '%s\n' "${docs_hash}" > "${stamp}"
   fi
 fi
 
