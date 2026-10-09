@@ -19,7 +19,7 @@
 # database file changes.
 set -u
 
-LEDS=${PV_LEDS_HELPER:-/usr/lib/pd-device/raze-leds}
+LEDS=${PV_LEDS_HELPER:-/usr/lib/board/raze-leds}
 STATE=${PV_LEDS_STATE:-/run/photonvision-os}
 TICK=0.15
 WINDOW=4 # samples kept per channel, to tell steady from blinking

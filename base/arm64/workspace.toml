@@ -52,6 +52,9 @@ timeout_seconds = 28800
 local_jobs = 0
 parallel_packages = true
 
+[providers.buildroot.package_cache]
+enabled = true
+
 [providers.buildroot.ccache]
 enabled = true
 max_size = "50G"

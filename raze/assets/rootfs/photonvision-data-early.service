@@ -6,7 +6,7 @@ After=data.mount systemd-remount-fs.service
 Wants=data.mount
 Before=local-fs.target shutdown.target
 Before=systemd-tmpfiles-setup.service systemd-journal-flush.service systemd-hostnamed.service
-Before=pd-device-hostname.service pd-device-ssh-keys.service pd-device-usb-gadget.service
+Before=board-hostname.service board-ssh-keys.service board-usb-gadget.service
 Conflicts=shutdown.target
 
 [Service]

@@ -196,11 +196,11 @@ if [ -f "$os_release" ] && [ "$IMAGE_VERSION" != unknown ]; then
 fi
 
 # Scripts staged by the recipe must be executable.
-# The device package reports its commit from /etc/pd-device/device-package.env,
+# The device package reports its commit from /etc/board/board-package.env,
 # which the OS writes (the package cannot know the importing recipe's source).
 if [ "$DEVICE_PACKAGE_COMMIT" != unknown ]; then
-	mkdir -p "$root/etc/pd-device"
-	printf 'PD_DEVICE_PACKAGE_COMMIT=%s\n' "$DEVICE_PACKAGE_COMMIT" >"$root/etc/pd-device/device-package.env"
+	mkdir -p "$root/etc/board"
+	printf 'BOARD_PACKAGE_COMMIT=%s\n' "$DEVICE_PACKAGE_COMMIT" >"$root/etc/board/board-package.env"
 fi
 
 # /data (p7 on the A/B layout) holds what an update must keep and everything
@@ -220,8 +220,8 @@ printf '/dev/mmcblk0p7\t/data\text4\tdefaults,noatime,nofail,x-systemd.device-ti
 for f in pv-leds-ring manage-url grow-rootfs.sh data-setup data-early; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
-[ -f "$root/etc/pd-device/update-health" ] && chmod 755 "$root/etc/pd-device/update-health"
-[ -f "$root/etc/pd-device/update.d/pre-reboot" ] && chmod 755 "$root/etc/pd-device/update.d/pre-reboot"
+[ -f "$root/etc/board/update-health" ] && chmod 755 "$root/etc/board/update-health"
+[ -f "$root/etc/board/update.d/pre-reboot" ] && chmod 755 "$root/etc/board/update.d/pre-reboot"
 
 # --- PhotonVision jar ------------------------------------------------------
 
@@ -253,7 +253,7 @@ fi
 #   SSH host keys              /data/ssh (sshd_config.d, data-setup)
 #   /etc/machine-id            empty: systemd mounts a transient ID each boot
 #   journal                    volatile (journald.conf.d)
-#   manage-url                 link to /run/pd-device/manage-url
+#   manage-url                 link to /run/board/manage-url
 #   PhotonVision               settings and logs on /data
 #                              (photonvision_config), natives unpacked above,
 #                              library temp files in /tmp (tmpfs)
@@ -271,9 +271,9 @@ fi
 
 : >"$root/etc/machine-id"
 
-mkdir -p "$root/etc/pd-device"
-rm -f "$root/etc/pd-device/manage-url"
-ln -s /run/pd-device/manage-url "$root/etc/pd-device/manage-url"
+mkdir -p "$root/etc/board"
+rm -f "$root/etc/board/manage-url"
+ln -s /run/board/manage-url "$root/etc/board/manage-url"
 
 # sshd reads drop-ins (the device package's authorized keys in /run, the host
 # keys on /data) only with an Include ahead of its own settings.

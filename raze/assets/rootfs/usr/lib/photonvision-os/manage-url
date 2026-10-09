@@ -1,11 +1,11 @@
 #!/bin/sh
 # Tell Atlas where PhotonVision's web UI is: the device package's identity
-# endpoint reports /etc/pd-device/manage-url as manage_url. The hostname is
+# endpoint reports /etc/board/manage-url as manage_url. The hostname is
 # per board (set at boot), so this runs every boot; the root filesystem is
-# read-only, so /etc/pd-device/manage-url is a link to this file in /run.
+# read-only, so /etc/board/manage-url is a link to this file in /run.
 set -eu
 host=$(hostname)
-dir=/run/pd-device
+dir=/run/board
 mkdir -p "$dir"
 url="http://${host}.local:5800/"
 [ "$(cat "$dir/manage-url" 2>/dev/null || true)" = "$url" ] && exit 0

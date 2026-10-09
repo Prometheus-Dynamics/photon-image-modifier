@@ -42,6 +42,7 @@ imports = [
   { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
   { path = "raze/build.toml", when = { target = "raze" } },
   { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
+  { path = "raze/expect-full.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },

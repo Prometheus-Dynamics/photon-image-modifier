@@ -1,7 +1,7 @@
 [Unit]
 Description=Publish PhotonVision's web UI address for Atlas (manage_url)
-After=pd-device-hostname.service
-Before=pd-device-identity.service
+After=board-hostname.service
+Before=board-identity.service
 
 [Service]
 Type=oneshot

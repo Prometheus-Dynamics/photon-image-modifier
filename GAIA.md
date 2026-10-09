@@ -87,7 +87,7 @@ networking (`usbbr0`, 172.31.250.1), the identity endpoint
 mDNS advertisement, EEPROM files for Atlas, the OV9782 kernel driver, the
 libcamera/libpisp package overrides and the PiSP tuning. See
 `devices/README.md` in Atlas for the device services and how to turn each one
-off (all are defaults; `/etc/pd-device/*.env` overrides them).
+off (all are defaults; `/etc/board/*.env` overrides them).
 
 What stays here:
 
@@ -143,7 +143,7 @@ writes to `/` at run time. `photonvision-data-early.service` runs before
 | `/etc/machine-id` | transient | the image ships it empty: systemd generates one per boot and mounts it over the file (not a first boot) |
 | journal | RAM | `Storage=volatile`, 32 MiB (`journald.conf.d/40-photonvision-os.conf`); PhotonVision's own logs persist on `/data` |
 | time (no RTC battery) | `/data/var/lib/systemd/timesync/clock` | timesyncd starts after data-early, saves every 30 s and retries NTP every 30 s (`timesyncd.conf.d/40-photonvision-os.conf`); a NetworkManager dispatcher script passes DHCP's NTP servers and restarts it when a link comes up; `/usr/lib/clock-epoch` keeps the clock from starting before the image's build time |
-| `manage-url` for Atlas | `/run/pd-device/manage-url` | `/etc/pd-device/manage-url` links there |
+| `manage-url` for Atlas | `/run/board/manage-url` | `/etc/board/manage-url` links there |
 | `systemd-update-done` stamps | in the image | `/etc/.updated` and `/var/.updated` are written at build time, so `ConditionNeedsUpdate=` units do not run every boot |
 
 If `/data` does not mount, data-early mounts a tmpfs there: the board boots

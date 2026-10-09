@@ -1,0 +1,6 @@
+# What a full Raze PhotonVision image must contain: validation fails if any of
+# these disappears (a layer deleted, emptied by a bad write, no longer
+# imported, or its `when` no longer matching).
+[expect]
+artifacts = ["photonvision-jar", "photon-libcamera-gl-driver", "orion-node"]
+installs = ["install-photonvision-jar", "install-orion-node"]

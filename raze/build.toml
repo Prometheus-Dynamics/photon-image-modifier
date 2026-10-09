@@ -19,7 +19,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "0fc8ecf8f7814b9276988999c8108205b99d3102"
+rev = "0b5d7f31d8e7de5c5d5be1231f2a8887c3873f01"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -227,14 +227,14 @@ entries = [
 # its web server answers) and a pre-reboot hook that stops PhotonVision cleanly.
 [[stage.files]]
 id = "photonvision-raze-update-health"
-src = "raze/assets/rootfs/etc/pd-device/update-health"
-dest = "/etc/pd-device/update-health"
+src = "raze/assets/rootfs/etc/board/update-health"
+dest = "/etc/board/update-health"
 origin = "static-asset"
 
 [[stage.files]]
 id = "photonvision-raze-update-pre-reboot"
-src = "raze/assets/rootfs/etc/pd-device/update.d/pre-reboot"
-dest = "/etc/pd-device/update.d/pre-reboot"
+src = "raze/assets/rootfs/etc/board/update.d/pre-reboot"
+dest = "/etc/board/update.d/pre-reboot"
 origin = "static-asset"
 
 [[stage.files]]
@@ -429,8 +429,8 @@ deterministic = true
 
 # p1: autoboot.txt only. The bootloader reads it first: boot A (p2) by
 # default, boot B (p3) once on a tryboot. The device package's update writer
-# rewrites it, keeps its state there (pd-update.env), and reads opt-in SSH keys
-# from pd-device/authorized_keys on it, so p1 is shared by both slots.
+# rewrites it, keeps its state there (board-update.env), and reads opt-in SSH keys
+# from board/authorized_keys on it, so p1 is shared by both slots.
 [[image.assembly.trees]]
 id = "autoboot"
 path = "$assembly.work/autoboot"
