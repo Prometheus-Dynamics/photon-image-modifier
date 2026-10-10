@@ -9,7 +9,7 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (1fe81f6: Buildroot 2026.08, kernel rpi-7.2.y
+# Pinned to a full commit (04aadea: Buildroot 2026.08, kernel rpi-7.2.y
 # with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
 # v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
 # services, the board-* names, lemnosd as the hardware service, board-agent
@@ -21,13 +21,15 @@ target = "raze"
 # applies kept staged, a persistent journal and stable machine id, and /data
 # made on first boot and reset by a new flash id, an updater that takes
 # truncated images, the ring's IMU gravity calibration, and persistent kernel
-# logs (ramoops/pstore, lockup panics, optional netconsole)); see GAIA.md for building against a local Atlas
+# logs (ramoops/pstore, lockup panics, optional netconsole), the IMU on the
+# RP1 PIO I2C bus, the trial's self-test phase, and the ring kept lit while the
+# LED driver loads); see GAIA.md for building against a local Atlas
 # checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "1fe81f60bcffa790f1d5ffe58e528145c5616b41"
+rev = "04aadeae6643844f72a692e7184ed94f643d6b9f"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -42,7 +44,9 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). 2ab3d93: sparkle looks
+# package is tested with (Atlas devices/README.md). 5b1d38c: the PIO I2C bus
+# (IMU at ~2% CPU), the trial ember held until the self-test, the drain
+# confirm look and comet glow; 2ab3d93: sparkle looks
 # (starry trial boot, green pop with falling sparks), anti-aliased comets, a
 # brighter reboot ember, IMU channel-selective reads; b17b5a5: sensors read on
 # demand (no IMU reads with no subscriber), one thread per bus; looks as data
@@ -52,7 +56,7 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "2ab3d938c3aa2430be10837916d6f7edcd119aa6"
+rev = "5b1d38c2db8354bdb518d1003bec8893d6408580"
 
 [[stage.files]]
 id = "photonvision-raze-config"
