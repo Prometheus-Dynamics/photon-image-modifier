@@ -1,7 +1,12 @@
 [Unit]
 Description=Publish PhotonVision's web UI address for Atlas (manage_url)
-After=board-hostname.service
-Before=board-identity.service
+# An early unit: it only needs /run and the hostname, and board-identity (in
+# sysinit.target) reads its file. Without DefaultDependencies=no it is ordered
+# after basic.target, which made an ordering cycle with sysinit.target.
+DefaultDependencies=no
+After=local-fs.target board-hostname.service
+Before=board-identity.service shutdown.target
+Conflicts=shutdown.target
 
 [Service]
 Type=oneshot
@@ -9,4 +14,4 @@ RemainAfterExit=yes
 ExecStart=/usr/lib/photonvision-os/manage-url
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target
