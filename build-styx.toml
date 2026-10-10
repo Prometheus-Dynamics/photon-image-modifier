@@ -173,12 +173,12 @@ default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 [inputs.raze_styx_photonvision_rev]
 description = "PhotonVision commit built for the styx backend (branch styx-eidos)"
 kind = "string"
-default = "9d9a7fdc8b15e05b6a927cfc9bf9c9f69222b0fd"
+default = "2d408e0fdce4c7fd5a8d5c47a0b96952b5caf2cb"
 
 [inputs.raze_styx_photonvision_version]
 description = "Version string forced into the styx PhotonVision jar; matches raze_styx_photonvision_rev"
 kind = "string"
-default = "dev-v2027.0.0-alpha-2-96-g9d9a7fdc"
+default = "dev-v2027.0.0-alpha-2-97-g2d408e0f"
 
 [inputs.raze_archive_ext]
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
