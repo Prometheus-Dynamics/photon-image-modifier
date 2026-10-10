@@ -9,7 +9,7 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (5febbec: Buildroot 2026.08, kernel rpi-7.2.y
+# Pinned to a full commit (1fe81f6: Buildroot 2026.08, kernel rpi-7.2.y
 # with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
 # v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
 # services, the board-* names, lemnosd as the hardware service, board-agent
@@ -20,13 +20,14 @@ target = "raze"
 # torn log lines, Lemnos b17b5a5, matched 100 Hz IMU rates, interrupted
 # applies kept staged, a persistent journal and stable machine id, and /data
 # made on first boot and reset by a new flash id, an updater that takes
-# truncated images, and the ring's IMU gravity calibration); see GAIA.md for building against a local Atlas
+# truncated images, the ring's IMU gravity calibration, and persistent kernel
+# logs (ramoops/pstore, lockup panics, optional netconsole)); see GAIA.md for building against a local Atlas
 # checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "5febbecb28d87b0399810a0049e8be4e05590311"
+rev = "1fe81f60bcffa790f1d5ffe58e528145c5616b41"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
