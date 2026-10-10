@@ -163,6 +163,23 @@ default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
 # Gaia compresses the Raze disk image by this extension: img.xz (the default,
 # what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
 # of about a minute; the board updater reads both), for dev builds.
+# Styx vision backend (build-styx.toml): the photonvision fork's styx-eidos branch. Pinned by
+# commit; see raze/photonvision-styx.toml.
+[inputs.raze_styx_photonvision_repo]
+description = "PhotonVision git repository (URL or local path) for the styx backend"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
+
+[inputs.raze_styx_photonvision_rev]
+description = "PhotonVision commit built for the styx backend (branch styx-eidos)"
+kind = "string"
+default = "9d9a7fdc8b15e05b6a927cfc9bf9c9f69222b0fd"
+
+[inputs.raze_styx_photonvision_version]
+description = "Version string forced into the styx PhotonVision jar; matches raze_styx_photonvision_rev"
+kind = "string"
+default = "dev-v2027.0.0-alpha-2-96-g9d9a7fdc"
+
 [inputs.raze_archive_ext]
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
 kind = "string"

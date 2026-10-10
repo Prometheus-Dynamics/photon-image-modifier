@@ -1,0 +1,186 @@
+gaia_version = ">=2.0.0"
+build_name = "photonvision-styx-${input.profile}-${input.target}"
+display_name = "PhotonVision Image (Styx vision backend)"
+version = "${input.version}"
+description = "Top-level PhotonVision Gaia build. Select target and profile here; target folders are fragments, not build entrypoints."
+target = "${input.target}"
+profile = "${input.profile}"
+
+imports = [
+  "base/arm64/workspace.toml",
+  "base/arm64/base-os.toml",
+  "base/arm64/identity.toml",
+  "base/arm64/ops.toml",
+
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight3g" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "limelight4" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "luma_p1" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raspi_dev" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "raze" } },
+  { path = "platform/raspberry-pi/build.toml", when = { profile = "full", target = "snakeyes" } },
+
+  { path = "platform/orange-pi-5/build.toml", when = { profile = "full", target = "opi" } },
+  { path = "platform/rubikpi3/build.toml", when = { profile = "full", target = "rubikpi3" } },
+
+  # Raze device support (kernel, OV9782, libcamera, boot overlays, device
+  # services) from the Atlas device package, after the OS base layers and
+  # before the PhotonVision layers that override its defaults. gpu.toml adds
+  # the Mesa EGL/GLES/gbm userspace the libcamera GL driver links. The
+  # "atlas" source is declared in raze/build.toml, so only Raze builds fetch it.
+  { source = "atlas", path = "devices/raze/gaia/device.toml", when = { target = "raze" } },
+  { source = "atlas", path = "devices/raze/gaia/gpu.toml", when = { profile = "full", target = "raze" } },
+
+  { path = "base/arm64/photonvision.toml", when = { profile = "full" } },
+
+  # orion-node from Orion's own Gaia layer; the "orion" source is declared in
+  # raze/build.toml.
+  { source = "orion", path = "packaging/gaia/orion-node.toml", when = { target = "raze" } },
+
+  { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
+  { path = "raze/build.toml", when = { target = "raze" } },
+  { path = "raze/photonvision-styx.toml", when = { profile = "full", target = "raze" } },
+  { path = "raze/expect-full-styx.toml", when = { profile = "full", target = "raze" } },
+  { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
+  { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
+  { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
+  { path = "limelight/limelight4/build.toml", when = { profile = "full", target = "limelight4" } },
+  { path = "luma/luma_p1/build.toml", when = { profile = "full", target = "luma_p1" } },
+  { path = "opi/build.toml", when = { profile = "full", target = "opi" } },
+  { path = "raspi/raspi/build.toml", when = { profile = "full", target = "raspi" } },
+  { path = "raspi/raspi_dev/build.toml", when = { profile = "full", target = "raspi_dev" } },
+  { path = "rubikpi3/build.toml", when = { profile = "full", target = "rubikpi3" } },
+  { path = "snakeyes/build.toml", when = { profile = "full", target = "snakeyes" } },
+]
+
+[product]
+family = "photonvision"
+name = "${input.target}"
+sku = "photonvision-${input.target}"
+
+[inputs.target]
+description = "Build target"
+kind = "enum"
+default = "generic-arm64"
+choices = [
+  "generic-arm64",
+  "limelight",
+  "limelight3",
+  "limelight3g",
+  "limelight4",
+  "luma_p1",
+  "opi",
+  "raspi",
+  "raspi_dev",
+  "raze",
+  "rubikpi3",
+  "snakeyes",
+]
+
+[inputs.profile]
+description = "Build profile"
+kind = "enum"
+default = "full"
+choices = ["base-os", "full"]
+
+[inputs.version]
+description = "PhotonVision release or image version label"
+kind = "enum"
+default_from = "latest-stable"
+
+[inputs.version.choices_from]
+kind = "git-tags"
+repo = "https://github.com/PhotonVision/photonvision.git"
+# 2027 pre-releases are selectable; prefer_stable keeps the default on the
+# newest stable release. v2026.7 is the April Fools release: it sorts above
+# v2026.3.4 and would otherwise become the default.
+include = ["v2026*", "v2027*"]
+exclude = ["v2026.7"]
+sort = "version-desc"
+version_scheme = "semver"
+prefer_stable = true
+limit = 25
+cache_ttl_seconds = 3600
+fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
+
+[inputs.photonvision_ref]
+description = "Official PhotonVision git tag used to build photonvision.jar"
+kind = "enum"
+default_from = "latest-stable"
+
+[inputs.photonvision_ref.choices_from]
+kind = "git-tags"
+repo = "https://github.com/PhotonVision/photonvision.git"
+# 2027 pre-releases are selectable; prefer_stable keeps the default on the
+# newest stable release. v2026.7 is the April Fools release: it sorts above
+# v2026.3.4 and would otherwise become the default.
+include = ["v2026*", "v2027*"]
+exclude = ["v2026.7"]
+sort = "version-desc"
+version_scheme = "semver"
+prefer_stable = true
+limit = 25
+cache_ttl_seconds = 3600
+fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
+
+# Raze application sources. The revs must be pushed to the repos before
+# the build works on other machines; point the *_repo inputs at local clones to
+# test unpushed commits. Keep each *_version equal to `git describe --tags`
+# of its rev (with the "dev-" prefix the PhotonVision build uses): the driver
+# version is the maven coordinate PhotonVision resolves the driver jars by.
+[inputs.raze_photonvision_repo]
+description = "PhotonVision git repository (URL or local path) used by the Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
+
+[inputs.raze_photonvision_rev]
+description = "PhotonVision commit built for Raze (branch raze-2027: upstream main plus the Raze changes)"
+kind = "string"
+default = "c9548d91ae1bfd3f3ac8410d0b85b6b6649b2f1a"
+
+[inputs.raze_photonvision_version]
+description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
+kind = "string"
+default = "dev-v2027.0.0-alpha-2-94-gc9548d91"
+
+[inputs.raze_libcamera_driver_repo]
+description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
+
+[inputs.raze_libcamera_driver_rev]
+description = "photon-libcamera-gl-driver commit built for Raze (branch raze-2027: ov9782 plus gaia-build-fix)"
+kind = "string"
+default = "057ab3bc58321cfb8a373b29b69ef8b3b2d3d03d"
+
+[inputs.raze_libcamera_driver_version]
+description = "Version string forced into the Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
+kind = "string"
+default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
+
+# Gaia compresses the Raze disk image by this extension: img.xz (the default,
+# what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
+# of about a minute; the board updater reads both), for dev builds.
+# Styx vision backend (build-styx.toml): the photonvision fork's styx-eidos branch. Pinned by
+# commit; see raze/photonvision-styx.toml.
+[inputs.raze_styx_photonvision_repo]
+description = "PhotonVision git repository (URL or local path) for the styx backend"
+kind = "string"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
+
+[inputs.raze_styx_photonvision_rev]
+description = "PhotonVision commit built for the styx backend (branch styx-eidos)"
+kind = "string"
+default = "9d9a7fdc8b15e05b6a927cfc9bf9c9f69222b0fd"
+
+[inputs.raze_styx_photonvision_version]
+description = "Version string forced into the styx PhotonVision jar; matches raze_styx_photonvision_rev"
+kind = "string"
+default = "dev-v2027.0.0-alpha-2-96-g9d9a7fdc"
+
+[inputs.raze_archive_ext]
+description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
+kind = "string"
+default = "img.xz"
