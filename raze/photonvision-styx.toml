@@ -9,6 +9,16 @@ repo = "${input.raze_styx_photonvision_repo}"
 rev = "${input.raze_styx_photonvision_rev}"
 refresh = "auto"
 
+# Eidos (private repository): the photon-styx build compiles against it. Local development
+# overrides this with --set sources.eidos.path=<checkout> (a worktree at this commit); the
+# released build materializes the pinned commit. Do not gaia lock with the override set.
+[[sources]]
+id = "eidos"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Eidos.git"
+rev = "64ae6a20cc6bb45616708e267e31d61770814583"
+refresh = "auto"
+
 # The jar build also compiles photon-styx for the board (tools/build.sh, zig, glibc 2.41), inside
 # the styx build container (Rust and zig on top of the normal one). The gradle property
 # -PstyxBackend bundles libphotonstyx.so into linux/arm64 resources.
@@ -20,6 +30,7 @@ build_command = ["${project.root_dir}/raze/scripts/build-photonvision-jar.sh"]
 build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_styx_photonvision_version}"],
   ["PHOTONVISION_STYX", "1"],
+  ["EIDOS_PATH", "${source.eidos.path}"],
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
 ]
 source = "photonvision-source"
