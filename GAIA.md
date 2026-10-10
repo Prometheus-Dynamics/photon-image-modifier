@@ -101,8 +101,12 @@ What stays here:
 - The root filesystem is a read-only, LZMA-compressed EROFS image
   (`rootfs.erofs`) in a 512 MiB slot; see "Read-only root" below. Buildroot
   makes `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs.sh` turns
-  it into `rootfs.erofs` and an empty `data.ext4`, failing the build if the
-  root does not fit its slot. The same script checks that every kernel
+  it into `rootfs.erofs` and writes the flash id that p1 carries, failing the
+  build if the root does not fit its slot. `sdcard.img` ends after rootfs-a's
+  content (packed EBRs, `truncate = "last-data"`): slot B's root and `/data`
+  are in the partition table but not in the file, and the device package's
+  `board-data-setup` makes `/data` on first boot (and again after a flash with
+  a new flash id). The same script checks that every kernel
   module of the kernel build ships (Buildroot ignores a failed
   `modules_install`, which once left 58 of 1898 modules in the image),
   reruns depmod, writes `/opt/photonvision/image-metadata.json` from the

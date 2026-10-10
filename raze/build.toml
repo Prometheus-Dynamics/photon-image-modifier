@@ -9,7 +9,7 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (08fe91d: Buildroot 2026.08, kernel rpi-7.2.y
+# Pinned to a full commit (71bb4d1: Buildroot 2026.08, kernel rpi-7.2.y
 # with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
 # v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
 # services, the board-* names, lemnosd as the hardware service, board-agent
@@ -17,13 +17,15 @@ target = "raze"
 # status endpoint on :5899, the A/B updater fixes from the first hardware
 # run, board events by seq, the board-stream push channel on :5898 with
 # its hardware topic and inotify wakeups, clock sync, and seq kept above
-# torn log lines, Lemnos b17b5a5 and matched 100 Hz IMU rates); see GAIA.md for building against a local Atlas
+# torn log lines, Lemnos b17b5a5, matched 100 Hz IMU rates, interrupted
+# applies kept staged, a persistent journal and stable machine id, and /data
+# made on first boot and reset by a new flash id); see GAIA.md for building against a local Atlas
 # checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "08fe91dd805a8319307410da2a542a9bcb89b69f"
+rev = "71bb4d19ec6497f21aff10ff6b8c2960d13d0023"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -287,7 +289,7 @@ config_overrides = [
   ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
   # post-image script turns it into rootfs.erofs (host erofs-utils, LZMA) and
-  # makes data.ext4 (host e2fsprogs).
+  # writes the flash id.
   ["BR2_TARGET_ROOTFS_EXT2", "n"],
   ["BR2_TARGET_ROOTFS_TAR", "y"],
   ["BR2_TARGET_ROOTFS_TAR_NONE", "y"],
@@ -471,6 +473,13 @@ tree = "autoboot"
 src = "raze/assets/autoboot.txt"
 dest = "autoboot.txt"
 
+# The flash id (post-image-rootfs.sh): board-data-setup remakes /data when it
+# changes, so a flash resets /data and an update keeps it.
+[[image.assembly.files]]
+tree = "autoboot"
+src = "$provider.images/flash-id"
+dest = "board/flash-id"
+
 [[image.assembly.filesystems]]
 id = "autoboot"
 kind = "vfat"
@@ -499,6 +508,11 @@ id = "sdcard"
 output = "$provider.images/sdcard.img"
 partition_table = "mbr"
 signature = "0x5056525a"
+# The EBR chain sits at the start of the extended partition (p4), so the file
+# can end after rootfs-a's content: slot B's root and /data are in the table but
+# not in the image (about 0.4 GB instead of 1.36 GB raw).
+ebr_placement = "packed"
+truncate = "last-data"
 first_lba = 2048
 alignment_lba = 2048
 
@@ -531,9 +545,12 @@ size = "512M"
 name = "rootfs-b"
 type_alias = "linux"
 size = "512M"
-wipe = true
+materialize = false
 
+# Made on first boot by the device package's board-data-setup, and grown to
+# fill the eMMC.
 [[image.assembly.disks.partitions]]
 name = "data"
 type_alias = "linux"
-image = "$provider.images/data.ext4"
+size = "64M"
+materialize = false

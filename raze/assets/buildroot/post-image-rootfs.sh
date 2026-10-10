@@ -1,6 +1,6 @@
 #!/bin/sh
 # Buildroot post-image script: turn rootfs.tar into the read-only root,
-# rootfs.erofs, and make an empty data.ext4 for /data.
+# rootfs.erofs, and write the flash id the boot selector (p1) carries.
 #
 # The content comes from rootfs.tar, which Buildroot creates under fakeroot
 # with the final ownership and permissions. Extraction, the fixes below and
@@ -327,10 +327,10 @@ du -sm "$root/usr/lib/jvm" "$root/opt/photonvision" "$root/usr/lib/photonvision"
 [ "$size_mib" -le "$slot_mib" ] ||
 	die "rootfs.erofs (${size_mib} MiB) does not fit a ${slot_mib} MiB root slot"
 
-# An empty /data filesystem for p7; grow-rootfs.service grows it to fill the
-# eMMC on first boot, data-early and data-setup fill it.
-data_image="$BINARIES_DIR/data.ext4"
-rm -f "$data_image"
-truncate -s 64M "$data_image"
-mkfs.ext4 -q -F -b 4096 -O ^64bit -L data "$data_image"
-log "data.ext4 is 64 MiB (grown on first boot)"
+# The image ships no /data filesystem (p7, and slot B's root, are left out of
+# sdcard.img). The device package's board-data-setup makes /data on first boot
+# and grows it to fill the eMMC; it remakes /data whenever p1's flash id
+# differs from the one /data was made for, so a flash resets /data and an A/B
+# update (which never writes p1) keeps it. A new id for every build.
+cat /proc/sys/kernel/random/uuid >"$BINARIES_DIR/flash-id"
+log "flash id $(cat "$BINARIES_DIR/flash-id")"
