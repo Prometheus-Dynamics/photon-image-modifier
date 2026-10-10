@@ -1,0 +1,37 @@
+#!/bin/sh
+# Tell Atlas which camera views PhotonVision serves: writes
+# /run/board/camera-streams.json, which the device package's identity
+# endpoint lists as camera_streams. Each active camera has a processed view
+# (its nickname, PhotonVision's output stream) and a raw view (<nickname>-raw,
+# the input stream); PhotonVision serves them with cscore on 1181 + 2 *
+# streamIndex (input) and one above (output), at /stream.mjpg. Run at boot and
+# whenever PhotonVision's settings database changes (photonvision-camera-streams.path).
+set -eu
+db=${PV_SETTINGS_DB:-/opt/photonvision/photonvision_config/photon.sqlite}
+out=${CAMERA_STREAMS_FILE:-/run/board/camera-streams.json}
+mkdir -p "${out%/*}"
+rows=""
+if [ -r "$db" ]; then
+	rows=$(sqlite3 -readonly -separator '	' "$db" \
+		"select json_extract(contents,'\$.nickname'), json_extract(contents,'\$.streamIndex')
+		   from cameras
+		  where coalesce(json_extract(contents,'\$.deactivated'), 0) = 0
+		  order by json_extract(contents,'\$.streamIndex')" 2>/dev/null) || rows=""
+fi
+sep=""
+tab=$(printf '\t')
+echo "$rows" | while IFS="$tab" read -r nick idx; do
+	case "$idx" in '' | *[!0-9]*) continue ;; esac
+	in_port=$((1181 + 2 * idx))
+	out_port=$((in_port + 1))
+	# JSON-escape the nickname (backslash and double quote).
+	name=$(printf '%s' "${nick:-camera$idx}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+	printf '%s{"name":"%s","url":":%s/stream.mjpg"},{"name":"%s-raw","url":":%s/stream.mjpg"}' \
+		"$sep" "$name" "$out_port" "$name" "$in_port"
+	sep=","
+done >"$out.items"
+json="[$(cat "$out.items")]"
+rm -f "$out.items"
+[ "$(cat "$out" 2>/dev/null || true)" = "$json" ] && exit 0
+printf '%s\n' "$json" >"$out.tmp"
+mv -f "$out.tmp" "$out"

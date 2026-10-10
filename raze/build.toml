@@ -227,6 +227,34 @@ src = "raze/assets/rootfs/usr/lib/photonvision-os/manage-url"
 dest = "/usr/lib/photonvision-os/manage-url"
 origin = "static-asset"
 
+# Atlas's camera views: camera-streams writes /run/board/camera-streams.json
+# (each camera's processed and raw MJPEG stream) at boot and whenever
+# PhotonVision's settings change; the identity lists it as camera_streams.
+[[stage.files]]
+id = "photonvision-raze-camera-streams"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/camera-streams"
+dest = "/usr/lib/photonvision-os/camera-streams"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-camera-streams-service"
+name = "photonvision-camera-streams.service"
+unit_path = "raze/assets/rootfs/photonvision-camera-streams.service"
+
+[[stage.services]]
+id = "photonvision-raze-camera-streams-path"
+name = "photonvision-camera-streams.path"
+unit_path = "raze/assets/rootfs/photonvision-camera-streams.path"
+
+# nt-server --point <address> | --restore | --status: Atlas points a camera at
+# its local NT server for a while (over SSH; listed in the identity's
+# diagnostics), changing only PhotonVision's ntServerAddress.
+[[stage.files]]
+id = "photonvision-raze-nt-server"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/nt-server"
+dest = "/usr/lib/photonvision-os/nt-server"
+origin = "static-asset"
+
 [[stage.services]]
 id = "photonvision-raze-manage-url-service"
 name = "photonvision-manage-url.service"
@@ -373,6 +401,8 @@ stage_files = [
   "photonvision-raze-leds-tmpfiles",
   "photonvision-raze-hardware-config",
   "photonvision-raze-manage-url",
+  "photonvision-raze-camera-streams",
+  "photonvision-raze-nt-server",
   "photonvision-raze-update-health",
   "photonvision-raze-update-pre-reboot",
   "photonvision-raze-hardware-config-default",
@@ -389,7 +419,7 @@ stage_files = [
   "photonvision-raze-nm-dispatcher-timesync",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-camera-streams-service", "photonvision-raze-camera-streams-path", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
 
 # Raze is the only target that assembles a bootable disk; Gaia compresses it
 # next to sdcard.img by the name's extension (input.raze_archive_ext: img.xz,

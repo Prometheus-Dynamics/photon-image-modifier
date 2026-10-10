@@ -1,0 +1,46 @@
+#!/bin/sh
+# Point PhotonVision's NetworkTables client at another server for a while
+# (Atlas's local NT server), and put it back:
+#   nt-server --point <address>   save the current address, use <address>
+#   nt-server --restore           put the saved address back
+#   nt-server --status            print the current address (and the saved one)
+# Only networkConfig.ntServerAddress changes; PhotonVision is restarted to
+# apply it. PhotonVision connects on port 5810, so the server must listen there.
+set -eu
+db=${PV_SETTINGS_DB:-/opt/photonvision/photonvision_config/photon.sqlite}
+saved=${NT_SERVER_SAVED:-/data/board/nt-server.previous}
+die() { echo "nt-server: $*" >&2; exit 1; }
+[ -w "$db" ] || die "PhotonVision's settings ($db) are not writable"
+current() {
+	sqlite3 -readonly "$db" "select json_extract(contents,'\$.ntServerAddress') from global where config_name='networkConfig'"
+}
+set_address() {
+	case "$1" in *\'*) die "bad address: $1" ;; esac
+	systemctl stop photonvision.service
+	sqlite3 "$db" "update global set contents=json_set(contents,'\$.ntServerAddress','$1') where config_name='networkConfig'" ||
+		{ systemctl start photonvision.service; die "could not update the settings"; }
+	systemctl start photonvision.service
+}
+case "${1:-}" in
+--point)
+	addr=${2:-}
+	case "$addr" in '' | *[!0-9A-Za-z.:-]*) die "usage: nt-server --point <address>" ;; esac
+	mkdir -p "${saved%/*}"
+	# Keep the address from before the first --point, not an earlier --point's.
+	[ -e "$saved" ] || current >"$saved"
+	set_address "$addr"
+	echo "PhotonVision now uses NetworkTables server $addr (was $(cat "$saved"))"
+	;;
+--restore)
+	[ -e "$saved" ] || { echo "nothing to restore; current: $(current)"; exit 0; }
+	set_address "$(cat "$saved")"
+	echo "PhotonVision's NetworkTables server is back to $(cat "$saved")"
+	rm -f "$saved"
+	;;
+--status)
+	printf 'current=%s' "$(current)"
+	[ -e "$saved" ] && printf ' saved=%s' "$(cat "$saved")"
+	echo
+	;;
+*) die "usage: nt-server --point <address> | --restore | --status" ;;
+esac

@@ -1,0 +1,10 @@
+[Unit]
+Description=Publish PhotonVision's camera views for Atlas (camera_streams)
+After=photonvision.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/photonvision-os/camera-streams
+
+[Install]
+WantedBy=multi-user.target

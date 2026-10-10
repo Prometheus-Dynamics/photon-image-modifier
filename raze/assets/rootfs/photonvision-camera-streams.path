@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh PhotonVision's camera views when its settings change
+
+[Path]
+PathModified=/opt/photonvision/photonvision_config/photon.sqlite
+Unit=photonvision-camera-streams.service
+
+[Install]
+WantedBy=multi-user.target
