@@ -159,3 +159,11 @@ default = "057ab3bc58321cfb8a373b29b69ef8b3b2d3d03d"
 description = "Version string forced into the Raze libcamera driver artifacts; matches raze_libcamera_driver_rev"
 kind = "string"
 default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
+
+# Gaia compresses the Raze disk image by this extension: img.xz (the default,
+# what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
+# of about a minute; the board updater reads both), for dev builds.
+[inputs.raze_archive_ext]
+description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
+kind = "string"
+default = "img.xz"

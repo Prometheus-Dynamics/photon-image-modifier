@@ -34,8 +34,6 @@ build_env = [
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
   ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF"],
   ["GRADLE_EXTRA_ARGS", "-PversionString=${input.raze_libcamera_driver_version}"],
-  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
-  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
   ["CLEAN_BUILD", "1"],
 ]
 after_image_prepare = true
@@ -56,8 +54,6 @@ build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
   ["LIBCAMERA_DRIVER_VERSION", "${input.raze_libcamera_driver_version}"],
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
-  ["GRADLE_USER_HOME", "${project.root_dir}/.gaia/docker-home/.gradle"],
-  ["JAVA_TOOL_OPTIONS", "-Duser.home=${project.root_dir}/.gaia/docker-home"],
 ]
 source = "photonvision-source"
 dependencies = ["photon-libcamera-gl-driver"]

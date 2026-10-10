@@ -265,6 +265,7 @@ kind = "buildroot"
 # package): a layer's external_tree replaces the earlier one, so keep the
 # device package's path in step with devices/raze/gaia/kernel.toml.
 external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external"
+external_tree_mode = "required"
 config_overrides = [
   # raspberrypicm5io_defconfig uses the external Bootlin toolchain, which has
   # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
@@ -370,10 +371,11 @@ stage_files = [
 stage_env_sets = ["photonvision-raze-image-env"]
 stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
 
-# Raze is the only target that assembles a bootable disk; a name ending in
-# .img.xz makes Gaia xz-compress it next to sdcard.img.
+# Raze is the only target that assembles a bootable disk; Gaia compresses it
+# next to sdcard.img by the name's extension (input.raze_archive_ext: img.xz,
+# or img.zst for dev builds).
 [image.output]
-archive_name = "${build.name}-${input.raze_photonvision_version}.img.xz"
+archive_name = "${build.name}-${input.raze_photonvision_version}.${input.raze_archive_ext}"
 
 # The OS owns the boot partition: the device package adds raze-device.txt,
 # its overlays and the stock overlays it loads to the tree with id "boot".

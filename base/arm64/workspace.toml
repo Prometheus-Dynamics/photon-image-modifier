@@ -66,7 +66,8 @@ enabled = true
 
 [providers.buildroot.ccache]
 enabled = true
-max_size = "50G"
+# Below the build disk's free space (about 61 GiB), so Gaia doesn't warn.
+max_size = "40G"
 
 [execution]
 jobs = 0
