@@ -347,9 +347,10 @@ name = "rootfs.erofs"
 format = "erofs"
 required = true
 
-# The flash id for p1 (post-image script); collected so the assembly can read it.
+# The flash id for p1 (post-image script); collected so the assembly can read
+# it (".raw": Gaia matches expected images to their format by extension).
 [[image.expected_images]]
-name = "flash-id"
+name = "flash-id.raw"
 format = "raw"
 required = true
 
@@ -483,7 +484,7 @@ dest = "autoboot.txt"
 # changes, so a flash resets /data and an update keeps it.
 [[image.assembly.files]]
 tree = "autoboot"
-src = "$provider.images/flash-id"
+src = "$provider.images/flash-id.raw"
 dest = "board/flash-id"
 
 [[image.assembly.filesystems]]

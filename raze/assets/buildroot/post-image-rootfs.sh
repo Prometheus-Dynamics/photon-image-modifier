@@ -332,5 +332,5 @@ du -sm "$root/usr/lib/jvm" "$root/opt/photonvision" "$root/usr/lib/photonvision"
 # and grows it to fill the eMMC; it remakes /data whenever p1's flash id
 # differs from the one /data was made for, so a flash resets /data and an A/B
 # update (which never writes p1) keeps it. A new id for every build.
-cat /proc/sys/kernel/random/uuid >"$BINARIES_DIR/flash-id"
-log "flash id $(cat "$BINARIES_DIR/flash-id")"
+cat /proc/sys/kernel/random/uuid >"$BINARIES_DIR/flash-id.raw"
+log "flash id $(cat "$BINARIES_DIR/flash-id.raw")"
