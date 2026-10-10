@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "04aadeae6643844f72a692e7184ed94f643d6b9f"
+rev = "a6fe6e826222fcb0272f84787021f09918f0b430"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -44,7 +44,9 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). 5b1d38c: the PIO I2C bus
+# package is tested with (Atlas devices/README.md). a9e352f: USB port power
+# switches, frame watch, look presets and the over layer mode, IMU/mag
+# auto-calibration and fusion, ring looks over Orion; 5b1d38c: the PIO I2C bus
 # (IMU at ~2% CPU), the trial ember held until the self-test, the drain
 # confirm look and comet glow; 2ab3d93: sparkle looks
 # (starry trial boot, green pop with falling sparks), anti-aliased comets, a
@@ -56,7 +58,7 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "5b1d38c2db8354bdb518d1003bec8893d6408580"
+rev = "a9e352f965d32300061acd33503c8a83490ebf5e"
 
 [[stage.files]]
 id = "photonvision-raze-config"
