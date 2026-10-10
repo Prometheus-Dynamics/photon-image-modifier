@@ -37,8 +37,14 @@ set -eu
 slot_mib=512
 # mkfs.erofs: LZMA (kernel CONFIG_EROFS_FS_ZIP_LZMA), 1 MiB physical clusters
 # (the best ratio; the kernel reads at most 1 MiB to fill a cold page), small
-# file tails packed into shared fragments, identical data stored once.
-erofs_opts="-zlzma,level=6 -C1048576 -Eztailpacking,fragments,dedupe -Lrootfs"
+# file tails packed into shared fragments. No dedupe: it saves nothing on this
+# root (+0.2% without it) and forces single-threaded compression; with
+# host-erofs-utils built multithreaded (external.mk), --workers cuts the
+# compression from ~105 s to ~14 s. A binary without --workers still works.
+erofs_opts="-zlzma,level=6 -C1048576 -Eztailpacking,fragments -Lrootfs"
+if mkfs.erofs --help 2>&1 | grep -q -- '--workers'; then
+	erofs_opts="$erofs_opts --workers=$(nproc)"
+fi
 
 # Modules the OS loads by name (modules-load.d, the USB gadget script, the
 # LED ring). Their absence fails the build. Their own dependencies are
