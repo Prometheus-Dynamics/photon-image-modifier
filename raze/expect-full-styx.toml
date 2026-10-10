@@ -1,0 +1,21 @@
+# What a full Raze PhotonVision image must contain: validation fails if any of
+# these disappears (a layer deleted, emptied by a bad write, no longer
+# imported, or its `when` no longer matching).
+[expect]
+artifacts = [
+  "photonvision-jar",
+  
+  "orion-node",
+  "board-agent",
+  "board-stream",
+  "lemnosd",
+  "lemnos-ctl",
+]
+installs = [
+  "install-photonvision-jar",
+  "install-orion-node",
+  "install-board-agent",
+  "install-board-stream",
+  "install-lemnosd",
+  "install-lemnos-ctl",
+]

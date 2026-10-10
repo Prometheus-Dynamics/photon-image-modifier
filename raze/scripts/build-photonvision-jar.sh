@@ -5,6 +5,7 @@
 #
 # Environment (all optional):
 #   PHOTONVISION_VERSION       forced -PversionString (jar name and UI version)
+#   PHOTONVISION_STYX          1: the Styx backend (-PstyxBackend, bundles libphotonstyx.so)
 #   LIBCAMERA_DRIVER_VERSION   -PlibcameraDriverVersion to consume
 #   MAVEN_LOCAL_REPO           maven local repo shared with the driver build
 #   PHOTONVISION_PREBUILD      gradle tasks to run in a separate invocation
@@ -21,6 +22,10 @@ if [ -n "${MAVEN_LOCAL_REPO:-}" ]; then
 fi
 if [ -n "${PHOTONVISION_VERSION:-}" ]; then
   args+=("-PversionString=${PHOTONVISION_VERSION}")
+fi
+if [ "${PHOTONVISION_STYX:-}" = "1" ]; then
+  # The Styx backend: photon-styx is built by the gradle task and bundled as linux/arm64 natives.
+  args+=("-PstyxBackend=true")
 fi
 if [ -n "${LIBCAMERA_DRIVER_VERSION:-}" ]; then
   args+=("-PlibcameraDriverVersion=${LIBCAMERA_DRIVER_VERSION}")

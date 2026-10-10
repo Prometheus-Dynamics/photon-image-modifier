@@ -1,6 +1,6 @@
 gaia_version = ">=2.0.0"
-build_name = "photonvision-${input.profile}-${input.target}"
-display_name = "PhotonVision Image"
+build_name = "photonvision-styx-${input.profile}-${input.target}"
+display_name = "PhotonVision Image (Styx vision backend)"
 version = "${input.version}"
 description = "Top-level PhotonVision Gaia build. Select target and profile here; target folders are fragments, not build entrypoints."
 target = "${input.target}"
@@ -41,8 +41,8 @@ imports = [
 
   { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
   { path = "raze/build.toml", when = { target = "raze" } },
-  { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
-  { path = "raze/expect-full.toml", when = { profile = "full", target = "raze" } },
+  { path = "raze/photonvision-styx.toml", when = { profile = "full", target = "raze" } },
+  { path = "raze/expect-full-styx.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
