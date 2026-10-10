@@ -38,6 +38,8 @@ retry_attempts = 1
 retry_backoff_ms = 0
 retry_backoff_strategy = "fixed"
 timeout_seconds = 1800
+# Gradle's home in the user cache (on a fast disk) instead of the workspace.
+gradle_home = "user-cache"
 
 [providers.buildroot]
 retry_attempts = 1
@@ -51,6 +53,13 @@ timeout_seconds = 28800
 # (BR2_PER_PACKAGE_DIRECTORIES), and a compiler cache shared by every build.
 local_jobs = 0
 parallel_packages = true
+# Build the Buildroot tree in RAM (falls back to disk when memory is short):
+# a full build is mostly small-file IO, which a spinning disk makes slow.
+work_dir = "ram"
+
+[providers.buildroot.host_tools]
+# The build image's ccache instead of building host-ccache and its libraries.
+ccache = "system,build"
 
 [providers.buildroot.package_cache]
 enabled = true
