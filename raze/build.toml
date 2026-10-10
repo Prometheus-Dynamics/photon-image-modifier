@@ -393,15 +393,20 @@ tree = "boot"
 src = "raze/assets/cmdline.txt"
 dest = "cmdline.txt"
 
+# start4.elf/fixup4.dat are the Pi 4 GPU firmware. A CM5 boots from its EEPROM
+# bootloader and never reads them, and rpi-firmware installs them only when its
+# Pi 4 variant is selected, so they are optional here.
 [[image.assembly.files]]
 tree = "boot"
 src_glob = "$provider.buildroot_output/images/rpi-firmware/start4.elf"
 dest = "."
+optional = true
 
 [[image.assembly.files]]
 tree = "boot"
 src_glob = "$provider.buildroot_output/images/rpi-firmware/fixup4.dat"
 dest = "."
+optional = true
 
 [[image.assembly.files]]
 tree = "boot"
