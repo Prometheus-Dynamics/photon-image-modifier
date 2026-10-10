@@ -41,7 +41,9 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). b17b5a5: sensors read on
+# package is tested with (Atlas devices/README.md). 2ab3d93: sparkle looks
+# (starry trial boot, green pop with falling sparks), anti-aliased comets, a
+# brighter reboot ember, IMU channel-selective reads; b17b5a5: sensors read on
 # demand (no IMU reads with no subscriber), one thread per bus; looks as data
 # (named and inline LED looks, look files, the pv.* looks), plus 8e59039's subscribe
 # replies, a deadline scheduler and boot-clock timestamps for live readings.
@@ -49,7 +51,7 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "b17b5a5918ae1280c9fb29231e92ac0351bf6061"
+rev = "2ab3d938c3aa2430be10837916d6f7edcd119aa6"
 
 [[stage.files]]
 id = "photonvision-raze-config"
