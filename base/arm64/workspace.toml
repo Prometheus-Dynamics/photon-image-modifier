@@ -1,4 +1,6 @@
 [workspace]
+# Finished images are copied here (Gaia prints the path, sha256 and size).
+export_dir = "~/Downloads"
 root_dir = "."
 build_dir = "build/gaia/${build.name}"
 out_dir = "output/gaia/${build.name}"
