@@ -10,8 +10,7 @@
 #   PHOTONVISION_PREBUILD      gradle tasks to run in a separate invocation
 #                              before the jar (space separated)
 #
-# Also builds the offline docs (Sphinx, docs/) so the jar serves /docs/,
-# without their videos and large images; needs
+# Also builds the offline docs (Sphinx, docs/) so the jar serves /docs/; needs
 # python3-venv and network access for pip on the first run.
 set -euo pipefail
 
@@ -53,7 +52,7 @@ if [ -f docs/requirements.txt ]; then
   # build.
   docs_hash=$(
     {
-      echo "${req_hash} media-trim-v1"
+      echo "${req_hash}"
       find docs -path docs/build -prune -o -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum
     } | sha256sum | cut -c1-32
   )
@@ -65,11 +64,6 @@ if [ -f docs/requirements.txt ]; then
       echo "build-photonvision-jar: docs/build/html/index.html was not produced" >&2
       exit 1
     fi
-    # The bundled docs are text and diagrams; the tutorial videos, GIFs and
-    # large photos (mostly other boards' wiring) were ~43 of their 55 MB, in a
-    # 512 MiB read-only root. They stay on docs.photonvision.org.
-    find docs/build/html -type f \( -name '*.mp4' -o -name '*.webm' -o -name '*.gif' \
-      -o \( -size +400k \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' \) \) \) -delete
     printf '%s\n' "${docs_hash}" > "${stamp}"
   fi
 fi
