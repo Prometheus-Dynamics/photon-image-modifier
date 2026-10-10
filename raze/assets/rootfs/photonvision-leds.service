@@ -1,7 +1,8 @@
 [Unit]
 Description=Raze LED ring as PhotonVision's status light
 Documentation=file:/usr/lib/photonvision-os/pv-leds-ring
-After=raze-leds-reprobe.service
+After=raze-leds-reprobe.service lemnosd.service
+Wants=lemnosd.service
 Before=photonvision.service
 
 [Service]

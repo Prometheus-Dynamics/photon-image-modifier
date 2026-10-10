@@ -9,20 +9,21 @@ target = "raze"
 
 # The Atlas repository holding the Raze device package. It is declared here
 # rather than in the root build.toml so that only Raze builds materialize it.
-# Pinned to a full commit (e8b2833: Buildroot 2026.08, kernel rpi-7.2.y
+# Pinned to a full commit (a8e9f4b: Buildroot 2026.08, kernel rpi-7.2.y
 # with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
 # v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
 # services, the board-* names, lemnosd as the hardware service, board-agent
 # for Orion update control (Orion ec91d0a), and the board event log and
 # status endpoint on :5899, the A/B updater fixes from the first hardware
 # run, board events by seq, the board-stream push channel on :5898 with
-# its hardware topic, clock sync, and seq kept above torn log lines); see GAIA.md for building against a local Atlas
+# its hardware topic and inotify wakeups, clock sync, and seq kept above
+# torn log lines); see GAIA.md for building against a local Atlas
 # checkout.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "e8b2833d4ab28ec4fd3780cc5ed75196ac8cd1db"
+rev = "a8e9f4bf9d543c49d8140ea94356169033d0591a"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -37,13 +38,14 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). 8e59039: subscribe
+# package is tested with (Atlas devices/README.md). c21515a: looks as data
+# (named and inline LED looks, look files, the pv.* looks), plus 8e59039's subscribe
 # replies, a deadline scheduler and boot-clock timestamps for live readings.
 [[sources]]
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "8e5903954668ad0b77d211e8cdb75747368f7daa"
+rev = "c21515a64d9d788ff7ebf00da594dffb3f58ff8b"
 
 [[stage.files]]
 id = "photonvision-raze-config"
@@ -81,12 +83,11 @@ origin = "static-asset"
 # The LED ring as PhotonVision's status light (and vision LED), with no
 # PhotonVision changes: the default hardwareConfig.json maps PhotonVision's
 # status RGB pins (101-103) and vision LED (pin 13) to custom GPIO commands
-# that only write the pin state to /run/photonvision-os; pv-leds-ring turns
-# that into ring colours through the device package's raze-leds helper,
-# calling it only when the look changes. The status colours follow
-# PhotonVision's LED brightness slider, read from its settings database with
-# the sqlite3 CLI (BR2_PACKAGE_SQLITE in base/arm64/base-os.toml installs it)
-# whenever the database changes.
+# that only write the pin state to /run/photonvision-os; pv-leds-ring decodes
+# PhotonVision's status from them and asks lemnosd for the matching named look
+# (pv.targets, pv.searching, pv.no-nt, pv.no-nt-targets, pv.error, pv.vision),
+# only when the status changes. lemnosd owns the looks, so restyling the ring
+# is a Lemnos look file, not a change here.
 [[stage.files]]
 id = "photonvision-raze-pv-leds-ring"
 src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds-ring"

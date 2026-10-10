@@ -6,25 +6,34 @@
 # in $STATE (a bash builtin, so no extra process per update):
 #   pin 13            vision LED   (0.0-1.0 brightness, or true/false)
 #   pins 101 102 103  status RGB   (true/false; PhotonVision blinks them)
-# This loop samples those files a few times a second using builtins only (no
-# fork per tick) and calls raze-leds only when the ring's look changes:
-#   vision LED on  -> white at its brightness
-#   otherwise      -> PhotonVision's status colour, blinking when it blinks:
-#     blue = targets visible, blinking green = connected, no targets,
-#     blinking blue = no NetworkTables, targets visible,
-#     blinking yellow = no NetworkTables, no targets, blinking red = error.
-# The status colours follow PhotonVision's LED brightness slider: PhotonVision
-# only drives the vision LED with it, but saves it to its settings database
-# (hardwareSettings.ledBrightnessPercentage), which is re-read whenever the
-# database file changes.
+# PhotonVision rewrites the status pins every 150 ms, blinking as two ticks on
+# and one off, and writes red, green and blue one after another, so a single
+# sample can catch yellow half written. This loop samples the files every
+# TICK using builtins only (no fork per tick), decodes PhotonVision's status
+# from the last WINDOW samples (a channel that was on at all is part of the
+# colour; one that was also off is blinking), and asks lemnosd for the
+# matching named look once the decoded status has held for SETTLE samples:
+#   vision LED on                       -> pv.vision, at the vision brightness
+#   blue                                -> pv.targets        (targets visible)
+#   blinking green                      -> pv.searching      (no targets)
+#   blinking blue                       -> pv.no-nt-targets  (no NetworkTables)
+#   blinking yellow (red + green)       -> pv.no-nt          (no NT, no targets)
+#   blinking red                        -> pv.error
+#   nothing                             -> off (other clients' looks show)
+# The looks themselves (colours, motion, brightness) are lemnosd's: built in,
+# and restyled by look files in /etc/lemnos/looks.d or
+# /var/lib/lemnos/looks.d (Lemnos docs/looks.md), with no change here.
+# PhotonVision's LED brightness slider scales the vision LED only; the ring's
+# overall level is lemnosd's look_brightness.
 set -u
 
-LEDS=${PV_LEDS_HELPER:-/usr/lib/board/raze-leds}
+CTL=${PV_LEDS_CTL:-/usr/bin/lemnos-ctl}
+CLIENT=${PV_LEDS_CLIENT:-photonvision}
+RING=${PV_LEDS_RING:-status-ring}
 STATE=${PV_LEDS_STATE:-/run/photonvision-os}
-TICK=0.15
-WINDOW=4 # samples kept per channel, to tell steady from blinking
-PV_LEDS_STATUS_DIM=40 # used until PhotonVision's saved brightness is known
-PV_SETTINGS_DB=/opt/photonvision/photonvision_config/photon.sqlite
+TICK=0.1
+WINDOW=10 # samples (1 s): longer than PhotonVision's 450 ms blink
+SETTLE=3  # samples a new status must hold before the ring changes
 # shellcheck source=/dev/null
 [ -r /etc/default/pv-leds ] && . /etc/default/pv-leds
 
@@ -47,31 +56,15 @@ lit() { # $1 value -> success when on
 	return 0
 }
 
-pct=0
-percent() { # 0.0-1.0 or true -> $pct (integer 0-100), builtins only
-	case "$1" in true | 1 | 1.0) pct=100; return ;; esac
+bright="1.00"
+fraction() { # 0.0-1.0 or true -> $bright ("0.00".."1.00"), builtins only
+	case "$1" in true | 1 | 1.0) bright="1.00"; return ;; esac
 	local int=${1%%.*} frac=${1#*.}
 	[ "$frac" = "$1" ] && frac=0
 	frac="${frac}00"
-	pct=$((10#${int:-0} * 100 + 10#${frac:0:2}))
+	local pct=$((10#${int:-0} * 100 + 10#${frac:0:2}))
 	((pct > 100)) && pct=100
-}
-
-# The slider value, refreshed only when the settings database is newer than
-# our stamp (a builtin test, so no fork per tick).
-DB_STAMP=$STATE/.settings-read
-status_dim=$PV_LEDS_STATUS_DIM
-refresh_dim() {
-	[ -r "$PV_SETTINGS_DB" ] || return
-	[ "$PV_SETTINGS_DB" -nt "$DB_STAMP" ] || return
-	: >"$DB_STAMP"
-	local v
-	v=$(sqlite3 -readonly "$PV_SETTINGS_DB" \
-		"select json_extract(contents, '$.ledBrightnessPercentage') from global where config_name='hardwareSettings'" 2>/dev/null) || return
-	case "$v" in '' | *[!0-9]*) return ;; esac
-	((v > 100)) && v=100
-	((v < 1)) && v=1
-	status_dim=$v
+	printf -v bright '%d.%02d' $((pct / 100)) $((pct % 100))
 }
 
 hist_r="" hist_g="" hist_b=""
@@ -81,16 +74,42 @@ push() { # var bit: keep the last WINDOW bits as a string
 	((${#h} > WINDOW)) && h=${h: -WINDOW}
 }
 
-last=""
-apply() { # look, then the raze-leds commands to get there
-	[ "$1" = "$last" ] && return
-	last=$1
-	shift
-	"$@"
+# The look for the status in the history windows -> $want.
+want=off
+decode() {
+	local r=0 g=0 b=0 blink=0
+	[[ $hist_r == *1* ]] && r=1
+	[[ $hist_g == *1* ]] && g=1
+	[[ $hist_b == *1* ]] && b=1
+	[[ $b == 1 && $hist_b == *0* ]] && blink=1
+	if ((r && g)); then
+		want=pv.no-nt
+	elif ((r)); then
+		want=pv.error
+	elif ((g)); then
+		want=pv.searching
+	elif ((b && blink)); then
+		want=pv.no-nt-targets
+	elif ((b)); then
+		want=pv.targets
+	else
+		want=off
+	fi
+}
+
+shown="" candidate="" held=0
+show() { # look [brightness]: ask lemnosd; remember it only once accepted
+	if [ "$1" = off ]; then
+		"$CTL" --client "$CLIENT" led off --device "$RING" >/dev/null 2>&1 || return
+	elif [ -n "${2:-}" ]; then
+		"$CTL" --client "$CLIENT" led look "$1" --brightness "$2" --device "$RING" >/dev/null 2>&1 || return
+	else
+		"$CTL" --client "$CLIENT" led look "$1" --device "$RING" >/dev/null 2>&1 || return
+	fi
+	shown="$1${2:+@$2}"
 }
 
 while :; do
-	refresh_dim
 	read_pin 13
 	vision=$value
 	read_pin 101; lit "$value" && push hist_r 1 || push hist_r 0
@@ -98,26 +117,22 @@ while :; do
 	read_pin 103; lit "$value" && push hist_b 1 || push hist_b 0
 
 	if lit "$vision"; then
-		percent "$vision"
-		apply "vision:$pct" sh -c "'$LEDS' color 255 255 255 255 && '$LEDS' dim $pct && '$LEDS' on"
+		fraction "$vision"
+		# The vision LED is PhotonVision's own command: show it at once.
+		[ "$shown" = "pv.vision@$bright" ] || show pv.vision "$bright"
+		candidate="" held=0
+	elif ((${#hist_b} < WINDOW)); then
+		: # Not a full window yet (just started): a partial one looks like blinking.
 	else
-		cr=0 cg=0 cb=0 blink=0
-		[[ $hist_r == *1* ]] && cr=1
-		[[ $hist_g == *1* ]] && cg=1
-		[[ $hist_b == *1* ]] && cb=1
-		[[ $cr == 1 && $hist_r == *0* ]] && blink=1
-		[[ $cg == 1 && $hist_g == *0* ]] && blink=1
-		[[ $cb == 1 && $hist_b == *0* ]] && blink=1
-		if [ "$cr$cg$cb" = 000 ]; then
-			apply "off" "$LEDS" off
+		decode
+		if [ "$want" = "$candidate" ]; then
+			((held < SETTLE)) && held=$((held + 1))
 		else
-			red=$((cr * 255))
-			green=$((cg * (cr ? 180 : 255))) # red+green reads as yellow, not orange
-			blue=$((cb * 255))
-			look="status:$cr$cg$cb:$blink:$status_dim"
-			cmd="'$LEDS' color $red $green $blue && '$LEDS' dim $status_dim && '$LEDS' on"
-			[ "$blink" = 1 ] && cmd="$cmd && '$LEDS' blink 2"
-			apply "$look" sh -c "$cmd"
+			candidate=$want held=1
+		fi
+		# A refused or failed request (lemnosd not up yet) is retried next tick.
+		if ((held >= SETTLE)) && [ "$shown" != "$want" ]; then
+			show "$want"
 		fi
 	fi
 	read -r -t "$TICK" -u "$SLEEP_FD" _ || true
