@@ -347,6 +347,12 @@ name = "rootfs.erofs"
 format = "erofs"
 required = true
 
+# The flash id for p1 (post-image script); collected so the assembly can read it.
+[[image.expected_images]]
+name = "flash-id"
+format = "raw"
+required = true
+
 [image.feed]
 stage_files = [
   "photonvision-raze-config",
