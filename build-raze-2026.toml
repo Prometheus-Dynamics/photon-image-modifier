@@ -159,12 +159,12 @@ default = "/home/sozo/Documents/GitHub/photonvision"
 [inputs.raze_photonvision_rev]
 description = "PhotonVision commit built for Raze (branch raze-2026: v2026.3.4 plus the Raze changes)"
 kind = "string"
-default = "a4b712498eb4ceba9077b10a1ff98f8ae661944b"
+default = "3997a5f00a77fd2f55c48669de1e7cc7c92e5005"
 
 [inputs.raze_photonvision_version]
 description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
 kind = "string"
-default = "dev-v2026.3.4-10-ga4b71249"
+default = "dev-v2026.3.4-11-g3997a5f0"
 
 [inputs.raze_libcamera_driver_repo]
 description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
