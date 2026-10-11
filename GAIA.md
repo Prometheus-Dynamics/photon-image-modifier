@@ -253,3 +253,33 @@ gaia run build.toml --set input.target=raze --set input.profile=full \
   --set input.raze_photonvision_repo=$PWD/../photonvision \
   --set input.raze_libcamera_driver_repo=$PWD/../photon-libcamera-gl-driver
 ```
+
+### PhotonVision 2026 (`build-raze-2026.toml`)
+
+`build-raze-2026.toml` is the same Raze recipe on PhotonVision 2026: the
+`raze-2026` branch of the PhotonVision fork (tag v2026.3.4 plus the Raze
+changes: OV9782, fisheye lenses, the image-supplied `hardwareConfig.json`)
+and the `raze-2026-fork` branch of the driver (the ov9782 and gaia-build-fix
+changes on the WPILib 2026 / OpenCV 4.10 driver, so the JNI matches the fork's
+`LibCameraJNI`). The image is named `photonvision-raze2026-<profile>-<target>`.
+
+```bash
+gaia run build-raze-2026.toml --set input.target=raze --set input.profile=full
+```
+
+It differs from `build.toml` in two layers:
+
+- `raze/build-2026.toml` replaces `raze/build.toml`: a copy (keep the two in
+  sync) whose `atlas` source carries the OV9782 exposure -ERANGE kernel fix,
+  and which ships `raze/assets/hardwareConfig-2026.json`, the hardware config
+  in PhotonVision 2026's schema (flat `statusRGBPins`/`statusRGBActiveHigh`;
+  2026 ignores the 2027 `statusLEDConfig`). Gaia rejects an import source
+  declared differently in two files, so the atlas pin cannot be overridden by
+  a later fragment.
+- `raze/photonvision-2026.toml` (after `raze/photonvision.toml`) runs both
+  Gradle builds in `docker/build-jdk17` (the build image plus Temurin 17 as
+  `JAVA_HOME`): their Gradle 8.14.3 does not run on JDK 25. The image still
+  runs PhotonVision on its jlink'd Temurin 25.
+
+The repo inputs default to the local main clones while the branches and the
+Atlas fix are unpushed; point them at the fork URLs once they are pushed.
