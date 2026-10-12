@@ -36,14 +36,11 @@ target = "raze"
 # build-raze-2026.toml: a6fe6e8 plus 8eb2f29, the kernel fix for the OV9782
 # exposure -ERANGE (the ov9282 driver keeps the exposure and strobe control
 # defaults inside their updated ranges; branch fix/ov9782-exposure-erange).
-# It is not pushed yet, so the repo is a local clone, as a git source (cloned
-# like a remote; `--set sources.atlas.path` makes a path source that the
-# board-agent Docker build cannot see). Once the fix is in
-# Atlas-Hardware-Manager, set the URL and its commit here.
+# Pinned to that branch's commit until the fix is merged into Atlas's dev.
 [[sources]]
 id = "atlas"
 kind = "git"
-repo = "/home/sozo/Documents/GitHub/Atlas-ov9782-exposure-clone"
+repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager.git"
 rev = "8eb2f293de559cf5a5f7181d8b753f03fe63f756"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives

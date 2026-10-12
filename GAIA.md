@@ -281,5 +281,6 @@ It differs from `build.toml` in two layers:
   `JAVA_HOME`): their Gradle 8.14.3 does not run on JDK 25. The image still
   runs PhotonVision on its jlink'd Temurin 25.
 
-The repo inputs default to the local main clones while the branches and the
-Atlas fix are unpushed; point them at the fork URLs once they are pushed.
+The repo inputs default to the forks (PhotonVision `raze-2026`, driver
+`raze-2026-fork`), and the atlas source to Atlas-Hardware-Manager's
+`fix/ov9782-exposure-erange` commit until that fix is merged into `dev`.

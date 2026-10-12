@@ -139,14 +139,8 @@ limit = 25
 cache_ttl_seconds = 3600
 fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
 
-# Raze application sources: the raze-2026 branches. They are not pushed yet,
-# so the repos are the local main clones (an input default cannot name
-# project.root_dir, and worktree paths fail inside Docker, whose clone cannot
-# follow a worktree's .git file); switch them to
-# https://github.com/Prometheus-Dynamics/photonvision.git and
-# https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git once
-# the branches are pushed.
-# The revs must be pushed to the repos before
+# Raze application sources: the forks' raze-2026 (PhotonVision) and
+# raze-2026-fork (driver) branches. The revs must be pushed to the repos before
 # the build works on other machines; point the *_repo inputs at local clones to
 # test unpushed commits. Keep each *_version equal to `git describe --tags`
 # of its rev (with the "dev-" prefix the PhotonVision build uses): the driver
@@ -154,7 +148,7 @@ fallback_choices = ["v2026.3.4", "v2027.0.0-alpha-2"]
 [inputs.raze_photonvision_repo]
 description = "PhotonVision git repository (URL or local path) used by the Raze target"
 kind = "string"
-default = "/home/sozo/Documents/GitHub/photonvision"
+default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 
 [inputs.raze_photonvision_rev]
 description = "PhotonVision commit built for Raze (branch raze-2026: v2026.3.4 plus the Raze changes)"
@@ -169,7 +163,7 @@ default = "dev-v2026.3.4-11-g3997a5f0"
 [inputs.raze_libcamera_driver_repo]
 description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
 kind = "string"
-default = "/home/sozo/Documents/GitHub/photon-libcamera-gl-driver"
+default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
 
 [inputs.raze_libcamera_driver_rev]
 description = "photon-libcamera-gl-driver commit built for Raze (branch raze-2026-fork: ov9782 plus gaia-build-fix, WPILib 2026 / OpenCV 4.10)"
