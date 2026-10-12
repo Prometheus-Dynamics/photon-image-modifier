@@ -1,0 +1,894 @@
+{
+  "harness": "raze-bench v1",
+  "label": "baseline-2027-libcamera",
+  "host": "172.31.12.81",
+  "started": "2026-10-11T09:06:07.219Z",
+  "params": {
+    "window_s": 30,
+    "mjpeg_window_s": 10,
+    "settle_s": 6,
+    "proc": "java",
+    "stream_port": 1182,
+    "phases": [
+      "full",
+      "low",
+      "driver"
+    ]
+  },
+  "pd_device": {
+    "os_version": "dev-v2027.0.0-alpha-2-94-gc9548d91+v2026.2.2-120-ga8cd373-dirty",
+    "os_name": "photonvision",
+    "model": "raze",
+    "rev": "gen1",
+    "serial": "0708c973b00a37bc",
+    "device_package": {
+      "version": "1.0.7",
+      "commit": "a6fe6e826222fcb0272f84787021f09918f0b430"
+    },
+    "slot_active": "A"
+  },
+  "phases": [
+    {
+      "name": "apriltag_1280x800",
+      "requested_mode": {
+        "pixelFormat": "Picam",
+        "width": 1280,
+        "fps": 120,
+        "height": 800
+      },
+      "requested_fps": 120,
+      "pv_state": {
+        "pipelineIndex": 0,
+        "pipelineType": 5,
+        "pipelineNickname": "New Pipeline",
+        "cameraVideoModeIndex": 0,
+        "videoMode": {
+          "pixelFormat": "Picam",
+          "width": 1280,
+          "fps": 120,
+          "height": 800
+        },
+        "tagFamily": 0,
+        "decimate": 1,
+        "threads": 4,
+        "blur": 0,
+        "refineEdges": true,
+        "solvePNPEnabled": false,
+        "doMultiTarget": false,
+        "streamingFrameDivisor": 0,
+        "outputShouldDraw": true,
+        "cameraAutoExposure": false,
+        "cameraExposureRaw": 2000,
+        "fpsLimit": -1
+      },
+      "pv": {
+        "ui_messages": 276,
+        "pv_fps": {
+          "n": 276,
+          "mean": 17.16,
+          "p50": 17,
+          "p95": 18,
+          "min": 14,
+          "max": 18
+        },
+        "pv_latency_ms": {
+          "n": 276,
+          "mean": 79.78,
+          "p50": 76.71,
+          "p95": 100.45,
+          "min": 62.39,
+          "max": 163.65
+        },
+        "seq_delivered_fps": 17.37,
+        "ui_result_rate_hz": 8.51,
+        "targets": {
+          "n": 276,
+          "mean": 0,
+          "p50": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "frames_with_targets_pct": 0,
+        "tag_ids_seen": [],
+        "window_s": 30
+      },
+      "system": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 31,
+        "system_cpu_pct": {
+          "n": 30,
+          "mean": 85.08,
+          "p50": 85.37,
+          "p95": 87.42,
+          "min": 81.6,
+          "max": 89.21
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 30,
+          "mean": 296.99,
+          "p50": 300,
+          "p95": 307.77,
+          "min": 259.62,
+          "max": 311.54
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 30,
+          "mean": 74.25,
+          "p50": 75,
+          "p95": 76.94,
+          "min": 64.9,
+          "max": 77.88
+        },
+        "proc_rss_mb": {
+          "n": 31,
+          "mean": 461.15,
+          "p50": 462.21,
+          "p95": 463.13,
+          "min": 457.89,
+          "max": 463.22
+        },
+        "cpu_temp_c": {
+          "n": 31,
+          "mean": 52.65,
+          "p50": 52.35,
+          "p95": 53.73,
+          "min": 51.25,
+          "max": 54
+        },
+        "arm_clock_mhz": {
+          "n": 31,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.04,
+          "min": 2400.02,
+          "max": 2400.04
+        },
+        "load1": {
+          "n": 31,
+          "mean": 5.25,
+          "p50": 5.22,
+          "p95": 5.53,
+          "min": 4.99,
+          "max": 5.53
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    462m  23%  76% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          "  936     1 lemnos   S     1604   0%   2% /usr/bin/lemnosd",
+          "72435     2 root     IW       0   0%   2% [kworker/u16:5-v]",
+          "  410     1 root     S    17752   1%   0% /usr/lib/systemd/systemd-journald",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved",
+          "  152     1 root     S    10668   1%   0% /usr/lib/systemd/systemd-udevd"
+        ]
+      },
+      "mjpeg_processed": {
+        "url": "http://172.31.12.81:1182/stream.mjpg",
+        "frames": 163,
+        "http_status": 200,
+        "content_type": "multipart/x-mixed-replace;boundary=boundarydonotcross",
+        "bytes": 7776724,
+        "fps": 16.33,
+        "frame_interval_ms": {
+          "n": 162,
+          "mean": 61.23,
+          "p50": 58.23,
+          "p95": 81.44,
+          "min": 43.81,
+          "max": 184.14
+        },
+        "mbit_per_s": 6.2,
+        "frame_kb": {
+          "n": 162,
+          "mean": 46.58,
+          "p50": 46.44,
+          "p95": 51.25,
+          "min": 39.24,
+          "max": 51.96
+        }
+      },
+      "system_while_streaming": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 11,
+        "system_cpu_pct": {
+          "n": 10,
+          "mean": 86.44,
+          "p50": 85.8,
+          "p95": 91.05,
+          "min": 83.37,
+          "max": 93.56
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 10,
+          "mean": 296.07,
+          "p50": 299.03,
+          "p95": 310.63,
+          "min": 237.5,
+          "max": 310.68
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 10,
+          "mean": 74.02,
+          "p50": 74.76,
+          "p95": 77.66,
+          "min": 59.37,
+          "max": 77.67
+        },
+        "proc_rss_mb": {
+          "n": 11,
+          "mean": 463.75,
+          "p50": 463.75,
+          "p95": 464.06,
+          "min": 463.34,
+          "max": 464.1
+        },
+        "cpu_temp_c": {
+          "n": 11,
+          "mean": 53.05,
+          "p50": 52.9,
+          "p95": 54,
+          "min": 52.35,
+          "max": 54
+        },
+        "arm_clock_mhz": {
+          "n": 11,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.04,
+          "min": 2400.02,
+          "max": 2400.04
+        },
+        "load1": {
+          "n": 11,
+          "mean": 5.51,
+          "p50": 5.53,
+          "p95": 5.53,
+          "min": 5.49,
+          "max": 5.53
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    463m  23%  67% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          "  931     1 dbus     S     6652   0%   2% /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslo",
+          "  206     2 root     IW       0   0%   2% [kworker/0:3-eve]",
+          "  410     1 root     S    18008   1%   0% /usr/lib/systemd/systemd-journald",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved",
+          "  152     1 root     S    10668   1%   0% /usr/lib/systemd/systemd-udevd"
+        ]
+      }
+    },
+    {
+      "name": "apriltag_640x400",
+      "requested_mode": {
+        "pixelFormat": "Picam",
+        "width": 640,
+        "fps": 120,
+        "height": 400
+      },
+      "requested_fps": 120,
+      "pv_state": {
+        "pipelineIndex": 0,
+        "pipelineType": 5,
+        "pipelineNickname": "New Pipeline",
+        "cameraVideoModeIndex": 3,
+        "videoMode": {
+          "pixelFormat": "Picam",
+          "width": 640,
+          "fps": 120,
+          "height": 400
+        },
+        "tagFamily": 0,
+        "decimate": 1,
+        "threads": 4,
+        "blur": 0,
+        "refineEdges": true,
+        "solvePNPEnabled": false,
+        "doMultiTarget": false,
+        "streamingFrameDivisor": 0,
+        "outputShouldDraw": true,
+        "cameraAutoExposure": false,
+        "cameraExposureRaw": 2000,
+        "fpsLimit": -1
+      },
+      "pv": {
+        "ui_messages": 306,
+        "pv_fps": {
+          "n": 306,
+          "mean": 96.82,
+          "p50": 99,
+          "p95": 107,
+          "min": 47,
+          "max": 110
+        },
+        "pv_latency_ms": {
+          "n": 306,
+          "mean": 21.8,
+          "p50": 21.49,
+          "p95": 28.32,
+          "min": 13.08,
+          "max": 51.71
+        },
+        "seq_delivered_fps": 94.26,
+        "ui_result_rate_hz": 9.51,
+        "targets": {
+          "n": 306,
+          "mean": 0,
+          "p50": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "frames_with_targets_pct": 0,
+        "tag_ids_seen": [],
+        "window_s": 30
+      },
+      "system": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 31,
+        "system_cpu_pct": {
+          "n": 30,
+          "mean": 71.39,
+          "p50": 71.18,
+          "p95": 75.71,
+          "min": 66.18,
+          "max": 80.58
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 30,
+          "mean": 252.54,
+          "p50": 252.91,
+          "p95": 262.5,
+          "min": 208.74,
+          "max": 263.11
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 30,
+          "mean": 63.13,
+          "p50": 63.23,
+          "p95": 65.63,
+          "min": 52.18,
+          "max": 65.78
+        },
+        "proc_rss_mb": {
+          "n": 31,
+          "mean": 473.5,
+          "p50": 473.64,
+          "p95": 474.55,
+          "min": 471.91,
+          "max": 474.65
+        },
+        "cpu_temp_c": {
+          "n": 31,
+          "mean": 51.5,
+          "p50": 51.25,
+          "p95": 52.9,
+          "min": 50.15,
+          "max": 52.9
+        },
+        "arm_clock_mhz": {
+          "n": 31,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.03,
+          "min": 2400.02,
+          "max": 2400.04
+        },
+        "load1": {
+          "n": 31,
+          "mean": 5.54,
+          "p50": 5.47,
+          "p95": 5.95,
+          "min": 5.34,
+          "max": 5.95
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    474m  24%  63% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          "  410     1 root     S    18972   1%   2% /usr/lib/systemd/systemd-journald",
+          "  936     1 lemnos   S     1500   0%   2% /usr/bin/lemnosd",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved",
+          "  152     1 root     S    10668   1%   0% /usr/lib/systemd/systemd-udevd",
+          "114640 1117 root     S     8368   0%   0% sshd-session: root [postauth]"
+        ]
+      },
+      "mjpeg_processed": {
+        "url": "http://172.31.12.81:1182/stream.mjpg",
+        "frames": 883,
+        "http_status": 200,
+        "content_type": "multipart/x-mixed-replace;boundary=boundarydonotcross",
+        "bytes": 8757819,
+        "fps": 88.3,
+        "frame_interval_ms": {
+          "n": 882,
+          "mean": 11.33,
+          "p50": 10.98,
+          "p95": 15.72,
+          "min": 2.51,
+          "max": 24.34
+        },
+        "mbit_per_s": 7,
+        "frame_kb": {
+          "n": 882,
+          "mean": 9.68,
+          "p50": 9.73,
+          "p95": 10.54,
+          "min": 8.18,
+          "max": 11.77
+        }
+      },
+      "system_while_streaming": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 11,
+        "system_cpu_pct": {
+          "n": 10,
+          "mean": 71.56,
+          "p50": 71.45,
+          "p95": 74.81,
+          "min": 65.45,
+          "max": 75.24
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 10,
+          "mean": 255.44,
+          "p50": 256.59,
+          "p95": 264,
+          "min": 241.75,
+          "max": 266.02
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 10,
+          "mean": 63.86,
+          "p50": 64.15,
+          "p95": 66,
+          "min": 60.44,
+          "max": 66.5
+        },
+        "proc_rss_mb": {
+          "n": 11,
+          "mean": 475.06,
+          "p50": 475.06,
+          "p95": 475.35,
+          "min": 474.74,
+          "max": 475.39
+        },
+        "cpu_temp_c": {
+          "n": 11,
+          "mean": 50.95,
+          "p50": 51.25,
+          "p95": 51.8,
+          "min": 49.6,
+          "max": 51.8
+        },
+        "arm_clock_mhz": {
+          "n": 11,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.04,
+          "min": 2400.02,
+          "max": 2400.04
+        },
+        "load1": {
+          "n": 11,
+          "mean": 4.98,
+          "p50": 4.99,
+          "p95": 5.12,
+          "min": 4.91,
+          "max": 5.24
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    474m  24%  67% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          "117218    1 board-st S      740   0%   2% /usr/bin/board-stream",
+          "  410     1 root     S    19100   1%   0% /usr/lib/systemd/systemd-journald",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved",
+          "  152     1 root     S    10668   1%   0% /usr/lib/systemd/systemd-udevd",
+          "123089 1117 root     S     8520   0%   0% sshd-session: root [postauth]"
+        ]
+      }
+    },
+    {
+      "name": "driver_mode",
+      "requested_mode": {
+        "pixelFormat": "Picam",
+        "width": 640,
+        "fps": 120,
+        "height": 400
+      },
+      "requested_fps": 120,
+      "pv_state": {
+        "pipelineIndex": -1,
+        "pipelineType": 2,
+        "pipelineNickname": "Driver Mode",
+        "cameraVideoModeIndex": 0,
+        "videoMode": {
+          "pixelFormat": "Picam",
+          "width": 1280,
+          "fps": 120,
+          "height": 800
+        },
+        "streamingFrameDivisor": 0,
+        "cameraAutoExposure": true,
+        "cameraExposureRaw": 20,
+        "fpsLimit": -1
+      },
+      "pv": {
+        "ui_messages": 239,
+        "pv_fps": {
+          "n": 239,
+          "mean": 14,
+          "p50": 14,
+          "p95": 14,
+          "min": 14,
+          "max": 15
+        },
+        "pv_latency_ms": {
+          "n": 239,
+          "mean": 12.71,
+          "p50": 12.55,
+          "p95": 13.92,
+          "min": 12.42,
+          "max": 15.52
+        },
+        "seq_delivered_fps": 14.95,
+        "ui_result_rate_hz": 7.47,
+        "targets": {
+          "n": 239,
+          "mean": 0,
+          "p50": 0,
+          "p95": 0,
+          "min": 0,
+          "max": 0
+        },
+        "frames_with_targets_pct": 0,
+        "tag_ids_seen": [],
+        "window_s": 30
+      },
+      "system": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 31,
+        "system_cpu_pct": {
+          "n": 30,
+          "mean": 8.04,
+          "p50": 7.74,
+          "p95": 14.42,
+          "min": 3.3,
+          "max": 16.71
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 30,
+          "mean": 9.95,
+          "p50": 9.8,
+          "p95": 11.32,
+          "min": 8.82,
+          "max": 11.76
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 30,
+          "mean": 2.49,
+          "p50": 2.45,
+          "p95": 2.83,
+          "min": 2.21,
+          "max": 2.94
+        },
+        "proc_rss_mb": {
+          "n": 31,
+          "mean": 489.44,
+          "p50": 489.43,
+          "p95": 489.58,
+          "min": 489.28,
+          "max": 489.59
+        },
+        "cpu_temp_c": {
+          "n": 31,
+          "mean": 43.99,
+          "p50": 44.1,
+          "p95": 45.75,
+          "min": 42.45,
+          "max": 46.3
+        },
+        "arm_clock_mhz": {
+          "n": 31,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.03,
+          "min": 2400.02,
+          "max": 2400.04
+        },
+        "load1": {
+          "n": 31,
+          "mean": 3.85,
+          "p50": 3.91,
+          "p95": 4.63,
+          "min": 3.11,
+          "max": 4.82
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    489m  24%   2% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          " 1087     1 root     SN    3024   0%   2% {pv-leds-ring} /bin/bash /usr/lib/photonvision-os/pv-leds-ring",
+          "  936     1 lemnos   S     1540   0%   2% /usr/bin/lemnosd",
+          "132563    1 board-st S      740   0%   2% /usr/bin/board-stream",
+          "  410     1 root     S    19612   1%   0% /usr/lib/systemd/systemd-journald",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved"
+        ]
+      },
+      "mjpeg_processed": {
+        "url": "http://172.31.12.81:1182/stream.mjpg",
+        "frames": 149,
+        "http_status": 200,
+        "content_type": "multipart/x-mixed-replace;boundary=boundarydonotcross",
+        "bytes": 6440331,
+        "fps": 14.95,
+        "frame_interval_ms": {
+          "n": 148,
+          "mean": 66.89,
+          "p50": 66.89,
+          "p95": 68.54,
+          "min": 60,
+          "max": 77.34
+        },
+        "mbit_per_s": 5.14,
+        "frame_kb": {
+          "n": 148,
+          "mean": 42.19,
+          "p50": 41.85,
+          "p95": 49.88,
+          "min": 33.85,
+          "max": 51.36
+        }
+      },
+      "system_while_streaming": {
+        "ok": true,
+        "ssh_exit": 0,
+        "ncpu": 4,
+        "proc_name": "java",
+        "pid": 15965,
+        "cmdline": "/usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNAMED -jar /opt/photonvision/photonvision.jar ",
+        "kernel": "7.2.9-v8-16k",
+        "samples": 11,
+        "system_cpu_pct": {
+          "n": 10,
+          "mean": 8.75,
+          "p50": 7.74,
+          "p95": 15.78,
+          "min": 5.54,
+          "max": 21.34
+        },
+        "proc_cpu_pct_of_one_core": {
+          "n": 10,
+          "mean": 18.45,
+          "p50": 18.63,
+          "p95": 19.61,
+          "min": 16.67,
+          "max": 19.61
+        },
+        "proc_cpu_pct_of_all_cores": {
+          "n": 10,
+          "mean": 4.61,
+          "p50": 4.66,
+          "p95": 4.9,
+          "min": 4.17,
+          "max": 4.9
+        },
+        "proc_rss_mb": {
+          "n": 11,
+          "mean": 489.66,
+          "p50": 489.65,
+          "p95": 489.71,
+          "min": 489.6,
+          "max": 489.72
+        },
+        "cpu_temp_c": {
+          "n": 11,
+          "mean": 42.7,
+          "p50": 42.45,
+          "p95": 43.83,
+          "min": 41.9,
+          "max": 44.1
+        },
+        "arm_clock_mhz": {
+          "n": 11,
+          "mean": 2400.03,
+          "p50": 2400.03,
+          "p95": 2400.03,
+          "min": 2400.02,
+          "max": 2400.03
+        },
+        "load1": {
+          "n": 11,
+          "mean": 2.87,
+          "p50": 2.78,
+          "p95": 3.02,
+          "min": 2.56,
+          "max": 3.02
+        },
+        "throttled_values": [
+          "0x0"
+        ],
+        "throttled_any": false,
+        "top_snapshot_end": [
+          "  PID  PPID USER     STAT   RSS %RSS %CPU COMMAND",
+          "15965     1 root     S<    489m  24%   5% /usr/bin/java -Xmx512m -Djava.io.tmpdir=/tmp -Djna.tmpdir=/tmp/jna --enable-native-access=ALL-UNNA",
+          "  410     1 root     S    19868   1%   0% /usr/lib/systemd/systemd-journald",
+          "  960     1 root     S    14876   1%   0% /usr/sbin/NetworkManager --no-daemon",
+          "    1     0 root     S    11744   1%   0% {systemd} /sbin/init splash",
+          "  725     1 systemd- S    11568   1%   0% /usr/lib/systemd/systemd-resolved",
+          "  152     1 root     S    10668   1%   0% /usr/lib/systemd/systemd-udevd",
+          "135515 1117 root     S     8224   0%   0% sshd-session: root [postauth]",
+          "  942     1 root     S     7480   0%   0% (agetty)"
+        ]
+      }
+    }
+  ],
+  "notes": [],
+  "pv_general": {
+    "version": "dev-v2027.0.0-alpha-2-94-gc9548d91",
+    "imageVersion": "dev-v2027.0.0-alpha-2-94-gc9548d91+v2026.2.2-120-ga8cd373-dirty",
+    "gpuAcceleration": "Zerocopy Libcamera Working",
+    "mrCalWorking": true,
+    "availableModels": [],
+    "supportedBackends": [],
+    "hardwareModel": "Raze",
+    "hardwarePlatform": "Linux Raspbian 64-bit",
+    "wpilibArch": "linuxarm64",
+    "conflictingHostname": false,
+    "conflictingCameras": ""
+  },
+  "camera": {
+    "nickname": "OV9782",
+    "uniqueName": "aa769641-e918-4824-834d-6f344e3d273a",
+    "path": "/base/axi/pcie@1000120000/rp1/i2c@88000/ov9782@60",
+    "isCSICamera": true,
+    "connected": true,
+    "videoFormatList": [
+      {
+        "pixelFormat": "Picam",
+        "width": 1280,
+        "fps": 120,
+        "height": 800
+      },
+      {
+        "pixelFormat": "Picam",
+        "width": 1280,
+        "fps": 120,
+        "height": 720
+      },
+      {
+        "pixelFormat": "Picam",
+        "width": 640,
+        "fps": 120,
+        "height": 480
+      },
+      {
+        "pixelFormat": "Picam",
+        "width": 640,
+        "fps": 120,
+        "height": 400
+      },
+      {
+        "pixelFormat": "Picam",
+        "width": 320,
+        "fps": 240,
+        "height": 240
+      },
+      {
+        "pixelFormat": "Picam",
+        "width": 320,
+        "fps": 240,
+        "height": 180
+      }
+    ],
+    "fpsLimit": -1,
+    "calibrations": 0
+  },
+  "original_state": {
+    "pipelineIndex": 0,
+    "pipelineType": 5,
+    "pipelineNickname": "New Pipeline",
+    "cameraVideoModeIndex": 0,
+    "videoMode": {
+      "pixelFormat": "Picam",
+      "width": 1280,
+      "fps": 120,
+      "height": 800
+    },
+    "tagFamily": 0,
+    "decimate": 1,
+    "threads": 4,
+    "blur": 0,
+    "refineEdges": true,
+    "solvePNPEnabled": false,
+    "doMultiTarget": false,
+    "streamingFrameDivisor": 0,
+    "outputShouldDraw": true,
+    "cameraAutoExposure": false,
+    "cameraExposureRaw": 2000,
+    "fpsLimit": -1
+  },
+  "restored_state": {
+    "pipelineIndex": 0,
+    "pipelineType": 5,
+    "pipelineNickname": "New Pipeline",
+    "cameraVideoModeIndex": 0,
+    "videoMode": {
+      "pixelFormat": "Picam",
+      "width": 1280,
+      "fps": 120,
+      "height": 800
+    },
+    "tagFamily": 0,
+    "decimate": 1,
+    "threads": 4,
+    "blur": 0,
+    "refineEdges": true,
+    "solvePNPEnabled": false,
+    "doMultiTarget": false,
+    "streamingFrameDivisor": 0,
+    "outputShouldDraw": true,
+    "cameraAutoExposure": false,
+    "cameraExposureRaw": 2000,
+    "fpsLimit": -1
+  },
+  "restore_ok": true,
+  "finished": "2026-10-11T09:08:47.006Z"
+}

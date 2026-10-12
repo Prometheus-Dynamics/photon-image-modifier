@@ -1,0 +1,36 @@
+{
+  "host": "172.31.12.81",
+  "camera": "OV9281",
+  "rows": [
+    {
+      "mode": "640x400@120",
+      "delivered_fps": 112.3,
+      "latency_ms": {
+        "n": 79,
+        "mean": 18.35,
+        "p50": 17.53,
+        "p95": 25.37,
+        "max": 31.72
+      },
+      "system_cpu_pct": 70.2,
+      "targets_max": 1,
+      "raw_jpeg_kb": 33.3,
+      "processed_jpeg_kb": 18
+    },
+    {
+      "mode": "1280x800@120",
+      "delivered_fps": 26.7,
+      "latency_ms": {
+        "n": 70,
+        "mean": 62,
+        "p50": 56.71,
+        "p95": 90.17,
+        "max": 113.46
+      },
+      "system_cpu_pct": 84,
+      "targets_max": 1,
+      "raw_jpeg_kb": 86.8,
+      "processed_jpeg_kb": 44.2
+    }
+  ]
+}
