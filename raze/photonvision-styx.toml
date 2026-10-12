@@ -46,12 +46,33 @@ backend = "docker"
 image = "photonvision-gaia-build-styx"
 dockerfile = "docker/build-styx/Dockerfile"
 
+# Styx itself: its kernel modules (the sensor bridge and the faster PiSP back
+# end driver) and the bridge's overlay are built from the commit photon-styx's
+# Cargo.lock pins (styx dev 30c5aec), so the bridge protocol matches the
+# userspace side in the jar. Move it together with the PhotonVision rev.
+[[sources]]
+id = "styx"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Styx.git"
+rev = "30c5aece9d6d7b9ff1b26f8ac0438bc48767b36d"
+refresh = "auto"
+
 # The stock libcamera stays out of the image: Styx talks to the sensor through the kernel's own
 # drivers and the PiSP ISP. Later in the import order than the device and platform layers, so
 # these values win over their BR2_PACKAGE_LIBCAMERA = "y".
 [image]
 kind = "buildroot"
+# A third BR2_EXTERNAL tree (a layer's external_tree replaces the earlier one,
+# so raze/build.toml's two are repeated): linux/linux-ext-styx.mk builds the
+# bridge module and swaps in Styx's pisp_be.c from the styx source.
+external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external:raze/assets/buildroot/external-styx"
+external_tree_mode = "required"
 config_overrides = [
+  ["BR2_LINUX_KERNEL_EXT_STYX_DIR", "\"${source.styx.path}/kernel-modules\""],
+  ["BR2_LINUX_KERNEL_EXT_STYX_SENSOR_BRIDGE", "y"],
+  ["BR2_LINUX_KERNEL_EXT_STYX_PISPBE", "y"],
+  # config.txt with the bridge overlay after raze-device.txt's camera line.
+  ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/styx/config.txt\""],
   ["BR2_PACKAGE_LIBCAMERA", "n"],
   ["BR2_PACKAGE_LIBCAMERA_PIPELINE_RPI_PISP", "n"],
   ["BR2_PACKAGE_LIBCAMERA_V4L2", "n"],
@@ -60,11 +81,23 @@ config_overrides = [
 # PhotonVision's service runs the Styx backend: a drop-in replaces ExecStart.
 [[stage.files]]
 id = "photonvision-styx-service-dropin"
-src = "@self/assets/styx/10-styx.conf"
-dest = "/etc/systemd/system/photonvision.service.d/10-styx.conf"
+src = "@self/assets/styx/30-styx.conf"
+dest = "/etc/systemd/system/photonvision.service.d/30-styx.conf"
 origin = "static-asset"
 
 [image.feed]
 stage_files = [
   "photonvision-styx-service-dropin",
 ]
+
+# The boot partition: the bridge's overlay, compiled from the styx source, and
+# the config.txt that loads it (in place of raze/build.toml's).
+[[image.assembly.transforms]]
+kind = "compile-dts"
+src = "@source:styx/kernel-modules/styx-sensor-bridge/dts/styx-sensor-bridge-cm5-runtime-overlay.dts"
+dest = "$assembly.tree.boot/overlays/styx-sensor-bridge-cam0.dtbo"
+
+[[image.assembly.files]]
+tree = "boot"
+src = "raze/assets/styx/config.txt"
+dest = "config.txt"

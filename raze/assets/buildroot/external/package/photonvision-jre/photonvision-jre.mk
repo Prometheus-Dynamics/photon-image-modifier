@@ -36,6 +36,8 @@ PHOTONVISION_JRE_EXTRA_DOWNLOADS = $(PHOTONVISION_JRE_HOST_JDK)
 #   jdk.zipfs        the zip/jar FileSystem provider (Jetty resources in jars)
 #   jdk.management   com.sun.management MXBeans (OSHI, JVM metrics)
 #   jdk.net          extended socket options Jetty probes for
+#   jdk.httpserver   com.sun.net.httpserver, the Styx backend's MJPEG
+#                    streams (org.photonvision.styx.StyxMjpegServer)
 #   jdk.crypto.ec    empty since JDK 22 (SunEC is in java.base); harmless,
 #                    kept so code that requires it by name still resolves
 # PhotonVision starts with exactly this set and serves its UI and docs (checked
@@ -44,7 +46,7 @@ PHOTONVISION_JRE_EXTRA_DOWNLOADS = $(PHOTONVISION_JRE_HOST_JDK)
 PHOTONVISION_JRE_MODULES = \
 	java.base,java.desktop,java.instrument,java.logging,java.management,\
 	java.naming,java.security.jgss,java.sql,jdk.unsupported,jdk.zipfs,\
-	jdk.management,jdk.net,jdk.crypto.ec
+	jdk.management,jdk.net,jdk.httpserver,jdk.crypto.ec
 
 # The module image (lib/modules) is left uncompressed: the root filesystem
 # is EROFS with LZMA, which packs it to about 60 % of a zip-9 image (20 MiB

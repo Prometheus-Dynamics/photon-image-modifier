@@ -1,0 +1,15 @@
+# PhotonVision on Raze, Styx vision backend (build-styx.toml). The same as
+# raze/assets/config.txt, plus the Styx sensor bridge on the camera port.
+arm_64bit=1
+disable_splash=1
+enable_uart=1
+
+include raze-device.txt
+
+# Styx sensor bridge on CAM0, applied after raze-device.txt's
+# `dtoverlay=ov9782,cam0,clk-continuous`: it disables the ov9782@60 node (the
+# kernel ov9282 driver never binds, so 0x60 on /dev/i2c-10 is free for Styx),
+# adds the bridge device (styx_sensor_bridge.ko) with the sensor's supplies,
+# clock, lanes and link frequency, and points csi0 at it. Styx's
+# styx-sensor-bridge-cm5-runtime overlay, here loaded by the firmware at boot.
+dtoverlay=styx-sensor-bridge-cam0

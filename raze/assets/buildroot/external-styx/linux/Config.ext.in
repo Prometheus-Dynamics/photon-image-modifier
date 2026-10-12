@@ -1,0 +1,22 @@
+config BR2_LINUX_KERNEL_EXT_STYX_DIR
+	string "Styx kernel-modules directory"
+	help
+	  kernel-modules/ of a Styx checkout (the "styx" Gaia source,
+	  pinned to the commit photon-styx builds against, so the
+	  bridge protocol matches the userspace side).
+
+config BR2_LINUX_KERNEL_EXT_STYX_SENSOR_BRIDGE
+	bool "Styx sensor bridge"
+	help
+	  Build styx_sensor_bridge.ko, the generic V4L2 sensor subdevice
+	  for camera sensors driven from userspace by Styx, as a module
+	  of the kernel the package builds.
+
+config BR2_LINUX_KERNEL_EXT_STYX_PISPBE
+	bool "Styx PiSP back end driver"
+	help
+	  Replace the kernel's PiSP back end driver (pisp_be) with Styx's
+	  version, which writes the per-job configuration faster (same
+	  uAPI and register values). Applied only when the kernel's own
+	  pisp_be.c is the one the Styx version was made from; otherwise
+	  the build fails.
