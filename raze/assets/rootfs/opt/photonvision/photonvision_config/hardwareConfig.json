@@ -4,13 +4,8 @@
   "ledsCanDim": true,
   "ledBrightnessRange": [0, 100],
   "ledPWMFrequency": 0,
-  "statusLEDConfig": {
-    "type": "RGB",
-    "redPin": 101,
-    "greenPin": 102,
-    "bluePin": 103,
-    "activeHigh": true
-  },
+  "statusRGBPins": [101, 102, 103],
+  "statusRGBActiveHigh": true,
   "getGPIOCommand": "cat /run/photonvision-os/led-{p} 2>/dev/null || echo false",
   "setGPIOCommand": "echo {s} > /run/photonvision-os/led-{p}",
   "setPWMCommand": "echo {v} > /run/photonvision-os/led-{p}",

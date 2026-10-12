@@ -136,7 +136,7 @@ kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 
 [inputs.raze_photonvision_rev]
-description = "PhotonVision commit built for Raze (branch raze-2027: upstream main plus the Raze changes)"
+description = "PhotonVision commit built for Raze (fork branch raze-2027, or raze-2026 with --preset pv2026)"
 kind = "string"
 default = "c877d906a418def576ce6f13eeb9117c63e4ff00"
 
@@ -151,7 +151,7 @@ kind = "string"
 default = "https://github.com/Prometheus-Dynamics/photon-libcamera-gl-driver.git"
 
 [inputs.raze_libcamera_driver_rev]
-description = "photon-libcamera-gl-driver commit built for Raze (branch raze-2027: ov9782 plus gaia-build-fix)"
+description = "photon-libcamera-gl-driver commit built for Raze (branch raze-2027, or raze-2026-fork with --preset pv2026)"
 kind = "string"
 default = "057ab3bc58321cfb8a373b29b69ef8b3b2d3d03d"
 
@@ -160,6 +160,31 @@ description = "Version string forced into the Raze libcamera driver artifacts; m
 kind = "string"
 default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
 
+# The PhotonVision line on the Raze image. Both lines share one base image
+# (Buildroot OS, kernel, device package, Lemnos, Orion) and one build tree;
+# they differ only in the application: the PhotonVision jar, the libcamera
+# driver (built against the OpenCV that line's PhotonVision bundles: 4.10 for
+# 2026, 4.13 for 2027) and the JDK image the jars build in (17 for 2026's
+# Gradle 8.14 / WPILib 2026, 25 for 2027). Everything else is shared, including
+# hardwareConfig.json: it uses the 2026 status-LED keys, which PhotonVision
+# 2027 migrates on load (HardwareConfig "MIGRATION: 2026"). 2027 is the default; `--preset pv2026` selects
+# PhotonVision 2026 (v2026.3.4 plus the Raze changes, WPILib 2026 / OpenCV 4.10).
+[inputs.pv]
+description = "PhotonVision line on the Raze image: 2027 (default) or 2026 (use --preset pv2026)"
+kind = "enum"
+choices = ["2027", "2026"]
+default = "2027"
+
+[inputs.raze_jar_build_image]
+description = "Docker image the PhotonVision jar and libcamera driver build in (JDK 25 for 2027, JDK 17 for 2026)"
+kind = "string"
+default = "photonvision-gaia-build"
+
+[inputs.raze_jar_build_dockerfile]
+description = "Dockerfile for raze_jar_build_image"
+kind = "string"
+default = "docker/build/Dockerfile"
+
 # Gaia compresses the Raze disk image by this extension: img.xz (the default,
 # what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
 # of about a minute; the board updater reads both), for dev builds.
@@ -167,3 +192,16 @@ default = "dev-v2027.0.0-alpha-2-18-g057ab3b"
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
 kind = "string"
 default = "img.xz"
+
+# PhotonVision 2026 on the Raze image: the same base, the 2026 application.
+#   gaia run build.toml --preset pv2026 --set input.target=raze --set input.profile=full
+[presets.pv2026]
+overrides = [
+  ["input.pv", "2026"],
+  ["input.raze_photonvision_rev", "d11961bd119e2c22101fa9cfe7a7b01f8436aabc"],
+  ["input.raze_photonvision_version", "dev-v2026.3.4-12-gd11961bd"],
+  ["input.raze_libcamera_driver_rev", "15b242128e54c7a96b04cc56b6cd949f53cfc2eb"],
+  ["input.raze_libcamera_driver_version", "dev-v2026.0.1-13-g15b2421"],
+  ["input.raze_jar_build_image", "photonvision-gaia-build-jdk17"],
+  ["input.raze_jar_build_dockerfile", "docker/build-jdk17/Dockerfile"],
+]

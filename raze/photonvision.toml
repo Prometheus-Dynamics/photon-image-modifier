@@ -45,6 +45,10 @@ output_path = "${workspace.out_dir}/artifacts/photon-libcamera-gl-driver.jar"
 [artifacts.execution]
 backend = "docker"
 
+[artifacts.execution.docker]
+image = "${input.raze_jar_build_image}"
+dockerfile = "${input.raze_jar_build_dockerfile}"
+
 [[artifacts]]
 id = "photonvision-jar"
 kind = "java"
@@ -69,8 +73,8 @@ backend = "docker"
 # python3-venv; Gaia builds this image from the Dockerfile when it changes, so
 # the rest of the build keeps using the plain photonvision-gaia-build image.
 [artifacts.execution.docker]
-image = "photonvision-gaia-build"
-dockerfile = "docker/build/Dockerfile"
+image = "${input.raze_jar_build_image}"
+dockerfile = "${input.raze_jar_build_dockerfile}"
 
 [image]
 kind = "buildroot"
