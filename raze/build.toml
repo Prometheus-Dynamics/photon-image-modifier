@@ -428,7 +428,7 @@ stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-ma
 # next to sdcard.img by the name's extension (input.raze_archive_ext: img.xz,
 # or img.zst for dev builds).
 [image.output]
-archive_name = "${build.name}-${input.raze_photonvision_version}.${input.raze_archive_ext}"
+archive_name = "${build.name}-${input.backend}-${input.raze_photonvision_version}.${input.raze_archive_ext}"
 
 # The OS owns the boot partition: the device package adds raze-device.txt,
 # its overlays and the stock overlays it loads to the tree with id "boot".

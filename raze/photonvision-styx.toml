@@ -51,13 +51,16 @@ src = "@self/assets/styx/30-styx.conf"
 dest = "/etc/systemd/system/photonvision.service.d/30-styx.conf"
 origin = "static-asset"
 
+[image]
+kind = "buildroot"
+
 [image.feed]
 stage_files = [
   "photonvision-styx-service-dropin",
 ]
 
 # libcamera is built once in the shared base for the libcamera images; the
-# Styx images leave it out of their rootfs. (Gaia's per-variant rootfs
-# exclusion; enable once that Gaia lands.)
-# [image.rootfs]
-# exclude_packages = ["libcamera", "libpisp"]
+# Styx images leave it out of their rootfs (Gaia checks that no kept
+# package or binary still needs them).
+[image.rootfs]
+exclude_packages = ["libcamera", "libpisp"]
