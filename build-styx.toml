@@ -141,9 +141,9 @@ kind = "string"
 default = "c9548d91ae1bfd3f3ac8410d0b85b6b6649b2f1a"
 
 [inputs.raze_photonvision_version]
-description = "Version string forced into the Raze PhotonVision jar; matches raze_photonvision_rev"
+description = "PhotonVision version in the image's version (IMAGE_VERSION in raze/build.toml); this build ships the styx jar, so it matches raze_styx_photonvision_version"
 kind = "string"
-default = "dev-v2027.0.0-alpha-2-94-gc9548d91"
+default = "dev-v2027.0.0-alpha-2-107-g7d150926"
 
 [inputs.raze_libcamera_driver_repo]
 description = "photon-libcamera-gl-driver git repository (URL or local path) used by the Raze target"
@@ -173,12 +173,12 @@ default = "https://github.com/Prometheus-Dynamics/photonvision.git"
 [inputs.raze_styx_photonvision_rev]
 description = "PhotonVision commit built for the styx backend (branch styx-eidos)"
 kind = "string"
-default = "a12a00c627cfe7d35c63548cfde970458093f025"
+default = "7d150926968fc5e0d0c5e3ffd354f807aeacafda"
 
 [inputs.raze_styx_photonvision_version]
 description = "Version string forced into the styx PhotonVision jar; matches raze_styx_photonvision_rev"
 kind = "string"
-default = "dev-v2027.0.0-alpha-2-100-ga12a00c6"
+default = "dev-v2027.0.0-alpha-2-107-g7d150926"
 
 [inputs.raze_archive_ext]
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
