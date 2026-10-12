@@ -4,7 +4,6 @@
 [expect]
 artifacts = [
   "photonvision-jar",
-  "photon-libcamera-gl-driver",
   "orion-node",
   "board-agent",
   "board-stream",

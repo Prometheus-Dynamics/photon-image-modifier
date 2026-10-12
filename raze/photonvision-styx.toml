@@ -64,3 +64,8 @@ stage_files = [
 # package or binary still needs them).
 [image.rootfs]
 exclude_packages = ["libcamera", "libpisp"]
+
+# This backend's pieces must be in the build (raze/expect-full.toml holds the
+# ones every Raze image needs).
+[expect]
+sources = ["eidos"]

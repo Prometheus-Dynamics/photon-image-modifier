@@ -64,3 +64,8 @@ backend = "docker"
 [artifacts.execution.docker]
 image = "${input.raze_jar_build_image}"
 dockerfile = "${input.raze_jar_build_dockerfile}"
+
+# This backend's artifacts must be in the build (raze/expect-full.toml holds
+# the ones every Raze image needs).
+[expect]
+artifacts = ["photon-libcamera-gl-driver"]
