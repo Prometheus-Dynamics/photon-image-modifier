@@ -1,0 +1,63 @@
+description = "Raze target, PhotonVision on the Styx + Eidos backend (input.backend = styx): Styx capture and Eidos AprilTags and calibration in the PhotonVision jar (libphotonstyx.so), with no libcamera and no OpenCV camera path."
+target = "raze"
+
+# The Styx backend shares the whole base with the libcamera images: the same
+# kernel and config.txt. Styx drives the OV9782 through its stock kernel driver
+# (ov9282, rp1-cfe, pisp_be) via the media graph, with the sensor description
+# and ISP tuning compiled in, so it needs no sensor-bridge module, overlay or
+# libcamera files. What differs is the application below, plus libcamera left
+# out of the rootfs.
+#
+# Eidos is fetched as a source and patched into photon-styx's cargo build
+# (EIDOS_PATH), so the build needs no credentials for the Eidos repository.
+[[sources]]
+id = "eidos"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Eidos.git"
+rev = "${input.raze_styx_eidos_rev}"
+refresh = "auto"
+
+[[artifacts]]
+id = "photonvision-jar"
+kind = "java"
+build_target = "photon-server/build/libs/photonvision-${input.raze_photonvision_version}-linuxarm64.jar"
+build_command = ["${project.root_dir}/raze/scripts/build-photonvision-jar.sh"]
+build_env = [
+  ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
+  ["PHOTONVISION_STYX", "1"],
+  ["EIDOS_PATH", "${project.root_dir}/${workspace.build_dir}/sources/eidos/content"],
+  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+]
+source = "photonvision-source"
+install_name = "photonvision.jar"
+install_class = "archive"
+install_dest_hint = "/opt/photonvision/photonvision.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
+
+[artifacts.execution]
+backend = "docker"
+
+# The build image plus Rust and zig (photon-styx for the Raze's glibc), on
+# the JDK the PhotonVision line needs (25 for 2027, 17 for 2026).
+[artifacts.execution.docker]
+image = "${input.raze_styx_build_image}"
+dockerfile = "${input.raze_styx_build_dockerfile}"
+
+# PhotonVision picks the backend from the environment (StyxBackend reads
+# PHOTONVISION_BACKEND), so the read-only-root ExecStart stays as it is.
+[[stage.files]]
+id = "photonvision-styx-service-dropin"
+src = "@self/assets/styx/30-styx.conf"
+dest = "/etc/systemd/system/photonvision.service.d/30-styx.conf"
+origin = "static-asset"
+
+[image.feed]
+stage_files = [
+  "photonvision-styx-service-dropin",
+]
+
+# libcamera is built once in the shared base for the libcamera images; the
+# Styx images leave it out of their rootfs. (Gaia's per-variant rootfs
+# exclusion; enable once that Gaia lands.)
+# [image.rootfs]
+# exclude_packages = ["libcamera", "libpisp"]

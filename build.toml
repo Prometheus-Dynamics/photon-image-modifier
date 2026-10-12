@@ -42,6 +42,9 @@ imports = [
   { path = "generic-arm64/build.toml", when = { target = "generic-arm64" } },
   { path = "raze/build.toml", when = { target = "raze" } },
   { path = "raze/photonvision.toml", when = { profile = "full", target = "raze" } },
+  # The vision backend (input.backend): libcamera with the GL driver, or Styx + Eidos.
+  { path = "raze/photonvision-libcamera.toml", when = { profile = "full", target = "raze", input = { backend = "libcamera" } } },
+  { path = "raze/photonvision-styx.toml", when = { profile = "full", target = "raze", input = { backend = "styx" } } },
   { path = "raze/expect-full.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
@@ -185,6 +188,32 @@ description = "Dockerfile for raze_jar_build_image"
 kind = "string"
 default = "docker/build/Dockerfile"
 
+# The vision backend on the Raze image. libcamera (default): the libcamera GL
+# driver and PhotonVision's OpenCV camera path. styx: Styx capture and Eidos
+# AprilTags and calibration in the jar (libphotonstyx.so), with no libcamera
+# and no OpenCV camera path. Both share the base image, kernel and config.txt;
+# select styx with --preset pv2027-styx or pv2026-styx.
+[inputs.backend]
+description = "Vision backend on the Raze image: libcamera (default) or styx (Styx + Eidos; use --preset pv2027-styx or pv2026-styx)"
+kind = "enum"
+choices = ["libcamera", "styx"]
+default = "libcamera"
+
+[inputs.raze_styx_eidos_rev]
+description = "Eidos commit patched into photon-styx for the styx backend"
+kind = "string"
+default = "b3faaa4be63ecd518be3848578f44b92d8fd7dc7"
+
+[inputs.raze_styx_build_image]
+description = "Docker image the styx PhotonVision jar builds in (build image plus Rust and zig; JDK 25 for 2027, 17 for 2026)"
+kind = "string"
+default = "photonvision-gaia-build-styx"
+
+[inputs.raze_styx_build_dockerfile]
+description = "Dockerfile for raze_styx_build_image"
+kind = "string"
+default = "docker/build-styx/Dockerfile"
+
 # Gaia compresses the Raze disk image by this extension: img.xz (the default,
 # what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
 # of about a minute; the board updater reads both), for dev builds.
@@ -204,4 +233,26 @@ overrides = [
   ["input.raze_libcamera_driver_version", "dev-v2026.0.1-13-g15b2421"],
   ["input.raze_jar_build_image", "photonvision-gaia-build-jdk17"],
   ["input.raze_jar_build_dockerfile", "docker/build-jdk17/Dockerfile"],
+]
+
+# PhotonVision 2027 on the Styx + Eidos backend (the fork's styx-eidos branch).
+#   gaia run build.toml --preset pv2027-styx --set input.target=raze --set input.profile=full
+[presets.pv2027-styx]
+overrides = [
+  ["input.pv", "2027"],
+  ["input.backend", "styx"],
+  ["input.raze_photonvision_rev", "60483483ae61fa4b86181dedf8cc32fe2e233b98"],
+  ["input.raze_photonvision_version", "dev-v2027.0.0-alpha-2-110-g60483483"],
+]
+
+# PhotonVision 2026 on the Styx + Eidos backend (the fork's styx-eidos-2026 branch).
+#   gaia run build.toml --preset pv2026-styx --set input.target=raze --set input.profile=full
+[presets.pv2026-styx]
+overrides = [
+  ["input.pv", "2026"],
+  ["input.backend", "styx"],
+  ["input.raze_photonvision_rev", "87399097fad0dbd123fd8d333a9d2eef16a0f368"],
+  ["input.raze_photonvision_version", "dev-v2026.3.4-29-g87399097"],
+  ["input.raze_styx_build_image", "photonvision-gaia-build-styx-jdk17"],
+  ["input.raze_styx_build_dockerfile", "docker/build-styx-jdk17/Dockerfile"],
 ]
