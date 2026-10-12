@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "f71ab5d95606c2ad53788721d721a35ccfd2a511"
+rev = "cbd32cc588eca37a300288af73f2948684d53aba"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
