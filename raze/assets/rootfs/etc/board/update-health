@@ -13,4 +13,13 @@ while [ "$i" -lt 60 ]; do
 	sleep 2
 done
 echo "update-health: photonvision.service or :5800 not healthy after 120 s" >&2
+# The journal is in RAM and the rollback restarts the board: keep what this
+# trial boot's PhotonVision said on /data, for whoever looks into it.
+log=/data/board/update-health.log
+{
+	echo "=== $(date -u +%FT%TZ) $(cat /etc/os-release 2>/dev/null | sed -n 's/^VERSION=//p')"
+	systemctl status --no-pager photonvision.service 2>&1 | head -n 20
+	journalctl -b -u photonvision.service --no-pager -o short-monotonic 2>&1 | tail -n 300
+} >>"$log" 2>/dev/null
+tail -c 1048576 "$log" >"$log.tmp" 2>/dev/null && mv "$log.tmp" "$log"
 exit 1
