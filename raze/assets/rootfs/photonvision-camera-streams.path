@@ -4,6 +4,8 @@ Description=Refresh PhotonVision's camera views when its settings change
 [Path]
 PathModified=/opt/photonvision/photonvision_config/photon.sqlite
 Unit=photonvision-camera-streams.service
+# Bursts of writes must not trip the trigger limit and fail the path unit.
+TriggerLimitIntervalSec=0
 
 [Install]
 WantedBy=multi-user.target

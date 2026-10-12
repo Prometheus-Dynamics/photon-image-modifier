@@ -1,6 +1,9 @@
 [Unit]
 Description=Publish PhotonVision's camera views for Atlas (camera_streams)
 After=photonvision.service
+# PhotonVision rewrites photon.sqlite many times in a few seconds (first boot,
+# settings saves); each write triggers a run, so never give up on starting.
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot
