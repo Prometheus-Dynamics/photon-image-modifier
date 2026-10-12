@@ -1,0 +1,618 @@
+description = "Raze target, PhotonVision OS side: boot partition, config.txt and cmdline.txt, root filesystem and networking. Device support comes from the Raze device package (Atlas), imported before this layer."
+# Raze OS layer for build-raze-2026.toml: a copy of raze/build.toml with two
+# changes, kept in sync with it by hand (diff the two files when either
+# changes):
+# - the atlas source carries the OV9782 exposure fix (below). Gaia rejects an
+#   import source declared differently in two files, so a fragment imported
+#   after raze/build.toml cannot override it; the whole layer is copied.
+# - PhotonVision 2026's hardwareConfig.json schema (raze/assets/hardwareConfig-2026.json).
+target = "raze"
+
+# The Raze device package (devices/raze/gaia/device.toml in Atlas, imported
+# from the root build.toml) brings the kernel, the OV9782 driver, libcamera
+# and libpisp, the boot overlays and raze-device.txt, and the device services
+# (identity endpoint, mDNS, USB gadget, LEDs, USB port power). This layer is
+# imported after it, so anything set here overrides the device defaults.
+
+# The Atlas repository holding the Raze device package. It is declared here
+# rather than in the root build.toml so that only Raze builds materialize it.
+# Pinned to a full commit (04aadea: Buildroot 2026.08, kernel rpi-7.2.y
+# with built-in EROFS, explicit 4 KiB pages, firmware 1.20260915, libcamera
+# v0.7.2+rpt20260817 and libpisp v1.7.0 without Boost, read-only root safe
+# services, the board-* names, lemnosd as the hardware service, board-agent
+# for Orion update control (Orion ec91d0a), and the board event log and
+# status endpoint on :5899, the A/B updater fixes from the first hardware
+# run, board events by seq, the board-stream push channel on :5898 with
+# its hardware topic and inotify wakeups, clock sync, and seq kept above
+# torn log lines, Lemnos b17b5a5, matched 100 Hz IMU rates, interrupted
+# applies kept staged, a persistent journal and stable machine id, and /data
+# made on first boot and reset by a new flash id, an updater that takes
+# truncated images, the ring's IMU gravity calibration, and persistent kernel
+# logs (ramoops/pstore, lockup panics, optional netconsole), the IMU on the
+# RP1 PIO I2C bus, the trial's self-test phase, and the ring kept lit while the
+# LED driver loads); see GAIA.md for building against a local Atlas
+# checkout.
+#
+# build-raze-2026.toml: a6fe6e8 plus 8eb2f29, the kernel fix for the OV9782
+# exposure -ERANGE (the ov9282 driver keeps the exposure and strobe control
+# defaults inside their updated ranges; branch fix/ov9782-exposure-erange).
+# Pinned to that branch's commit until the fix is merged into Atlas's dev.
+[[sources]]
+id = "atlas"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager.git"
+rev = "8eb2f293de559cf5a5f7181d8b753f03fe63f756"
+
+# orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
+# the board an Orion node for host facts, actions and, later, updates.
+# 4fadba9: request/response actions (wait_ms, ActionCaller), observed watches, F64 config
+# values; the same Orion commit as the device package's board-agent.
+[[sources]]
+id = "orion"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Orion.git"
+rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
+
+# lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
+# device package's lemnos.toml layer. Gaia lets only local files declare
+# import sources, so the Lemnos pin lives here, at the commit the device
+# package is tested with (Atlas devices/README.md). a9e352f: USB port power
+# switches, frame watch, look presets and the over layer mode, IMU/mag
+# auto-calibration and fusion, ring looks over Orion; 5b1d38c: the PIO I2C bus
+# (IMU at ~2% CPU), the trial ember held until the self-test, the drain
+# confirm look and comet glow; 2ab3d93: sparkle looks
+# (starry trial boot, green pop with falling sparks), anti-aliased comets, a
+# brighter reboot ember, IMU channel-selective reads; b17b5a5: sensors read on
+# demand (no IMU reads with no subscriber), one thread per bus; looks as data
+# (named and inline LED looks, look files, the pv.* looks), plus 8e59039's subscribe
+# replies, a deadline scheduler and boot-clock timestamps for live readings.
+[[sources]]
+id = "lemnos"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
+rev = "a9e352f965d32300061acd33503c8a83490ebf5e"
+
+[[stage.files]]
+id = "photonvision-raze-config"
+src = "raze/assets/config.txt"
+dest = "/boot/firmware/config.txt"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-grow-rootfs"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/grow-rootfs.sh"
+dest = "/usr/lib/photonvision-os/grow-rootfs.sh"
+origin = "static-asset"
+
+# The root is a read-only EROFS image in a fixed 512 MiB slot; this grows
+# /data (p7) and its filesystem to fill the eMMC on first boot.
+[[stage.services]]
+id = "photonvision-raze-grow-rootfs-service"
+name = "grow-rootfs.service"
+unit_path = "raze/assets/rootfs/grow-rootfs.service"
+
+# PhotonVision waits for the grow (it writes its settings and logs to /data).
+[[stage.files]]
+id = "photonvision-raze-photonvision-grow-rootfs-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
+origin = "static-asset"
+
+# Presets: systemd-networkd off (NetworkManager owns networking).
+[[stage.files]]
+id = "photonvision-raze-preset"
+src = "raze/assets/rootfs/usr/lib/systemd/system-preset/50-photonvision-os.preset"
+dest = "/usr/lib/systemd/system-preset/50-photonvision-os.preset"
+origin = "static-asset"
+
+# The LED ring as PhotonVision's status light (and vision LED), with no
+# PhotonVision changes: the default hardwareConfig.json maps PhotonVision's
+# status RGB pins (101-103) and vision LED (pin 13) to custom GPIO commands
+# that only write the pin state to /run/photonvision-os; pv-leds-ring decodes
+# PhotonVision's status from them and asks lemnosd for the matching named look
+# (pv.targets, pv.searching, pv.no-nt, pv.no-nt-targets, pv.error, pv.vision),
+# only when the status changes. lemnosd owns the looks, so restyling the ring
+# is a Lemnos look file, not a change here.
+[[stage.files]]
+id = "photonvision-raze-pv-leds-ring"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/pv-leds-ring"
+dest = "/usr/lib/photonvision-os/pv-leds-ring"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-leds-tmpfiles"
+src = "raze/assets/rootfs/usr/lib/tmpfiles.d/photonvision-os.conf"
+dest = "/usr/lib/tmpfiles.d/photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-leds-service"
+name = "photonvision-leds.service"
+unit_path = "raze/assets/rootfs/photonvision-leds.service"
+
+# PhotonVision 2026's HardwareConfig has flat statusRGBPins and
+# statusRGBActiveHigh fields and skips unknown properties, so the 2027
+# statusLEDConfig object would leave the status LED unconfigured.
+[[stage.files]]
+id = "photonvision-raze-hardware-config"
+src = "raze/assets/hardwareConfig-2026.json"
+dest = "/opt/photonvision/photonvision_config/hardwareConfig.json"
+origin = "static-asset"
+
+# /data, the partition kept across A/B updates: data-setup seeds PhotonVision's
+# settings there from these defaults and bind-mounts them over
+# /opt/photonvision/photonvision_config, and keeps the SSH host keys.
+[[stage.files]]
+id = "photonvision-raze-hardware-config-default"
+src = "raze/assets/hardwareConfig-2026.json"
+dest = "/usr/share/photonvision-os/photonvision_config/hardwareConfig.json"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-data-setup"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/data-setup"
+dest = "/usr/lib/photonvision-os/data-setup"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-data-setup-service"
+name = "photonvision-data-setup.service"
+unit_path = "raze/assets/rootfs/photonvision-data-setup.service"
+
+# The read-only (EROFS) root: everything written at run time goes to /data or
+# /run. data-early (before local-fs.target) mounts /data/var on /var (a tmpfs
+# on /data if p7 is missing), seeds and applies the static hostname kept in
+# /data/etc/hostname, and makes the NetworkManager and SSH directories. The
+# drop-ins point hostnamed, NetworkManager, sshd, journald and PhotonVision
+# at those places. The post-image script makes the links in /etc and packs
+# PhotonVision's jar (see its "Read-only root" section for the full list).
+[[stage.files]]
+id = "photonvision-raze-data-early"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/data-early"
+dest = "/usr/lib/photonvision-os/data-early"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-data-early-service"
+name = "photonvision-data-early.service"
+unit_path = "raze/assets/rootfs/photonvision-data-early.service"
+
+[[stage.files]]
+id = "photonvision-raze-hostnamed-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/systemd-hostnamed.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/systemd-hostnamed.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-networkmanager-conf"
+src = "raze/assets/rootfs/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-sshd-config"
+src = "raze/assets/rootfs/etc/ssh/sshd_config.d/40-photonvision-os.conf"
+dest = "/etc/ssh/sshd_config.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-sshd-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/sshd.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/sshd.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-journald-conf"
+src = "raze/assets/rootfs/usr/lib/systemd/journald.conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/journald.conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+# No RTC battery: timesyncd's clock file (on /data via /var) keeps time from
+# going backwards across reboots, it saves and retries every 30 s, and
+# NetworkManager's dispatcher gives it DHCP's NTP servers and restarts it
+# when a link comes up.
+[[stage.files]]
+id = "photonvision-raze-timesyncd-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/systemd-timesyncd.service.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/system/systemd-timesyncd.service.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-timesyncd-conf"
+src = "raze/assets/rootfs/usr/lib/systemd/timesyncd.conf.d/40-photonvision-os.conf"
+dest = "/usr/lib/systemd/timesyncd.conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-nm-dispatcher-timesync"
+src = "raze/assets/rootfs/usr/lib/NetworkManager/dispatcher.d/40-photonvision-timesync"
+dest = "/usr/lib/NetworkManager/dispatcher.d/40-photonvision-timesync"
+origin = "static-asset"
+mode = 493
+
+[[stage.files]]
+id = "photonvision-raze-photonvision-read-only-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
+origin = "static-asset"
+
+# manage_url for Atlas ("Web UI"): http://<hostname>.local:5800/, written at
+# boot because the hostname is per board.
+[[stage.files]]
+id = "photonvision-raze-manage-url"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/manage-url"
+dest = "/usr/lib/photonvision-os/manage-url"
+origin = "static-asset"
+
+# Atlas's camera views: camera-streams writes /run/board/camera-streams.json
+# (each camera's processed and raw MJPEG stream) at boot and whenever
+# PhotonVision's settings change; the identity lists it as camera_streams.
+[[stage.files]]
+id = "photonvision-raze-camera-streams"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/camera-streams"
+dest = "/usr/lib/photonvision-os/camera-streams"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-camera-streams-service"
+name = "photonvision-camera-streams.service"
+unit_path = "raze/assets/rootfs/photonvision-camera-streams.service"
+
+[[stage.services]]
+id = "photonvision-raze-camera-streams-path"
+name = "photonvision-camera-streams.path"
+unit_path = "raze/assets/rootfs/photonvision-camera-streams.path"
+
+# nt-server --point <address> | --restore | --status: Atlas points a camera at
+# its local NT server for a while (over SSH; listed in the identity's
+# diagnostics), changing only PhotonVision's ntServerAddress.
+[[stage.files]]
+id = "photonvision-raze-nt-server"
+src = "raze/assets/rootfs/usr/lib/photonvision-os/nt-server"
+dest = "/usr/lib/photonvision-os/nt-server"
+origin = "static-asset"
+
+[[stage.services]]
+id = "photonvision-raze-manage-url-service"
+name = "photonvision-manage-url.service"
+unit_path = "raze/assets/rootfs/photonvision-manage-url.service"
+
+# Image identity for /opt/photonvision/image-metadata.json,
+# which raze/assets/buildroot/post-image-rootfs.sh writes from this file
+# (PhotonVision's OsImageData reads it).
+[[stage.env_sets]]
+id = "photonvision-raze-image-env"
+name = "photonvision-image"
+entries = [
+  # The Raze jar's own version plus this repository's describe, unique per
+  # image build; the same VERSION the update bundle carries.
+  ["IMAGE_VERSION", "${input.raze_photonvision_version}+${project.describe}"],
+  ["IMAGE_NAME", "${build.target}"],
+  ["IMAGE_SOURCE", "gaia-buildroot:${build.name}"],
+  ["DEVICE_PACKAGE_COMMIT", "${source.atlas.commit}"],
+  ["ORION_COMMIT", "${source.orion.commit}"],
+]
+
+# The device package's A/B updater takes the same .img.xz that is flashed: it
+# copies boot A and root A from the image into the inactive slot. The image
+# supplies a health check (a trial boot is kept only when PhotonVision runs and
+# its web server answers) and a pre-reboot hook that stops PhotonVision cleanly.
+[[stage.files]]
+id = "photonvision-raze-update-health"
+src = "raze/assets/rootfs/etc/board/update-health"
+dest = "/etc/board/update-health"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-update-pre-reboot"
+src = "raze/assets/rootfs/etc/board/update.d/pre-reboot"
+dest = "/etc/board/update.d/pre-reboot"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-cmdline"
+src = "raze/assets/cmdline.txt"
+dest = "/boot/firmware/cmdline.txt"
+origin = "static-asset"
+
+[image]
+kind = "buildroot"
+# defconfig and the kernel come from the device package. Its BR2_EXTERNAL
+# tree (OV9782 kernel extension, kernel config fragment, libcamera/libpisp
+# overrides) is listed here with this repository's (the photonvision-jre
+# package): a layer's external_tree replaces the earlier one, so keep the
+# device package's path in step with devices/raze/gaia/kernel.toml.
+external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external"
+external_tree_mode = "required"
+config_overrides = [
+  # raspberrypicm5io_defconfig uses the external Bootlin toolchain, which has
+  # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
+  # exist with it, and Gaia's override check would report it as dropped.
+  ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
+  # The boot partition and sdcard.img are built by the assembly below. The
+  # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
+  # checking the kernel modules, writing the PhotonVision image-metadata.json,
+  # packing PhotonVision's jar and pointing run-time writes at /data or /run
+  # (see the script).
+  ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs.sh\""],
+  ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
+  # orion-node runs as the orion user; the image has no systemd-sysusers to
+  # create it at boot, so it comes from Orion's own users table.
+  ["BR2_ROOTFS_USERS_TABLES", "\"${source.orion.path}/packaging/buildroot/orion-users.table\""],
+  ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
+  # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
+  # post-image script turns it into rootfs.erofs (host erofs-utils, LZMA) and
+  # writes the flash id.
+  ["BR2_TARGET_ROOTFS_EXT2", "n"],
+  ["BR2_TARGET_ROOTFS_TAR", "y"],
+  ["BR2_TARGET_ROOTFS_TAR_NONE", "y"],
+  ["BR2_PACKAGE_HOST_E2FSPROGS", "y"],
+  ["BR2_PACKAGE_HOST_EROFS_UTILS", "y"],
+  # The root stays read-only (fstab "ro", cmdline "rootfstype=erofs ro"), and
+  # /var is left alone by Buildroot: data-early bind-mounts /data/var on it,
+  # seeded from the image's /var.
+  ["BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW", "n"],
+  ["BR2_INIT_SYSTEMD_VAR_NONE", "y"],
+  # Java: a jlink'd runtime from Temurin's prebuilt aarch64 jmods
+  # (raze/assets/buildroot/external/package/photonvision-jre) instead of
+  # compiling OpenJDK, which was the longest step of a clean build and
+  # shipped a 124 MB unstripped JDK. Nothing else in the image needs OpenJDK
+  # or what it selected (CUPS, ALSA, fontconfig, X11 headers).
+  ["BR2_PACKAGE_OPENJDK", "n"],
+  ["BR2_PACKAGE_OPENJDK_VERSION_25", "n"],
+  ["BR2_PACKAGE_PHOTONVISION_JRE", "y"],
+  # base-os enables linux-firmware, but the Raze selects no blob from it
+  # (the camera needs none and the VPU firmware comes from rpi-firmware),
+  # so it only cost about 5 minutes of download and extract per clean build
+  # and installed nothing.
+  ["BR2_PACKAGE_LINUX_FIRMWARE", "n"],
+  # NetworkManager owns Ethernet. It hands per-link mDNS (connection.mdns=2
+  # from the device package) to systemd-resolved, which also publishes the
+  # device's _pd-device._tcp service, so resolved must stay on and nothing
+  # else may answer on port 5353 (no avahi).
+  ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
+  # nmcli: PhotonVision reads interfaces and sets DHCP/static addressing
+  # through it ("Cannot manage network without nmcli!" otherwise).
+  ["BR2_PACKAGE_NETWORK_MANAGER_CLI", "y"],
+  ["BR2_PACKAGE_SYSTEMD_RESOLVED", "y"],
+  ["BR2_PACKAGE_AVAHI", "n"],
+  # The defconfig's BR2_SYSTEM_DHCP="eth0" would make systemd-networkd run a
+  # second DHCP client on the link NetworkManager manages. systemd-networkd
+  # itself stays installed with systemd but is disabled by
+  # 50-photonvision-os.preset (staged above).
+  ["BR2_SYSTEM_DHCP", "\"\""],
+]
+
+[[image.expected_images]]
+name = "sdcard.img"
+format = "raw"
+required = true
+
+# The root filesystem is rootfs.erofs (post-image script), not the base
+# layer's rootfs.ext4.
+[[image.expected_images]]
+name = "rootfs.ext4"
+format = "ext4"
+required = false
+
+[[image.expected_images]]
+name = "rootfs.erofs"
+format = "erofs"
+required = true
+
+# The flash id for p1 (post-image script); collected so the assembly can read
+# it (".raw": Gaia matches expected images to their format by extension).
+[[image.expected_images]]
+name = "flash-id.raw"
+format = "raw"
+required = true
+
+[image.feed]
+stage_files = [
+  "photonvision-raze-config",
+  "photonvision-raze-cmdline",
+  "photonvision-raze-grow-rootfs",
+  "photonvision-raze-photonvision-grow-rootfs-dropin",
+  "photonvision-raze-preset",
+  "photonvision-raze-pv-leds-ring",
+  "photonvision-raze-leds-tmpfiles",
+  "photonvision-raze-hardware-config",
+  "photonvision-raze-manage-url",
+  "photonvision-raze-camera-streams",
+  "photonvision-raze-nt-server",
+  "photonvision-raze-update-health",
+  "photonvision-raze-update-pre-reboot",
+  "photonvision-raze-hardware-config-default",
+  "photonvision-raze-data-setup",
+  "photonvision-raze-data-early",
+  "photonvision-raze-hostnamed-dropin",
+  "photonvision-raze-networkmanager-conf",
+  "photonvision-raze-sshd-config",
+  "photonvision-raze-sshd-dropin",
+  "photonvision-raze-journald-conf",
+  "photonvision-raze-photonvision-read-only-dropin",
+  "photonvision-raze-timesyncd-dropin",
+  "photonvision-raze-timesyncd-conf",
+  "photonvision-raze-nm-dispatcher-timesync",
+]
+stage_env_sets = ["photonvision-raze-image-env"]
+stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-camera-streams-service", "photonvision-raze-camera-streams-path", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
+
+# Raze is the only target that assembles a bootable disk; Gaia compresses it
+# next to sdcard.img by the name's extension (input.raze_archive_ext: img.xz,
+# or img.zst for dev builds).
+[image.output]
+archive_name = "${build.name}-${input.raze_photonvision_version}.${input.raze_archive_ext}"
+
+# The OS owns the boot partition: the device package adds raze-device.txt,
+# its overlays and the stock overlays it loads to the tree with id "boot".
+[image.assembly]
+# In RAM (/dev/shm): trees, boot.vfat and the raw sdcard.img; only the
+# published outputs (sdcard.img, the archive) are written to disk.
+work_dir = "ram"
+out_dir = "$provider.images"
+
+[[image.assembly.trees]]
+id = "boot"
+path = "$assembly.work/boot"
+
+[[image.assembly.files]]
+tree = "boot"
+src = "raze/assets/config.txt"
+dest = "config.txt"
+
+[[image.assembly.files]]
+tree = "boot"
+src = "raze/assets/cmdline.txt"
+dest = "cmdline.txt"
+
+# start4.elf/fixup4.dat are the Pi 4 GPU firmware. A CM5 boots from its EEPROM
+# bootloader and never reads them, and rpi-firmware installs them only when its
+# Pi 4 variant is selected, so they are optional here.
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/start4.elf"
+dest = "."
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/fixup4.dat"
+dest = "."
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src_glob = "$provider.buildroot_output/images/bcm*.dtb"
+dest = "."
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/bcm2712d0.dtbo"
+dest = "overlays/bcm2712d0.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi.dtbo"
+dest = "overlays/disable-wifi.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi-pi5.dtbo"
+dest = "overlays/disable-wifi-pi5.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt.dtbo"
+dest = "overlays/disable-bt.dtbo"
+optional = true
+
+[[image.assembly.files]]
+tree = "boot"
+src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt-pi5.dtbo"
+dest = "overlays/disable-bt-pi5.dtbo"
+optional = true
+
+[[image.assembly.transforms]]
+kind = "gzip"
+src = "$provider.buildroot_output/images/Image"
+dest = "$assembly.tree.boot/kernel8.img"
+deterministic = true
+
+# p1: autoboot.txt only. The bootloader reads it first: boot A (p2) by
+# default, boot B (p3) once on a tryboot. The device package's update writer
+# rewrites it, keeps its state there (board-update.env), and reads opt-in SSH keys
+# from board/authorized_keys on it, so p1 is shared by both slots.
+[[image.assembly.trees]]
+id = "autoboot"
+path = "$assembly.work/autoboot"
+
+[[image.assembly.files]]
+tree = "autoboot"
+src = "raze/assets/autoboot.txt"
+dest = "autoboot.txt"
+
+# The flash id (post-image-rootfs.sh): board-data-setup remakes /data when it
+# changes, so a flash resets /data and an update keeps it.
+[[image.assembly.files]]
+tree = "autoboot"
+src = "$provider.images/flash-id.raw"
+dest = "board/flash-id"
+
+[[image.assembly.filesystems]]
+id = "autoboot"
+kind = "vfat"
+source_tree = "autoboot"
+output = "$assembly.work/autoboot.vfat"
+size = "16M"
+
+# One boot image serves both boot slots: the update writer rewrites root= in
+# the slot it writes (cmdline.txt here says root A, /dev/mmcblk0p5).
+[[image.assembly.filesystems]]
+id = "boot"
+kind = "vfat"
+source_tree = "boot"
+output = "$provider.images/boot.vfat"
+size = "128M"
+
+# A/B layout for the device package's update writer (Atlas docs/ota.md):
+# p1 autoboot, p2/p3 boot A/B, p4 extended (added by Gaia), p5/p6 root A/B
+# (512 MiB each, read-only EROFS; the post-image script fails a root image
+# that does not fit), p7 /data (64 MiB here, grown to fill the eMMC on first
+# boot).
+# Slot B ships empty. Unwritten space stays sparse, so the .img.xz stays
+# small.
+[[image.assembly.disks]]
+id = "sdcard"
+output = "$provider.images/sdcard.img"
+partition_table = "mbr"
+signature = "0x5056525a"
+# The EBR chain sits at the start of the extended partition (p4), so the file
+# can end after rootfs-a's content: slot B's root and /data are in the table but
+# not in the image (about 0.4 GB instead of 1.36 GB raw).
+ebr_placement = "packed"
+truncate = "last-data"
+first_lba = 2048
+alignment_lba = 2048
+
+[[image.assembly.disks.partitions]]
+name = "autoboot"
+type_alias = "fat32-lba"
+bootable = true
+image = "$assembly.work/autoboot.vfat"
+size = "16M"
+
+[[image.assembly.disks.partitions]]
+name = "boot-a"
+type_alias = "fat32-lba"
+image = "$provider.images/boot.vfat"
+size = "128M"
+
+[[image.assembly.disks.partitions]]
+name = "boot-b"
+type_alias = "fat32-lba"
+image = "$provider.images/boot.vfat"
+size = "128M"
+
+[[image.assembly.disks.partitions]]
+name = "rootfs-a"
+type_alias = "linux"
+image = "$provider.images/rootfs.erofs"
+size = "512M"
+
+[[image.assembly.disks.partitions]]
+name = "rootfs-b"
+type_alias = "linux"
+size = "512M"
+materialize = false
+
+# Made on first boot by the device package's board-data-setup, and grown to
+# fill the eMMC.
+[[image.assembly.disks.partitions]]
+name = "data"
+type_alias = "linux"
+size = "64M"
+materialize = false

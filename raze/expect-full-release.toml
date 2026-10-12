@@ -1,0 +1,23 @@
+# What a full Raze PhotonVision image with the release jar must contain
+# (build-raze-release.toml; the release jar with the libcamera GL driver JNI
+# built for Raze swapped in): validation fails if any of these disappears (a
+# layer deleted, emptied by a bad write, no longer imported, or its `when` no
+# longer matching).
+[expect]
+artifacts = [
+  "photon-libcamera-gl-driver-release",
+  "photonvision-jar",
+  "orion-node",
+  "board-agent",
+  "board-stream",
+  "lemnosd",
+  "lemnos-ctl",
+]
+installs = [
+  "install-photonvision-jar",
+  "install-orion-node",
+  "install-board-agent",
+  "install-board-stream",
+  "install-lemnosd",
+  "install-lemnos-ctl",
+]

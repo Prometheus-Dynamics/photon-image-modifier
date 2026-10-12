@@ -27,6 +27,14 @@ retry_backoff_ms = 0
 retry_backoff_strategy = "fixed"
 timeout_seconds = 1800
 
+# Release jars (about 150 MB) and other downloads: the default 120 s cuts a
+# download off on a slow link.
+[providers.download]
+retry_attempts = 2
+retry_backoff_ms = 30000
+retry_backoff_strategy = "fixed"
+timeout_seconds = 1800
+
 # orion-node is a cargo build inside Docker (toolchain download on first use);
 # on a busy disk the default 300 s is not enough.
 [providers.rust]
