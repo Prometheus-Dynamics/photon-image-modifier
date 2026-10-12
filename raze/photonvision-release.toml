@@ -1,0 +1,76 @@
+description = "Raze target, PhotonVision application from the official release jar: base/arm64/photonvision.toml's download of input.photonvision_ref, with its libcamera GL driver JNI replaced by one built for the Raze OS (no Gradle build of the forks). Used by build-raze-release.toml."
+target = "raze"
+
+# The release jar bundles upstream's photon-libcamera-gl-driver JNI, built for
+# Raspberry Pi OS (libcamera 0.5, GLVND's libOpenGL), which does not load on
+# Raze. The same driver version (v2026.0.0 for the v2026 releases), with the
+# Raze build support and OV9782 handling (branch raze-2026 of the Prometheus
+# Dynamics fork), is cross-compiled against the image's libcamera 0.7 and Mesa
+# EGL/GLESv2 and swapped into the downloaded jar before it is installed. It
+# links OpenCV 4.10, the version the 2026 jars bundle; a 2027 release jar
+# needs a different driver build (see raze/photonvision.toml).
+[[sources]]
+id = "photon-libcamera-gl-driver-release"
+kind = "git"
+repo = "${input.raze_release_libcamera_driver_repo}"
+rev = "${input.raze_release_libcamera_driver_rev}"
+refresh = "auto"
+
+# Only the shared library is needed (SKIP_GRADLE=1): it runs after Buildroot
+# prepare, when the toolchain and sysroot exist, like raze/photonvision.toml's
+# driver build.
+[[artifacts]]
+id = "photon-libcamera-gl-driver-release"
+kind = "java"
+build_target = "cmake_build/libphotonlibcamera.so"
+build_command = ["./tools/build_arm64_jni.sh"]
+build_env = [
+  ["BUILDROOT_HOST_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host"],
+  # No RPATH to the build tree's OpenCV: PhotonVision loads the jar's OpenCV
+  # natives before this library.
+  ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF -DCMAKE_SKIP_RPATH=ON"],
+  ["SKIP_GRADLE", "1"],
+  ["CLEAN_BUILD", "1"],
+]
+after_image_prepare = true
+source = "photon-libcamera-gl-driver-release"
+install_name = "libphotonlibcamera.so"
+install_class = "library"
+output_path = "${workspace.out_dir}/artifacts/libphotonlibcamera.so"
+
+[artifacts.execution]
+backend = "docker"
+
+# Replaces base/arm64/photonvision.toml's no-op artifact of the same id: the
+# downloaded jar with linux/arm64/shared/libphotonlibcamera.so swapped and its
+# MD5 and combined hash in /ResourceInformation.json updated (what WPILib's
+# native loader and raze/assets/buildroot/pack-photonvision-jar.py check). The
+# download itself is left as it is; the result goes straight into the build
+# dir, which already exists (Gaia mounts the parent of every absolute path
+# argument into the container, and Docker would create a missing one as root).
+[[artifacts]]
+id = "photonvision-jar"
+kind = "java"
+build_target = "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar"
+build_command = [
+  "${project.root_dir}/raze/scripts/swap-photonlibcamera.py",
+  "--jar", "photonvision-${input.photonvision_ref}-linuxarm64.jar",
+  "--lib", "${project.root_dir}/${workspace.out_dir}/artifacts/libphotonlibcamera.so",
+  "--out", "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar",
+]
+source = "photonvision-source"
+dependencies = ["photon-libcamera-gl-driver-release"]
+install_name = "photonvision.jar"
+install_class = "archive"
+install_dest_hint = "/opt/photonvision/photonvision.jar"
+output_path = "${workspace.out_dir}/artifacts/photonvision-linuxarm64.jar"
+
+[artifacts.execution]
+backend = "docker"
+
+[image]
+kind = "buildroot"
+config_overrides = [
+  # As raze/photonvision.toml, so the OS matches the fork build's.
+  ["BR2_PACKAGE_LIBCAMERA_V4L2", "y"],
+]
