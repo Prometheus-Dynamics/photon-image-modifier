@@ -87,6 +87,13 @@ src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-
 dest = "/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
 origin = "static-asset"
 
+# A plain stop is not a failure (see the drop-in).
+[[stage.files]]
+id = "photonvision-raze-photonvision-clean-stop-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/15-clean-stop.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/15-clean-stop.conf"
+origin = "static-asset"
+
 # Presets: systemd-networkd off (NetworkManager owns networking).
 [[stage.files]]
 id = "photonvision-raze-preset"
