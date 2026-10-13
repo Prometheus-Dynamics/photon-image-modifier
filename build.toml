@@ -244,8 +244,8 @@ overrides = [
 overrides = [
   ["input.pv", "2027"],
   ["input.backend", "styx"],
-  ["input.raze_photonvision_rev", "c01b5bf925abc62809f7f901362e4e1c39c74919"],
-  ["input.raze_photonvision_version", "dev-v2027.0.0-alpha-2-130-gc01b5bf9"],
+  ["input.raze_photonvision_rev", "ff361649faf32abfac25a265bdf7793d3e10983e"],
+  ["input.raze_photonvision_version", "dev-v2027.0.0-alpha-2-131-gff361649"],
 ]
 
 # PhotonVision 2026 on the Styx + Eidos backend (the fork's styx-eidos-2026 branch).
@@ -254,8 +254,8 @@ overrides = [
 overrides = [
   ["input.pv", "2026"],
   ["input.backend", "styx"],
-  ["input.raze_photonvision_rev", "a2cffbb2a8e067a2c711bcc3fff355613ef96c58"],
-  ["input.raze_photonvision_version", "dev-v2026.3.4-49-ga2cffbb2"],
+  ["input.raze_photonvision_rev", "d09ac987c5321d0e06f42f27f920eec26f570830"],
+  ["input.raze_photonvision_version", "dev-v2026.3.4-50-gd09ac987"],
   ["input.raze_styx_build_image", "photonvision-gaia-build-styx-jdk17"],
   ["input.raze_styx_build_dockerfile", "docker/build-styx-jdk17/Dockerfile"],
 ]

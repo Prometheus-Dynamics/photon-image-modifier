@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "9ea53971f61cc3fabb0098ab09ff5f374022966e"
+rev = "5ff0f5cb8d93731476bf42c73cdaa8194e42b4cd"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -62,14 +62,15 @@ repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
 rev = "ce3dda3e5cee4c0253989ad1485dee4669bf9290"
 
 # Styx's out-of-tree kernel modules (kernel-modules/ov9282: the OV9782 driver with the 1280x480
-# window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event). Built once in the shared Buildroot base against the image's own kernel, and left
+# window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event; kernel-modules/pispbe:
+# the ISP back end with faster job setup). Built once in the shared Buildroot base against the image's own kernel, and left
 # out of the libcamera variants (raze/photonvision-libcamera.toml exclude_packages), so only the
 # Styx images ship it; their kernel stays the same. The same rev in every variant.
 [[sources]]
 id = "styx"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Styx.git"
-rev = "e0ee11a8bf15b3e4c4fbba37c66b1f650988c591"
+rev = "fca40156dac138aef3f3aadc1d1a0f39e491fc32"
 
 [[stage.files]]
 id = "photonvision-raze-config"
@@ -345,6 +346,8 @@ config_overrides = [
   ["BR2_PACKAGE_STYX_OV9282", "y"],
   # Styx's rp1-cfe (the camera receiver's mid-frame line event, for sliced delivery), same rules.
   ["BR2_PACKAGE_STYX_RP1_CFE", "y"],
+  # Styx's pisp_be (back end job config written in ~7 us instead of ~120 us), same rules.
+  ["BR2_PACKAGE_STYX_PISPBE", "y"],
   # The boot partition and sdcard.img are built by the assembly below. The
   # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
   # checking the kernel modules, writing the PhotonVision image-metadata.json,
