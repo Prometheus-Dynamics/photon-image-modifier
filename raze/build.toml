@@ -61,6 +61,16 @@ kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
 rev = "ce3dda3e5cee4c0253989ad1485dee4669bf9290"
 
+# Styx's out-of-tree kernel modules (kernel-modules/ov9282: the OV9782 driver with the 1280x480
+# window mode). Built once in the shared Buildroot base against the image's own kernel, and left
+# out of the libcamera variants (raze/photonvision-libcamera.toml exclude_packages), so only the
+# Styx images ship it; their kernel stays the same. The same rev in every variant.
+[[sources]]
+id = "styx"
+kind = "git"
+repo = "https://github.com/Prometheus-Dynamics/Styx.git"
+rev = "0049467fda73ee1c08c96b3336c695f0cf685661"
+
 [[stage.files]]
 id = "photonvision-raze-config"
 src = "raze/assets/config.txt"
@@ -321,15 +331,18 @@ kind = "buildroot"
 # defconfig and the kernel come from the device package. Its BR2_EXTERNAL
 # tree (OV9782 kernel extension, kernel config fragment, libcamera/libpisp
 # overrides) is listed here with this repository's (the photonvision-jre
-# package): a layer's external_tree replaces the earlier one, so keep the
-# device package's path in step with devices/raze/gaia/kernel.toml.
-external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external"
+# package) and Styx's kernel-module tree: a layer's external_tree replaces the earlier one, so
+# keep the device package's path in step with devices/raze/gaia/kernel.toml.
+external_tree = "@source:atlas/devices/raze/gaia/buildroot-external:raze/assets/buildroot/external:@source:styx/kernel-modules/ov9282/buildroot"
 external_tree_mode = "required"
 config_overrides = [
   # raspberrypicm5io_defconfig uses the external Bootlin toolchain, which has
   # C++; the base layer's switch for C++ in Buildroot's own toolchain does not
   # exist with it, and Gaia's override check would report it as dropped.
   ["BR2_TOOLCHAIN_BUILDROOT_CXX", "n"],
+  # Styx's ov9282 (1280x480 window), to /lib/modules/<ver>/updates; the libcamera variants
+  # exclude the package, so they keep the stock driver.
+  ["BR2_PACKAGE_STYX_OV9282", "y"],
   # The boot partition and sdcard.img are built by the assembly below. The
   # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
   # checking the kernel modules, writing the PhotonVision image-metadata.json,

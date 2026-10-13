@@ -65,6 +65,14 @@ backend = "docker"
 image = "${input.raze_jar_build_image}"
 dockerfile = "${input.raze_jar_build_dockerfile}"
 
+# Styx's ov9282 module is built in the shared base for the Styx images; the libcamera images
+# leave it out and keep the stock driver (Gaia reruns depmod after the exclusion).
+[image]
+kind = "buildroot"
+
+[image.rootfs]
+exclude_packages = ["styx-ov9282"]
+
 # This backend's artifacts must be in the build (raze/expect-full.toml holds
 # the ones every Raze image needs).
 [expect]
