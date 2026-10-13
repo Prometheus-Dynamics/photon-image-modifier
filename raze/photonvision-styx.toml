@@ -25,7 +25,7 @@ build_command = ["${project.root_dir}/raze/scripts/build-photonvision-jar.sh"]
 build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
   ["PHOTONVISION_STYX", "1"],
-  ["EIDOS_PATH", "${project.root_dir}/${workspace.build_dir}/sources/eidos/content"],
+  ["EIDOS_PATH", "${source.eidos.path}"],
   ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
 ]
 source = "photonvision-source"
