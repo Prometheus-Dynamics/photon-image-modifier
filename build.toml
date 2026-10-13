@@ -205,7 +205,7 @@ default = "libcamera"
 [inputs.raze_styx_eidos_rev]
 description = "Eidos commit patched into photon-styx for the styx backend"
 kind = "string"
-default = "5131cf98f0fa5d6c811e66824562945f1678ccd0"
+default = "921c3e9eaa8797de9ccb2b7de13b27ba583366be"
 
 [inputs.raze_styx_build_image]
 description = "Docker image the styx PhotonVision jar builds in (build image plus Rust and zig; JDK 25 for 2027, 17 for 2026)"
@@ -244,8 +244,8 @@ overrides = [
 overrides = [
   ["input.pv", "2027"],
   ["input.backend", "styx"],
-  ["input.raze_photonvision_rev", "3a5ce9b0c678f110addf4a02c05cac9730a77cab"],
-  ["input.raze_photonvision_version", "dev-v2027.0.0-alpha-2-123-g3a5ce9b0"],
+  ["input.raze_photonvision_rev", "0e37447b03ba3ec064850d83edccae8b728fbaf3"],
+  ["input.raze_photonvision_version", "dev-v2027.0.0-alpha-2-124-g0e37447b"],
 ]
 
 # PhotonVision 2026 on the Styx + Eidos backend (the fork's styx-eidos-2026 branch).
@@ -254,8 +254,8 @@ overrides = [
 overrides = [
   ["input.pv", "2026"],
   ["input.backend", "styx"],
-  ["input.raze_photonvision_rev", "b4a99ff3e23883110c04281223f92685ea843109"],
-  ["input.raze_photonvision_version", "dev-v2026.3.4-42-gb4a99ff3"],
+  ["input.raze_photonvision_rev", "12cc460cbc9e255d4753242584ed3ab10c1ebe84"],
+  ["input.raze_photonvision_version", "dev-v2026.3.4-43-g12cc460c"],
   ["input.raze_styx_build_image", "photonvision-gaia-build-styx-jdk17"],
   ["input.raze_styx_build_dockerfile", "docker/build-styx-jdk17/Dockerfile"],
 ]
