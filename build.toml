@@ -199,10 +199,13 @@ kind = "enum"
 choices = ["libcamera", "styx"]
 default = "libcamera"
 
+# The Eidos photon-styx builds against: this checkout replaces the fork's own Eidos pin
+# (photon-styx/Cargo.toml) through EIDOS_PATH, so the two must name the same commit;
+# bump them together.
 [inputs.raze_styx_eidos_rev]
 description = "Eidos commit patched into photon-styx for the styx backend"
 kind = "string"
-default = "b3faaa4be63ecd518be3848578f44b92d8fd7dc7"
+default = "5131cf98f0fa5d6c811e66824562945f1678ccd0"
 
 [inputs.raze_styx_build_image]
 description = "Docker image the styx PhotonVision jar builds in (build image plus Rust and zig; JDK 25 for 2027, 17 for 2026)"
