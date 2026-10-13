@@ -59,7 +59,7 @@ rev = "4fadba9fd81d376375dbe9a3c7a6ccc6416685ae"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "7821ecdcb15c477b52797b90f0eda0e6479a4e1b"
+rev = "ce3dda3e5cee4c0253989ad1485dee4669bf9290"
 
 [[stage.files]]
 id = "photonvision-raze-config"
