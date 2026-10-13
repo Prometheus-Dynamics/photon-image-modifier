@@ -360,16 +360,16 @@ config_overrides = [
   # so it only cost about 5 minutes of download and extract per clean build
   # and installed nothing.
   ["BR2_PACKAGE_LINUX_FIRMWARE", "n"],
-  # NetworkManager owns Ethernet. It hands per-link mDNS (connection.mdns=2
-  # from the device package) to systemd-resolved, which also publishes the
-  # device's _pd-device._tcp service, so resolved must stay on and nothing
-  # else may answer on port 5353 (no avahi).
+  # NetworkManager owns Ethernet. mDNS is avahi's (the device package turns
+  # resolved's and NetworkManager's mDNS off): WPILib's NetworkTables finds the
+  # robot controller (_SystemCore._tcp) through avahi-client, and avahi
+  # publishes <hostname>.local and the device's _pd-device._tcp service.
+  # resolved stays for unicast DNS.
   ["BR2_PACKAGE_NETWORK_MANAGER", "y"],
   # nmcli: PhotonVision reads interfaces and sets DHCP/static addressing
   # through it ("Cannot manage network without nmcli!" otherwise).
   ["BR2_PACKAGE_NETWORK_MANAGER_CLI", "y"],
   ["BR2_PACKAGE_SYSTEMD_RESOLVED", "y"],
-  ["BR2_PACKAGE_AVAHI", "n"],
   # The defconfig's BR2_SYSTEM_DHCP="eth0" would make systemd-networkd run a
   # second DHCP client on the link NetworkManager manages. systemd-networkd
   # itself stays installed with systemd but is disabled by
