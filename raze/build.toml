@@ -222,6 +222,14 @@ src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/20-read-
 dest = "/usr/lib/systemd/system/photonvision.service.d/20-read-only-root.conf"
 origin = "static-asset"
 
+# The built-in camera is activated on a fresh install (both PhotonVision
+# lines and both backends; PHOTONVISION_AUTO_ACTIVATE_CSI in the forks).
+[[stage.files]]
+id = "photonvision-raze-builtin-camera-dropin"
+src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/30-builtin-camera.conf"
+dest = "/usr/lib/systemd/system/photonvision.service.d/30-builtin-camera.conf"
+origin = "static-asset"
+
 # manage_url for Atlas ("Web UI"): http://<hostname>.local:5800/, written at
 # boot because the hostname is per board.
 [[stage.files]]
@@ -417,6 +425,7 @@ stage_files = [
   "photonvision-raze-sshd-dropin",
   "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",
+  "photonvision-raze-builtin-camera-dropin",
   "photonvision-raze-timesyncd-dropin",
   "photonvision-raze-timesyncd-conf",
   "photonvision-raze-nm-dispatcher-timesync",
