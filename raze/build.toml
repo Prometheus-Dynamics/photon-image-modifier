@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "2301a9b0fb70ce4db6cc446dc094e5765ec9df80"
+rev = "a36e866e889683da1cdf55a3629558822e6bc0fa"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -358,6 +358,9 @@ config_overrides = [
   ["BR2_PACKAGE_STYX_RP1_CFE", "y"],
   # Styx's pisp_be (back end job config written in ~7 us instead of ~120 us), same rules.
   ["BR2_PACKAGE_STYX_PISPBE", "y"],
+  # The device package's kernel trim (pass 2, -O2): -1.4 MB kernel8.img per slot, fewer modules;
+  # board-tested on 2026-10-16 (camera, ring, IMU, fan, gadget/NAT, PV timing unchanged).
+  ["BR2_RAZE_KERNEL_TRIM", "y"],
   # host veritysetup, for Gaia's dm-verity step on the slot root images (a host tool only;
   # nothing lands in the target).
   ["BR2_PACKAGE_HOST_CRYPTSETUP", "y"],
