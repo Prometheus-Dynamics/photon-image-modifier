@@ -348,6 +348,9 @@ config_overrides = [
   ["BR2_PACKAGE_STYX_RP1_CFE", "y"],
   # Styx's pisp_be (back end job config written in ~7 us instead of ~120 us), same rules.
   ["BR2_PACKAGE_STYX_PISPBE", "y"],
+  # host veritysetup, for Gaia's dm-verity step on the slot root images (a host tool only;
+  # nothing lands in the target).
+  ["BR2_PACKAGE_HOST_CRYPTSETUP", "y"],
   # The boot partition and sdcard.img are built by the assembly below. The
   # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
   # checking the kernel modules, writing the PhotonVision image-metadata.json,
