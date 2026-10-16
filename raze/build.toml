@@ -29,22 +29,25 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "5ff0f5cb8d93731476bf42c73cdaa8194e42b4cd"
+rev = "b4d664aa661fd6f1c09c0ada12caed2be21799a0"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
-# f8d767ac (live-streams, protocol 5): push sessions, streams with history and backfill, open
+# 414834b: the orion user at fixed uid/gid 901, so its state on the shared /data keeps its owner
+# across OS images. f8d767ac (live-streams, protocol 5): push sessions, streams with history and backfill, open
 # read and USB auto-enroll; the same Orion commit as the device package's board-agent.
 [[sources]]
 id = "orion"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Orion.git"
-rev = "f8d767ac5f7a995fbdc205d727f58dcf719c25dc"
+rev = "414834b9abbe666bb86571dde7ca7e79d4fbfaa4"
 
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). 7821ecd: one PIO TX
+# package is tested with (Atlas devices/README.md). 384b2b1: the lemnos user at fixed uid/gid
+# 900 (shared /data); 026abcd: lemnos-orion on Orion protocol 5 (it was rejected as protocol 4).
+# 7821ecd: one PIO TX
 # helper per bus (IMU ~5.6% of a core, was 8.4%); a9e352f: USB port power
 # switches, frame watch, look presets and the over layer mode, IMU/mag
 # auto-calibration and fusion, ring looks over Orion; 5b1d38c: the PIO I2C bus
@@ -59,7 +62,7 @@ rev = "f8d767ac5f7a995fbdc205d727f58dcf719c25dc"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "ce3dda3e5cee4c0253989ad1485dee4669bf9290"
+rev = "384b2b1379b0c81e7d47349c93beb74e69d51bd0"
 
 # Styx's out-of-tree kernel modules (kernel-modules/ov9282: the OV9782 driver with the 1280x480
 # window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event; kernel-modules/pispbe:
@@ -191,6 +194,13 @@ origin = "static-asset"
 id = "photonvision-raze-networkmanager-conf"
 src = "raze/assets/rootfs/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
 dest = "/usr/lib/NetworkManager/conf.d/40-photonvision-os.conf"
+origin = "static-asset"
+
+[[stage.files]]
+id = "photonvision-raze-data-owners"
+src = "raze/assets/rootfs/usr/lib/board/data-owners.d/photonvision.conf"
+dest = "/usr/lib/board/data-owners.d/photonvision.conf"
+mode = 420
 origin = "static-asset"
 
 [[stage.files]]
@@ -449,6 +459,7 @@ stage_files = [
   "photonvision-raze-data-early",
   "photonvision-raze-hostnamed-dropin",
   "photonvision-raze-networkmanager-conf",
+  "photonvision-raze-data-owners",
   "photonvision-raze-sshd-config",
   "photonvision-raze-sshd-dropin",
   "photonvision-raze-journald-conf",
