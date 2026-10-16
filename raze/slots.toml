@@ -1,0 +1,361 @@
+# Raze dynamic slots: the slot bundle (<id>.slot.tar), the first-flash disk
+# (MBR: p1 FAT32 boot, p2 ext4 data) and the slot manifest, for the Raze
+# PhotonVision image. A Gaia fragment, imported by the PhotonVision root
+# build.toml after the Raze layers (target raze, profile full: the PhotonVision
+# source it names is declared there), and the Atlas initramfs
+# (devices/raze/gaia/initramfs.toml, slot-init).
+# Everything here is additive: its own tree, filesystem and disk ids, prefixed
+# slots-/slot-. What the recipe must still change is in NOTES.md.
+
+# The slot id is photonvision-<version>-<variant>-<commit>. The version is
+# input.slot_version (the Raze jar version, without its describe), the variant
+# is input.backend (libcamera or styx), and the commit is the 8-character short
+# commit of the PhotonVision source this build compiles:
+# ${source.photonvision-source.commit_short} (raze/photonvision.toml). Source
+# tokens are substituted in every [image.assembly] string and in stage env
+# sets, so the id is written with the same token everywhere it appears.
+
+[inputs.slot_version]
+description = "PhotonVision version in the slot id (the Raze jar version, without its describe). Each PhotonVision line sets it in its preset (pv2026 and pv2026-styx: 2026.3.4)"
+kind = "string"
+default = "2027.0.0-alpha-2"
+
+[inputs.slot_kernel]
+description = "Kernel release (uname -r) of the Raze kernel the slots boot"
+kind = "string"
+default = "7.2.9-v8-16k"
+
+# /etc/slot.json, reduced (no verity values: they come from the image, which
+# contains this file). Stage env set: rendered to /etc/default/slot.env in
+# the rootfs before the erofs is made; the post-image script writes
+# /etc/slot.json from it (see NOTES.md).
+[[stage.env_sets]]
+id = "slot-identity"
+name = "slot"
+entries = [
+  ["SLOT_SCHEMA", "1"],
+  ["SLOT_ID", "photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}"],
+  ["SLOT_FAMILY", "photonvision"],
+  ["SLOT_VERSION", "${input.slot_version}"],
+  ["SLOT_VARIANT", "${input.backend}"],
+  ["SLOT_KERNEL", "${input.slot_kernel}"],
+  ["SLOT_BUILT", "${build.date}"],
+  ["SLOT_SOURCE", "${input.raze_photonvision_rev}"],
+  ["SLOT_DATA_DIRS", "photonvision_config"],
+]
+
+# The feed takes the slot identity env set above. It is listed here, not in
+# raze/build.toml, so a profile without this fragment does not name an env set
+# that is not declared.
+[image.feed]
+stage_env_sets = ["slot-identity"]
+
+[[image.assembly.trees]]
+id = "slots-fat"
+path = "$assembly.work/slots/fat"
+
+[[image.assembly.trees]]
+id = "slots-manifest"
+path = "$assembly.work/slots/manifest"
+
+[[image.assembly.trees]]
+id = "slots-data"
+path = "$assembly.work/slots/data"
+
+# The boot payload of a slot (kernel, initramfs, both CM5 DTBs, the overlays,
+# the base cmdline). It is filled once, here, and the first-flash FAT copies
+# and the bundle read it. The overlays are the stock set minus the names the
+# Raze build overrides (its boot tree, Atlas devices/raze/gaia/boot.toml and
+# buildroot-external/external.mk RAZE_KERNEL_OVERLAYS), then the overrides and
+# the three Atlas-built overlays, so the result does not depend on copy order.
+[[image.assembly.trees]]
+id = "slots-payload"
+path = "$assembly.work/slots/payload"
+
+# dm-verity over the read-only root (appended tree; superblock at hash_offset).
+[[image.assembly.transforms]]
+kind = "verity"
+src = "$provider.images/rootfs.erofs"
+dest = "$assembly.work/slots/rootfs.erofs"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$assembly.tree.boot/kernel8.img"
+dest = "kernel8.img"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$assembly.work/slots/initramfs.cpio.zst"
+dest = "initramfs"
+
+# The base cmdline (no slot arguments): the bundle's boot/cmdline.txt. The
+# first-flash cmdline.txt is the slot's, built in the slots-fat tree below.
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "@self/assets/slots/cmdline.txt"
+dest = "cmdline.txt"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src_glob = "$provider.buildroot_output/images/bcm*.dtb"
+dest = "."
+
+# Stock overlays, minus the five names the Raze build overrides.
+[[image.assembly.files]]
+tree = "slots-payload"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/overlays/*.dtbo"
+exclude = ["dwc2.dtbo", "i2c1-pi5.dtbo", "ws2812-pio.dtbo", "vc4-kms-v3d-pi5.dtbo", "ramoops-pi5.dtbo"]
+dest = "overlays/"
+
+# overlay_map.dtb and hat_map.dtb.
+[[image.assembly.files]]
+tree = "slots-payload"
+src_glob = "$provider.buildroot_output/images/rpi-firmware/overlays/*.dtb"
+dest = "overlays/"
+
+# The Raze overrides (raze-overlays, from the Raze kernel build).
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$provider.buildroot_output/images/raze-overlays/dwc2.dtbo"
+dest = "overlays/dwc2.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$provider.buildroot_output/images/raze-overlays/i2c1-pi5.dtbo"
+dest = "overlays/i2c1-pi5.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$provider.buildroot_output/images/raze-overlays/ws2812-pio.dtbo"
+dest = "overlays/ws2812-pio.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$provider.buildroot_output/images/raze-overlays/vc4-kms-v3d-pi5.dtbo"
+dest = "overlays/vc4-kms-v3d-pi5.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$provider.buildroot_output/images/raze-overlays/ramoops-pi5.dtbo"
+dest = "overlays/ramoops-pi5.dtbo"
+
+# The Atlas-built overlays (boot tree, from Atlas devices/raze/gaia/boot.toml).
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$assembly.tree.boot/overlays/ov9782.dtbo"
+dest = "overlays/ov9782.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$assembly.tree.boot/overlays/raze-fan.dtbo"
+dest = "overlays/raze-fan.dtbo"
+
+[[image.assembly.files]]
+tree = "slots-payload"
+src = "$assembly.tree.boot/overlays/raze-usb-power.dtbo"
+dest = "overlays/raze-usb-power.dtbo"
+
+# The slot manifest: slot.json (the bundle's, the FAT's and /data's copy).
+[[image.assembly.files]]
+tree = "slots-manifest"
+dest = "slot.json"
+
+[image.assembly.files.json]
+schema = 1
+id = "photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}"
+family = "photonvision"
+version = "${input.slot_version}"
+variant = "${input.backend}"
+kernel = "${input.slot_kernel}"
+built = "${build.date}"
+source = "${input.raze_photonvision_rev}"
+data_dirs = ["photonvision_config"]
+
+# The boot payload's digests: every regular file of the payload tree, keyed by
+# its path in the tree. The tree is the one the bundle and the first-flash FAT
+# are filled from, so the map names exactly the files that ship.
+boot = { files = "${assembly.sha256_tree:slots-payload}" }
+
+[image.assembly.files.json.image]
+size = "${assembly.size:$assembly.work/slots/rootfs.erofs}"
+sha256 = "${assembly.sha256:$assembly.work/slots/rootfs.erofs}"
+
+[image.assembly.files.json.verity]
+root_hash = "${assembly.verity:$assembly.work/slots/rootfs.erofs:root_hash}"
+salt = "${assembly.verity:$assembly.work/slots/rootfs.erofs:salt}"
+hash_offset = "${assembly.verity:$assembly.work/slots/rootfs.erofs:hash_offset}"
+data_blocks = "${assembly.verity:$assembly.work/slots/rootfs.erofs:data_blocks}"
+data_block_size = "${assembly.verity:$assembly.work/slots/rootfs.erofs:data_block_size}"
+hash_block_size = "${assembly.verity:$assembly.work/slots/rootfs.erofs:hash_block_size}"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "@self/assets/slots/config.txt"
+dest = "config.txt"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "@self/assets/slots/tryboot.txt"
+dest = "tryboot.txt"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.boot/raze-device.txt"
+dest = "raze-device.txt"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+content = "os_prefix=slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/\n"
+dest = "default.txt"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+content = "os_prefix=slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/\n"
+dest = "trial.txt"
+
+# The root copy of the payload (the default slot's): the boot files, the
+# overlays, and the slot cmdline. The FAT tree cannot copy a directory, so each
+# file group is a glob of the payload tree.
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-payload/kernel8.img"
+dest = "kernel8.img"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-payload/initramfs"
+dest = "initramfs"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/bcm*.dtb"
+dest = "."
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/overlays/*.dtb"
+dest = "overlays/"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/overlays/*.dtbo"
+dest = "overlays/"
+
+# The slot's cmdline: the base (assets/slots/cmdline.txt) plus the slot
+# arguments. It is written once, into slots/<id>/, and the root copy is the
+# same file, so the two cannot differ.
+[[image.assembly.files]]
+tree = "slots-fat"
+content = "console=serial0,115200 console=tty1 rootwait quiet splash systemd.unified_cgroup_hierarchy=1 atlas.slot=photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short} atlas.roothash=${assembly.verity:$assembly.work/slots/rootfs.erofs:root_hash} atlas.data=PARTUUID=5056525a-02 panic=5\n"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/cmdline.txt"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-fat/slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/cmdline.txt"
+dest = "cmdline.txt"
+
+# slots/<id>/: the same payload, the slot's cmdline and slot.json.
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-manifest/slot.json"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/slot.json"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-payload/kernel8.img"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/kernel8.img"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src = "$assembly.tree.slots-payload/initramfs"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/initramfs"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/bcm*.dtb"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/overlays/*.dtb"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/overlays/"
+
+[[image.assembly.files]]
+tree = "slots-fat"
+src_glob = "$assembly.tree.slots-payload/overlays/*.dtbo"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}/overlays/"
+
+# Second partition, p2 (ext4, label data): the slot images and manifests and
+# the slot state. The partition is sized from its content plus 256 MiB free,
+# so the root can grow by that much before the disk needs a change.
+[[image.assembly.files]]
+tree = "slots-data"
+src = "$assembly.work/slots/rootfs.erofs"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.erofs"
+
+[[image.assembly.files]]
+tree = "slots-data"
+src = "$assembly.tree.slots-manifest/slot.json"
+dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.json"
+
+# json null is not a TOML value, so state.json is written as text.
+[[image.assembly.files]]
+tree = "slots-data"
+content = '{"schema":1,"default":"photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}","previous":null,"trial":null}\n'
+dest = "board/slots/state.json"
+
+[[image.assembly.filesystems]]
+id = "slots-boot"
+kind = "vfat"
+source_tree = "slots-fat"
+output = "$assembly.work/slots/boot.vfat"
+size = "1G"
+
+[[image.assembly.filesystems]]
+id = "slots-data"
+kind = "ext4"
+source_tree = "slots-data"
+output = "$assembly.work/slots/data.ext4"
+size = "auto"
+free = "256M"
+label = "data"
+
+[[image.assembly.disks]]
+id = "slots-sdcard"
+output = "$provider.images/slots-sdcard.img"
+partition_table = "mbr"
+signature = "0x5056525a"
+first_lba = 2048
+alignment_lba = 2048
+truncate = "last-data"
+
+[[image.assembly.disks.partitions]]
+name = "slots-boot"
+type_alias = "fat32-lba"
+bootable = true
+image = "$assembly.work/slots/boot.vfat"
+size = "1G"
+
+[[image.assembly.disks.partitions]]
+name = "data"
+type_alias = "linux"
+image = "$assembly.work/slots/data.ext4"
+
+# The slot bundle: <id>.slot.tar, uncompressed. The boot files are one tree
+# member under boot/ (the payload tree, so the bundle and its digests name the
+# same files); the overlays are its glob, minus the Raze names, as above.
+[[image.assembly.archives]]
+id = "slots-bundle"
+output = "$provider.images/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.slot.tar"
+
+[[image.assembly.archives.members]]
+name = "slot.json"
+src = "$assembly.tree.slots-manifest/slot.json"
+
+[[image.assembly.archives.members]]
+name = "rootfs.erofs"
+src = "$assembly.work/slots/rootfs.erofs"
+
+[[image.assembly.archives.members]]
+tree = "slots-payload"
+prefix = "boot/"

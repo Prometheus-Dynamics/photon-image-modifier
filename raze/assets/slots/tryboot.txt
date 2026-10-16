@@ -1,0 +1,12 @@
+# PhotonVision on Raze, slot trial boot (the firmware reads this file instead
+# of config.txt on a `reboot '0 tryboot'`). Same as config.txt, but the trial
+# slot (trial.txt) instead of the default.
+arm_64bit=1
+disable_splash=1
+enable_uart=1
+
+include raze-device.txt
+
+[all]
+initramfs initramfs followkernel
+include trial.txt

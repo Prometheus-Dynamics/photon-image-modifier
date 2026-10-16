@@ -46,6 +46,10 @@ imports = [
   { path = "raze/photonvision-libcamera.toml", when = { profile = "full", target = "raze", input = { backend = "libcamera" } } },
   { path = "raze/photonvision-styx.toml", when = { profile = "full", target = "raze", input = { backend = "styx" } } },
   { path = "raze/expect-full.toml", when = { profile = "full", target = "raze" } },
+  # Dynamic slots (Atlas's slot initramfs and this image's slot layer): a verity'd slot root, a
+  # <id>.slot.tar bundle and the slot first-flash disk, next to the A/B disk for now.
+  { source = "atlas", path = "devices/raze/gaia/initramfs.toml", when = { target = "raze" } },
+  { path = "raze/slots.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
@@ -229,6 +233,7 @@ default = "img.xz"
 #   gaia run build.toml --preset pv2026 --set input.target=raze --set input.profile=full
 [presets.pv2026]
 overrides = [
+  ["input.slot_version", "2026.3.4"],
   ["input.pv", "2026"],
   ["input.raze_photonvision_rev", "02b1437545b7239073dde08001b3eee04ddf5d89"],
   ["input.raze_photonvision_version", "dev-v2026.3.4-15-g02b14375"],
@@ -252,6 +257,7 @@ overrides = [
 #   gaia run build.toml --preset pv2026-styx --set input.target=raze --set input.profile=full
 [presets.pv2026-styx]
 overrides = [
+  ["input.slot_version", "2026.3.4"],
   ["input.pv", "2026"],
   ["input.backend", "styx"],
   ["input.raze_photonvision_rev", "fd973cee2478f2fdeeb73740c67681c462ca4ab3"],

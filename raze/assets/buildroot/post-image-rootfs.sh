@@ -307,6 +307,24 @@ done
 # (timesyncd's clock file on /data then keeps it moving forward).
 : >"$root/usr/lib/clock-epoch"
 
+# --- Slot identity ----------------------------------------------------------
+#
+# /etc/slot.json, from the slot-identity env set (raze/slots.toml, rendered to
+# /etc/default/slot.env): which slot this root is. No verity values: those
+# live in the bundle's slot.json, since this file is inside the verity image.
+slot_env="$root/etc/default/slot.env"
+if [ -r "$slot_env" ]; then
+	(
+		# shellcheck disable=SC1090
+		. "$slot_env"
+		dirs=$(printf '%s' "${SLOT_DATA_DIRS:-}" | tr ',' '\n' | sed '/^$/d; s/.*/"&"/' | paste -sd, -)
+		cat >"$root/etc/slot.json" <<EOF
+{"schema": ${SLOT_SCHEMA:-1}, "id": "$(json_escape "${SLOT_ID:-}")", "family": "$(json_escape "${SLOT_FAMILY:-}")", "version": "$(json_escape "${SLOT_VERSION:-}")", "variant": "$(json_escape "${SLOT_VARIANT:-}")", "kernel": "$(json_escape "${SLOT_KERNEL:-}")", "built": "$(json_escape "${SLOT_BUILT:-}")", "source": "$(json_escape "${SLOT_SOURCE:-}")", "data_dirs": [${dirs}]}
+EOF
+	)
+	log "slot identity: $(cat "$root/etc/slot.json")"
+fi
+
 # --- Filesystem -------------------------------------------------------------
 
 rm -f "$image"
