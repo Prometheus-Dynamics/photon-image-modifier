@@ -301,7 +301,8 @@ dest = "slots/photonvision-${input.slot_version}-${input.backend}-${source.photo
 # json null is not a TOML value, so state.json is written as text.
 [[image.assembly.files]]
 tree = "slots-data"
-content = '{"schema":1,"default":"photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}","previous":null,"trial":null}\n'
+content = '''{"schema":1,"default":"photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}","previous":null,"trial":null}
+'''
 dest = "board/slots/state.json"
 
 [[image.assembly.filesystems]]
