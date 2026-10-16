@@ -85,7 +85,7 @@ dest = "kernel8.img"
 
 [[image.assembly.files]]
 tree = "slots-payload"
-src = "$assembly.work/slots/initramfs.cpio.xz"
+src = "$assembly.work/slots/initramfs.cpio.zst"
 dest = "initramfs"
 
 # The base cmdline (no slot arguments): the bundle's boot/cmdline.txt. The
