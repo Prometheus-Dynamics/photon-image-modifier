@@ -320,9 +320,11 @@ size = "auto"
 free = "256M"
 label = "data"
 
+# The first-flash disk is built in the work dir: only its xz image (below) is
+# an output of the run, so the raw disk is not published or copied out.
 [[image.assembly.disks]]
 id = "slots-sdcard"
-output = "$provider.images/slots-sdcard.img"
+output = "$assembly.work/slots/slots-sdcard.img"
 partition_table = "mbr"
 signature = "0x5056525a"
 first_lba = 2048
@@ -341,12 +343,21 @@ name = "data"
 type_alias = "linux"
 image = "$assembly.work/slots/data.ext4"
 
-# The slot bundle: <id>.slot.tar, uncompressed. The boot files are one tree
+# The first-flash disk, compressed into the image output dir under the slot
+# id (xz, default level). Gaia publishes it with the run: it is listed in the
+# summary and copied by --export next to the primary image.
+[[image.assembly.transforms]]
+kind = "xz"
+src = "$assembly.work/slots/slots-sdcard.img"
+dest = "$assembly.out/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.img.xz"
+
+# The slot bundle: <id>.slot.tar, uncompressed, in the image output dir (a
+# published output of the run, like the xz image above). The boot files are one tree
 # member under boot/ (the payload tree, so the bundle and its digests name the
 # same files); the overlays are its glob, minus the Raze names, as above.
 [[image.assembly.archives]]
 id = "slots-bundle"
-output = "$provider.images/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.slot.tar"
+output = "$assembly.out/photonvision-${input.slot_version}-${input.backend}-${source.photonvision-source.commit_short}.slot.tar"
 
 [[image.assembly.archives.members]]
 name = "slot.json"
