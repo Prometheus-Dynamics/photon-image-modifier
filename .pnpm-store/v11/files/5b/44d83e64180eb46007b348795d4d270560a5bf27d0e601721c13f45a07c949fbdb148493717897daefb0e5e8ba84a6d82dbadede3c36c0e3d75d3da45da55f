@@ -1,0 +1,213 @@
+Object.defineProperty(exports, '__esModule', { value: true });
+
+/**
+ * Type predicate.
+ * @param candidate The candidate to test.
+ */ function isConcentrationMassSymbol(candidate) {
+    return concentrationMassSymbols.includes(candidate);
+}
+/**
+* All the Concentration Mass symbols.
+*/ const concentrationMassSymbols = [
+    "g/L",
+    "mg/dL"
+];
+
+/**
+ * A tuple of conversion functions to and from a base unit.
+ */ /**
+ * Creates a linear conversion tuple, where:
+ * - `base = value * coefficient + constant`
+ * - `value = (base - constant) / coefficient`
+ */ const linearConversion = (coefficient, constant = 0)=>[
+        (value)=>value * coefficient + constant,
+        (value)=>(value - constant) / coefficient
+    ];
+
+class CommonProxyHandler {
+    constructor(conversions){
+        this.conversions = conversions;
+    }
+    has(target, propertyKey) {
+        if (propertyKey in target) return true;
+        return this.isUnit(propertyKey);
+    }
+    ownKeys(target) {
+        return Reflect.ownKeys(target).concat(this.units);
+    }
+    set(_, __, ___, ____) {
+        return false;
+    }
+    deleteProperty(_, __) {
+        return false;
+    }
+    setPrototypeOf(_, __) {
+        return false;
+    }
+    getPrototypeOf() {
+        return null;
+    }
+    get(target, p, receiver) {
+        return Reflect.get(target, p, receiver);
+    }
+    getOwnPropertyDescriptor(target, p) {
+        if (p in target) return Reflect.getOwnPropertyDescriptor(target, p);
+        if (this.isUnit(p)) return {
+            enumerable: true,
+            configurable: true,
+            get: this.get.bind(this, target, p, undefined)
+        };
+        return undefined;
+    }
+    get units() {
+        return Reflect.ownKeys(this.conversions);
+    }
+    isUnit(candidate) {
+        return candidate in this.conversions;
+    }
+}
+
+class DimensionProxyHandler extends CommonProxyHandler {
+    constructor(conversions, createMeasurement){
+        super(conversions);
+        this.createMeasurement = createMeasurement;
+    }
+    get(target, propertyKey) {
+        if (propertyKey in target) return target[propertyKey];
+        if (!this.isUnit(propertyKey)) return undefined;
+        return (value)=>this.createMeasurement(this.conversions, value, propertyKey);
+    }
+}
+
+/**
+ * Type predicate that checks if a value is a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns true if the candidate is a measurement object, false otherwise.
+ */ const isMeasurement$1 = (candidate, unit, value)=>{
+    if (typeof candidate !== "object") return false;
+    if (candidate === null) return false;
+    if (!("unit" in candidate)) return false;
+    if (!("value" in candidate)) return false;
+    const { value: valueCandidate, unit: unitCandidate } = candidate;
+    if (typeof valueCandidate !== "number") return false;
+    if (typeof unitCandidate !== "string") return false;
+    if (unit !== undefined && unitCandidate !== unit) return false;
+    return true;
+};
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */ /**
+ * Create a new measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement object.
+ */ const measurement$1 = (value, unit)=>Object.freeze(Object.create(null, {
+        ...Object.getOwnPropertyDescriptors(value),
+        value: {
+            value
+        },
+        unit: {
+            value: unit
+        }
+    }));
+
+/// MARK: Property Descriptors
+/**
+ * Generates property descriptors for the given conversions.
+ *
+ * @template Units - The type of units.
+ * @param conversions - The conversions object.
+ * @returns The property descriptors for the alternatives.
+ */ function propertyDescriptors(conversions) {
+    const descriptors = Object.create(null);
+    for(const unit in conversions)descriptors[unit] = propertyDescriptor(conversions, unit);
+    return descriptors;
+}
+/**
+ * Creates a property descriptor for a specific unit of measurement.
+ *
+ * @template Units - The type of units available.
+ * @template Unit - The specific unit of measurement.
+ *
+ * @param conversions - The conversions object containing the unit conversions.
+ * @param unit - The specific unit of measurement.
+ *
+ * @returns A property descriptor for the specified unit of measurement.
+ */ const propertyDescriptor = (conversions, unit)=>({
+        enumerable: true,
+        get: alternativeGet(conversions, unit)
+    });
+/**
+ * Retrieves an alternative measurement value based on the specified unit.
+ *
+ * @template Units - The string literal type representing all possible units.
+ * @template Unit - The specific unit to retrieve the alternative value for.
+ * @param conversions - The conversion functions for all units.
+ * @param unit - The unit to retrieve the alternative value for.
+ * @returns A function that retrieves the alternative measurement value.
+ */ const alternativeGet = (conversions, unit)=>function() {
+        let value;
+        if (this.unit === unit) {
+            value = this.value;
+        } else {
+            const [toBase, fromBase] = [
+                conversions[this.unit][0],
+                conversions[unit][1]
+            ];
+            value = fromBase(toBase(this.value));
+        }
+        return Object.create(measurement$1(value, unit), propertyDescriptors(conversions));
+    };
+
+/**
+ * Type predicate, determining if a candidate is a dimension measurement.
+ * @param candidate - The candidate to check.
+ * @param units - The units of the dimension.
+ * @param unit - The unit of the measurement.
+ * @returns The predicate result.
+ */ const isMeasurement = (candidate, units, unit)=>{
+    if (!isMeasurement$1(candidate, unit)) return false;
+    if (!units) units = Object.keys(candidate);
+    const candidateKeys = Object.keys(candidate);
+    if (!units.every((unit)=>candidateKeys.includes(unit))) return false;
+    if (!candidateKeys.every((key)=>units.includes(key))) return false;
+    if (candidateKeys.length === 0) return false;
+    if (Object.entries(candidate).some(([key, value])=>!isMeasurement$1(value, key))) return false;
+    return true;
+};
+
+function measurement(basis, value, unit) {
+    return Object.create(measurement$1(value, unit), isMeasurement(basis) ? Object.getOwnPropertyDescriptors(basis) : propertyDescriptors(basis));
+}
+
+/**
+ * Creates a dimension from a set of conversions.
+ * @param conversions - The conversions for the dimension.
+ * @returns The dimension.
+ * @template Units - The units of the dimension.
+ */ const dimension = (conversions)=>new Proxy(Object.create(null), new DimensionProxyHandler(conversions, measurement));
+
+const concentrationMass = dimension({
+    "g/L": linearConversion(1),
+    "mg/dL": linearConversion(0.01)
+});
+const gramsPerLiter = concentrationMass["g/L"];
+const milligramsPerDeciliter = concentrationMass["mg/dL"];
+
+exports.concentrationMass = concentrationMass;
+exports.concentrationMassSymbols = concentrationMassSymbols;
+exports.gramsPerLiter = gramsPerLiter;
+exports.isConcentrationMassSymbol = isConcentrationMassSymbol;
+exports.milligramsPerDeciliter = milligramsPerDeciliter;

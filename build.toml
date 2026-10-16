@@ -49,7 +49,7 @@ imports = [
   # Dynamic slots (Atlas's slot initramfs and this image's slot layer): a verity'd slot root, a
   # <id>.slot.tar bundle and the slot first-flash disk, next to the A/B disk for now.
   { source = "atlas", path = "devices/raze/gaia/initramfs.toml", when = { target = "raze" } },
-  { path = "raze/slots.toml", when = { profile = "full", target = "raze" } },
+  { source = "atlas", path = "devices/raze/gaia/slots.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
@@ -224,6 +224,34 @@ default = "docker/build-styx/Dockerfile"
 # Gaia compresses the Raze disk image by this extension: img.xz (the default,
 # what flashing tools and releases use) or img.zst (zstd -T0, seconds instead
 # of about a minute; the board updater reads both), for dev builds.
+# The slot identity for the device package's slots fragment
+# (devices/raze/gaia/slots.toml): the id is <family>-<version>-<variant>-<commit>.
+# slot_variant must be a literal (the styx presets set "styx"); slot_version is
+# the Raze jar version without its describe (the 2026 presets set 2026.3.4).
+[inputs.slot_family]
+kind = "string"
+default = "photonvision"
+
+[inputs.slot_version]
+kind = "string"
+default = "2027.0.0-alpha-2"
+
+[inputs.slot_variant]
+kind = "string"
+default = "libcamera"
+
+[inputs.slot_commit]
+kind = "string"
+default = "${source.photonvision-source.commit_short}"
+
+[inputs.slot_source]
+kind = "string"
+default = "${source.photonvision-source.commit}"
+
+[inputs.slot_data_dir]
+kind = "string"
+default = "photonvision_config"
+
 [inputs.raze_archive_ext]
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
 kind = "string"
@@ -247,6 +275,7 @@ overrides = [
 #   gaia run build.toml --preset pv2027-styx --set input.target=raze --set input.profile=full
 [presets.pv2027-styx]
 overrides = [
+  ["input.slot_variant", "styx"],
   ["input.pv", "2027"],
   ["input.backend", "styx"],
   ["input.raze_photonvision_rev", "60ff40d12534d08efa9e39a56f0eafb02c143446"],
@@ -257,6 +286,7 @@ overrides = [
 #   gaia run build.toml --preset pv2026-styx --set input.target=raze --set input.profile=full
 [presets.pv2026-styx]
 overrides = [
+  ["input.slot_variant", "styx"],
   ["input.slot_version", "2026.3.4"],
   ["input.pv", "2026"],
   ["input.backend", "styx"],

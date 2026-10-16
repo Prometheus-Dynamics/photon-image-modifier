@@ -1,0 +1,472 @@
+/**
+ * The string representation of a measurement.
+ */
+type Measurement$4<Unit extends string, Value extends number = number> = `${Value}${Unit}`;
+/**
+ * Create a new measurement string.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement string.
+ */
+declare const measurement$4: <Unit extends string, Value extends number = number>(value: Value, unit: Unit) => Measurement$4<Unit, Value>;
+
+/**
+ * Type predicate that checks if a string is a valid measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns The result of the check.
+ */
+declare const isMeasurement$4: <Unit extends string = string, Value extends number = number>(candidate: any, unit?: Unit, value?: Value) => candidate is Measurement$4<Unit, Value>;
+
+/**
+ * Returns the value of a measurement with a fixed number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @param fractionDigits The number of decimal places to return.
+ * @returns The value of the measurement with a fixed number of decimal places.
+ */
+declare const toFixed$4: <Unit extends string, Value extends number>(measurement: Measurement$4<Unit, Value>, fractionDigits?: number) => Measurement$4<Unit, number>;
+
+/**
+ * Returns the value of a measurement with a fixed number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @param fractionDigits The number of decimal places to return.
+ * @returns The value of the measurement with a fixed number of decimal places.
+ */
+declare const toPrecision$4: <Unit extends string, Value extends number>(measurement: Measurement$4<Unit, Value>, precision?: number) => Measurement$4<Unit, number>;
+
+/**
+ * Returns the unit of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the unit of.
+ * @returns The unit of the measurement.
+ */
+declare const unit$3: <Unit extends string, Value extends number = number>(measurement: Measurement$4<Unit, Value>) => Unit;
+
+/**
+ * Returns the value of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @returns The value of the measurement.
+ */
+declare const value$3: <Unit extends string, Value extends number = number>(measurement: Measurement$4<Unit, Value>) => Value;
+
+declare namespace index$3 {
+  export { isMeasurement$4 as isMeasurement, measurement$4 as measurement, toFixed$4 as toFixed, toPrecision$4 as toPrecision, unit$3 as unit, value$3 as value };
+  export type { Measurement$4 as Measurement };
+}
+
+/**
+ * The tuple representation of a measurement.
+ */
+type Measurement$3<Unit extends string, Value extends number = number> = readonly [value: Value, unit: Unit];
+/**
+ * Creates a new measurement tuple.
+ *
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement tuple.
+ */
+declare const measurement$3: <Unit extends string, Value extends number = number>(value: Value, unit: Unit) => Measurement$3<Unit, Value>;
+
+/**
+ * Type predicate that checks if a value is a measurement tuple.
+ *
+ * @param candidate The value to check.
+ * @param unit The expected unit of the measurement.
+ * @param value The expected value of the measurement.
+ * @returns The candidate is a measurement tuple.
+ */
+declare const isMeasurement$3: <Unit extends string = string, Value extends number = number>(candidate: any, unit?: Unit, value?: Value) => candidate is Measurement$3<Unit, Value>;
+
+/**
+ * Rounds the value of a measurement tuple to the specified number of decimal places.
+ *
+ * @param measurement The measurement tuple.
+ * @param fractionDigits The number of decimal places.
+ * @returns A new measurement tuple with the rounded value.
+ */
+declare const toFixed$3: <Unit extends string, Value extends number>([value, unit]: Measurement$3<Unit, Value>, fractionDigits?: number) => Measurement$3<Unit, number>;
+
+/**
+ * Rounds the value of a measurement tuple to the specified precision.
+ *
+ * @param measurement The measurement tuple.
+ * @param precision The number of significant digits.
+ * @returns A new measurement tuple with the rounded value.
+ */
+declare const toPrecision$3: <Unit extends string, Value extends number>([value, unit]: Measurement$3<Unit, Value>, precision?: number) => Measurement$3<Unit, number>;
+
+/**
+ * Extracts the unit from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The unit of the measurement.
+ */
+declare const unit$2: <Unit extends string, Value extends number = number>(measurement: Measurement$3<Unit, Value>) => Unit;
+
+/**
+ * Extracts the value from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The value of the measurement.
+ */
+declare const value$2: <Unit extends string, Value extends number = number>(measurement: Measurement$3<Unit, Value>) => Value;
+
+declare namespace index$2 {
+  export { isMeasurement$3 as isMeasurement, measurement$3 as measurement, toFixed$3 as toFixed, toPrecision$3 as toPrecision, unit$2 as unit, value$2 as value };
+  export type { Measurement$3 as Measurement };
+}
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */
+type Measurement$2<Unit extends string, Value extends number = number> = Number & {
+    readonly value: Value;
+    readonly unit: Unit;
+};
+/**
+ * Create a new measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement object.
+ */
+declare const measurement$2: <Unit extends string, Value extends number = number>(value: Value, unit: Unit) => Measurement$2<Unit, Value>;
+
+/**
+ * Type predicate that checks if a value is a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns true if the candidate is a measurement object, false otherwise.
+ */
+declare const isMeasurement$2: <Unit extends string = string, Value extends number = number>(candidate: any, unit?: Unit, value?: Value) => candidate is Measurement$2<Unit, Value>;
+
+/**
+ * Returns the value of a measurement object, fixed to a
+ * number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */
+declare const toFixed$2: <Unit extends string, Value extends number>({ value, unit }: Measurement$2<Unit, Value>, fractionDigits?: number) => Measurement$2<Unit, number>;
+
+/**
+ * Returns the value of a measurement object, rounded to
+ * the specified precision.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */
+declare const toPrecision$2: <Unit extends string, Value extends number>({ value, unit }: Measurement$2<Unit, Value>, precision?: number) => Measurement$2<Unit, number>;
+
+/**
+ * Returns the unit of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */
+declare const unit$1: <Unit extends string, Value extends number = number>(measurement: Measurement$2<Unit, Value>) => Unit;
+
+/**
+ * Returns the value of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */
+declare const value$1: <Unit extends string, Value extends number = number>(measurement: Measurement$2<Unit, Value>) => Value;
+
+declare namespace index$1 {
+  export { isMeasurement$2 as isMeasurement, measurement$2 as measurement, toFixed$2 as toFixed, toPrecision$2 as toPrecision, unit$1 as unit, value$1 as value };
+  export type { Measurement$2 as Measurement };
+}
+
+/**
+ * A tuple of conversion functions to and from a base unit.
+ */
+type Conversion = readonly [
+    toBase: (value: number) => number,
+    fromBase: (value: number) => number
+];
+/**
+ * A record of conversion tuples for each unit.
+ * The first conversion you provide is considered to be the
+ * base unit.
+ */
+type Conversions<Unit extends string> = {
+    readonly [unit in Unit]: Conversion;
+};
+/**
+ * Creates a linear conversion tuple, where:
+ * - `base = value * coefficient + constant`
+ * - `value = (base - constant) / coefficient`
+ */
+declare const linearConversion: (coefficient: number, constant?: number) => Conversion;
+
+/**
+ * Represents a dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Measurement$1<Units extends string, Unit extends Units = Units, Value extends number = number> = Measurement$2<Unit, Value> & Alternatives<Units>;
+/**
+ * Creates a dimension measurement governed by a set of conversions.
+ * @param conversions - The conversions to use.
+ * @param value - The value of the measurement.
+ * @param unit - The unit of the measurement.
+ * @returns A dimension measurement.
+ * @template Units - The units of the dimension.
+ * @template Unit - The unit of the measurement.
+ * @template Value - The value of the measurement.
+ */
+declare function measurement$1<Units extends string, Unit extends Units, Value extends number>(conversions: Conversions<Units>, value: Value, unit: Unit): Measurement$1<Units, Unit, Value>;
+/**
+ * Creates a dimension measurement governed by another
+ * dimension measurement.
+ * @param base - The base measurement.
+ * @param value - The value of the measurement.
+ * @param unit - The unit of the measurement.
+ * @returns A dimension measurement of the same dimension as the base.
+ * @template Units - The units of the dimension.
+ * @template Unit - The unit of the measurement.
+ * @template Value - The value of the measurement.
+ */
+declare function measurement$1<Units extends string, Unit extends Units, Value extends number>(base: Measurement$1<Units>, value: Value, unit: Unit): Measurement$1<Units, Unit, Value>;
+
+/**
+ * Represents a collection of alternative measurements for different units.
+ *
+ * @template Units - The string literal type representing the available units.
+ */
+type Alternatives<Units extends string> = {
+    readonly [unit in Units]: Measurement$1<Units, unit, number>;
+};
+
+/**
+ * A dimension is a map of units to creation functions.
+ * Each function takes a number value and returns a
+ * dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Dimension<Units extends string> = {
+    readonly [unit in Units]: (value: number) => Measurement$1<Units>;
+};
+/**
+ * Creates a dimension from a set of conversions.
+ * @param conversions - The conversions for the dimension.
+ * @returns The dimension.
+ * @template Units - The units of the dimension.
+ */
+declare const dimension: <Units extends string>(conversions: Conversions<Units>) => Dimension<Units>;
+
+/**
+ * Type predicate, determining if a candidate is a dimension measurement.
+ * @param candidate - The candidate to check.
+ * @param units - The units of the dimension.
+ * @param unit - The unit of the measurement.
+ * @returns The predicate result.
+ */
+declare const isMeasurement$1: <Units extends string, Unit extends Units>(candidate: any, units?: readonly Units[], unit?: Unit) => candidate is Measurement$1<Unit>;
+
+/**
+ * Rounds the value of a measurement to a specified number of decimal places.
+ *
+ * @param measurement - The measurement to round.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default value is used.
+ * @returns A new measurement with the rounded value.
+ */
+declare const toFixed$1: <Units extends string, Unit extends Units, Value extends number>(measurement: Measurement$1<Units, Unit, Value>, fractionDigits?: number) => Measurement$1<Units, Unit, number>;
+
+/**
+ * Returns a new measurement with the value rounded to the specified number of decimal places.
+ *
+ * @param measurement - The measurement to round.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default behavior is used.
+ * @returns A new measurement with the rounded value.
+ */
+declare const toPrecision$1: <Units extends string, Unit extends Units, Value extends number>(measurement: Measurement$1<Units, Unit, Value>, fractionDigits?: number) => Measurement$1<Units, Unit, number>;
+
+/**
+ * Returns the units of a given measurement.
+ *
+ * @template M - The measurement type.
+ * @param {M} measurement - The measurement object.
+ * @returns {Units} - The units of the measurement.
+ */
+type UnitsOf<M extends Measurement$1<any>> = M extends Measurement$1<infer Units, any> ? Units : never;
+/**
+ * Retrieves the units of a given measurement.
+ *
+ * @param measurement - The measurement object.
+ * @returns An array of units for the given measurement.
+ */
+declare const units: <U extends string>(measurement: Measurement$1<U>) => U[];
+
+type index_Alternatives<Units extends string> = Alternatives<Units>;
+type index_Conversion = Conversion;
+type index_Conversions<Unit extends string> = Conversions<Unit>;
+type index_Dimension<Units extends string> = Dimension<Units>;
+type index_UnitsOf<M extends Measurement$1<any>> = UnitsOf<M>;
+declare const index_dimension: typeof dimension;
+declare const index_linearConversion: typeof linearConversion;
+declare const index_units: typeof units;
+declare namespace index {
+  export { index_dimension as dimension, isMeasurement$1 as isMeasurement, index_linearConversion as linearConversion, measurement$1 as measurement, toFixed$1 as toFixed, toPrecision$1 as toPrecision, index_units as units };
+  export type { index_Alternatives as Alternatives, index_Conversion as Conversion, index_Conversions as Conversions, index_Dimension as Dimension, Measurement$1 as Measurement, index_UnitsOf as UnitsOf };
+}
+
+/**
+ * Represents a measurement with a specific unit and value.
+ *
+ * @template Unit - The type of unit for the measurement.
+ * @template Value - The type of value for the measurement.
+ */
+type Measurement<Unit extends string, Value extends number = number> = Measurement$4<Unit, Value> | Measurement$3<Unit, Value> | Measurement$2<Unit, Value> | Measurement$1<Unit, Unit, Value>;
+/**
+ * Creates a measurement string based on the specified base
+ * and value.
+ *
+ * @template Unit - The unit type of the measurement.
+ * @template Value - The value type of the measurement.
+ *
+ * @param {string.Measurement<Unit, number>} basedOn - The base measurement string.
+ * @param {Value}                           value  - The value of the measurement.
+ *
+ * @returns {string.Measurement<Unit, Value>} - The created measurement string.
+ */
+declare function measurement<Unit extends string, Value extends number>(basedOn: Measurement$4<Unit, number>, value: Value): Measurement$4<Unit, Value>;
+/**
+ * Creates a dimension measurement object matching the
+ * provided dimension of the given value.
+ *
+ * @template Units - The units of the dimension.
+ * @template Unit  - The unit type of the measurement.
+ * @template Value - The value type of the measurement.
+ *
+ * @param {dimension.Measurement<Units, Unit, Value>} basedOn - The base dimension measurement.
+ * @param {Value}                                     value     - The value of the measurement.
+ *
+ * @returns {Measurement<Unit, Value>} - The created measurement object.
+ */
+declare function measurement<Units extends string, Unit extends Units, Value extends number>(basedOn: Measurement$1<Units, Unit, number>, value: Value): Measurement$1<Units, Unit, Value>;
+/**
+ * Creates a measurement tuple based on the specified base
+ * and value.
+ *
+ * @template Unit - The unit type of the measurement.
+ * @template Value - The value type of the measurement.
+ *
+ * @param {tuple.Measurement<Unit, number>} basedOn - The base measurement tuple.
+ * @param {Value}                           value - The value of the measurement.
+ *
+ * @returns {tuple.Measurement<Unit, Value>} - The created measurement tuple.
+ */
+declare function measurement<Unit extends string, Value extends number>(basedOn: Measurement$3<Unit, number>, value: Value): Measurement$3<Unit, Value>;
+/**
+ * Creates a measurement object based on the specified base
+ * and value.
+ *
+ * @template Unit - The unit type of the measurement.
+ * @template Value - The value type of the measurement.
+ *
+ * @param {object.Measurement<Unit, number>} basedOn - The base measurement object.
+ * @param {Value}                            value  - The value of the measurement.
+ *
+ * @returns {object.Measurement<Unit, Value>} - The created measurement object.
+ */
+declare function measurement<Unit extends string, Value extends number>(basedOn: Measurement$2<Unit, number>, value: Value): Measurement$2<Unit, Value>;
+/**
+ * Creates a measurement object based on the specified base
+ * and value.
+ *
+ * @template Unit  - The unit type of the measurement.
+ * @template Value - The value type of the measurement.
+ *
+ * @param {Measurement<Unit, number>} basedOn  - The base measurement object.
+ * @param {Value}                     value - The value of the measurement.
+ *
+ * @returns {Measurement<Unit, Value>} - The created measurement object.
+ */
+declare function measurement<Unit extends string, Value extends number>(basedOn: Measurement<Unit, number>, value: Value): Measurement<Unit, Value>;
+
+/**
+ * Type predicate, determining if a candidate is a measurement.
+ *
+ * @template Units - The type of units.
+ * @template Unit - The specific unit type.
+ * @param candidate - The value to be checked.
+ * @param unit - The specific unit to be checked against.
+ * @param units - Additional units to be checked against.
+ * @returns A boolean indicating whether the candidate is a valid measurement.
+ */
+declare const isMeasurement: <Units extends string, Unit extends Units = Units>(candidate: any, unit?: Unit, units?: readonly Units[]) => candidate is Measurement<Unit>;
+
+/**
+ * Converts a measurement value to a fixed number with a specified number of decimal places.
+ *
+ * @param measurement - The measurement value to convert.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default behavior is used.
+ * @returns The converted measurement value with the specified number of decimal places.
+ */
+declare const toFixed: <Unit extends string, Value extends number>(measurement: Measurement<Unit, Value>, fractionDigits?: number) => Measurement<Unit, number>;
+
+/**
+ * Applies precision formatting to a measurement value.
+ *
+ * @param measurement - The measurement value to apply precision formatting to.
+ * @param fractionDigits - The number of digits to appear after the decimal point.
+ * @returns A new measurement value with precision formatting applied.
+ */
+declare const toPrecision: <Unit extends string, Value extends number>(measurement: Measurement<Unit, Value>, fractionDigits?: number) => Measurement<Unit, number>;
+
+/**
+ * Returns the unit of measurement for the given measurement.
+ *
+ * @template Unit - The type of unit.
+ * @param measurement - The measurement value.
+ * @returns The unit of measurement.
+ */
+declare function unit<Unit extends string>(measurement: Measurement<Unit>): Unit;
+
+/**
+ * Retrieves the value from a measurement object.
+ *
+ * @param measurement - The measurement object to retrieve the value from.
+ * @returns The value of the measurement.
+ */
+declare function value<Unit extends string, Value extends number>(measurement: Measurement<Unit, Value>): Value;
+
+export { index as dimension, isMeasurement, measurement, index$1 as object, index$3 as string, toFixed, toPrecision, index$2 as tuple, unit, value };
+export type { Measurement };

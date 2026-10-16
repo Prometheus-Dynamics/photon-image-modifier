@@ -1,0 +1,968 @@
+Object.defineProperty(exports, '__esModule', { value: true });
+
+/**
+ * Type predicate that checks if a string is a valid measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns The result of the check.
+ */ const isMeasurement$3 = (candidate, unit, value)=>{
+    if (typeof candidate !== "string") return false;
+    const valueCandidate = parseFloat(candidate);
+    if (Number.isNaN(valueCandidate)) return false;
+    const unitCandidate = candidate.replace(valueCandidate.toString(), "").trim();
+    if (!unitCandidate) return false;
+    if (`${valueCandidate}${unitCandidate}` !== candidate) return false;
+    return true;
+};
+
+/**
+ * The string representation of a measurement.
+ */ /**
+ * Create a new measurement string.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement string.
+ */ const measurement$4 = (value, unit)=>`${value}${unit}`;
+
+/**
+ * Returns the value of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @returns The value of the measurement.
+ */ const value$3 = (measurement)=>parseFloat(measurement);
+
+/**
+ * Returns the unit of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the unit of.
+ * @returns The unit of the measurement.
+ */ const unit$3 = (measurement)=>{
+    return measurement.slice(parseFloat(measurement).toString().length);
+};
+
+/**
+ * Type predicate that checks if a value is a measurement tuple.
+ *
+ * @param candidate The value to check.
+ * @param unit The expected unit of the measurement.
+ * @param value The expected value of the measurement.
+ * @returns The candidate is a measurement tuple.
+ */ const isMeasurement$2 = (candidate, unit, value)=>{
+    if (!Array.isArray(candidate)) return false;
+    if (candidate.length !== 2) return false;
+    const [valueCandidate, unitCandidate] = candidate;
+    if (typeof valueCandidate !== "number") return false;
+    if (typeof unitCandidate !== "string") return false;
+    return true;
+};
+
+/**
+ * The tuple representation of a measurement.
+ */ /**
+ * Creates a new measurement tuple.
+ *
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement tuple.
+ */ const measurement$3 = (value, unit)=>[
+        value,
+        unit
+    ];
+
+/**
+ * Extracts the unit from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The unit of the measurement.
+ */ const unit$2 = (measurement)=>measurement[1];
+
+/**
+ * Extracts the value from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The value of the measurement.
+ */ const value$2 = (measurement)=>measurement[0];
+
+/**
+ * Type predicate that checks if a value is a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns true if the candidate is a measurement object, false otherwise.
+ */ const isMeasurement$1 = (candidate, unit, value)=>{
+    if (typeof candidate !== "object") return false;
+    if (candidate === null) return false;
+    if (!("unit" in candidate)) return false;
+    if (!("value" in candidate)) return false;
+    const { value: valueCandidate, unit: unitCandidate } = candidate;
+    if (typeof valueCandidate !== "number") return false;
+    if (typeof unitCandidate !== "string") return false;
+    if (unit !== undefined && unitCandidate !== unit) return false;
+    return true;
+};
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */ /**
+ * Create a new measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement object.
+ */ const measurement$2 = (value, unit)=>Object.freeze(Object.create(null, {
+        ...Object.getOwnPropertyDescriptors(value),
+        value: {
+            value
+        },
+        unit: {
+            value: unit
+        }
+    }));
+
+/**
+ * Returns the unit of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const unit$1 = (measurement)=>measurement.unit;
+
+/**
+ * Returns the value of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const value$1 = (measurement)=>measurement.value;
+
+/**
+ * A tuple of conversion functions to and from a base unit.
+ */ /**
+ * Creates a linear conversion tuple, where:
+ * - `base = value * coefficient + constant`
+ * - `value = (base - constant) / coefficient`
+ */ const linearConversion = (coefficient, constant = 0)=>[
+        (value)=>value * coefficient + constant,
+        (value)=>(value - constant) / coefficient
+    ];
+
+class CommonProxyHandler {
+    constructor(conversions){
+        this.conversions = conversions;
+    }
+    has(target, propertyKey) {
+        if (propertyKey in target) return true;
+        return this.isUnit(propertyKey);
+    }
+    ownKeys(target) {
+        return Reflect.ownKeys(target).concat(this.units);
+    }
+    set(_, __, ___, ____) {
+        return false;
+    }
+    deleteProperty(_, __) {
+        return false;
+    }
+    setPrototypeOf(_, __) {
+        return false;
+    }
+    getPrototypeOf() {
+        return null;
+    }
+    get(target, p, receiver) {
+        return Reflect.get(target, p, receiver);
+    }
+    getOwnPropertyDescriptor(target, p) {
+        if (p in target) return Reflect.getOwnPropertyDescriptor(target, p);
+        if (this.isUnit(p)) return {
+            enumerable: true,
+            configurable: true,
+            get: this.get.bind(this, target, p, undefined)
+        };
+        return undefined;
+    }
+    get units() {
+        return Reflect.ownKeys(this.conversions);
+    }
+    isUnit(candidate) {
+        return candidate in this.conversions;
+    }
+}
+
+class DimensionProxyHandler extends CommonProxyHandler {
+    constructor(conversions, createMeasurement){
+        super(conversions);
+        this.createMeasurement = createMeasurement;
+    }
+    get(target, propertyKey) {
+        if (propertyKey in target) return target[propertyKey];
+        if (!this.isUnit(propertyKey)) return undefined;
+        return (value)=>this.createMeasurement(this.conversions, value, propertyKey);
+    }
+}
+
+/// MARK: Property Descriptors
+/**
+ * Generates property descriptors for the given conversions.
+ *
+ * @template Units - The type of units.
+ * @param conversions - The conversions object.
+ * @returns The property descriptors for the alternatives.
+ */ function propertyDescriptors(conversions) {
+    const descriptors = Object.create(null);
+    for(const unit in conversions)descriptors[unit] = propertyDescriptor(conversions, unit);
+    return descriptors;
+}
+/**
+ * Creates a property descriptor for a specific unit of measurement.
+ *
+ * @template Units - The type of units available.
+ * @template Unit - The specific unit of measurement.
+ *
+ * @param conversions - The conversions object containing the unit conversions.
+ * @param unit - The specific unit of measurement.
+ *
+ * @returns A property descriptor for the specified unit of measurement.
+ */ const propertyDescriptor = (conversions, unit)=>({
+        enumerable: true,
+        get: alternativeGet(conversions, unit)
+    });
+/**
+ * Retrieves an alternative measurement value based on the specified unit.
+ *
+ * @template Units - The string literal type representing all possible units.
+ * @template Unit - The specific unit to retrieve the alternative value for.
+ * @param conversions - The conversion functions for all units.
+ * @param unit - The unit to retrieve the alternative value for.
+ * @returns A function that retrieves the alternative measurement value.
+ */ const alternativeGet = (conversions, unit)=>function() {
+        let value;
+        if (this.unit === unit) {
+            value = this.value;
+        } else {
+            const [toBase, fromBase] = [
+                conversions[this.unit][0],
+                conversions[unit][1]
+            ];
+            value = fromBase(toBase(this.value));
+        }
+        return Object.create(measurement$2(value, unit), propertyDescriptors(conversions));
+    };
+
+/**
+ * Type predicate, determining if a candidate is a dimension measurement.
+ * @param candidate - The candidate to check.
+ * @param units - The units of the dimension.
+ * @param unit - The unit of the measurement.
+ * @returns The predicate result.
+ */ const isMeasurement = (candidate, units, unit)=>{
+    if (!isMeasurement$1(candidate, unit)) return false;
+    if (!units) units = Object.keys(candidate);
+    const candidateKeys = Object.keys(candidate);
+    if (!units.every((unit)=>candidateKeys.includes(unit))) return false;
+    if (!candidateKeys.every((key)=>units.includes(key))) return false;
+    if (candidateKeys.length === 0) return false;
+    if (Object.entries(candidate).some(([key, value])=>!isMeasurement$1(value, key))) return false;
+    return true;
+};
+
+function measurement$1(basis, value, unit) {
+    return Object.create(measurement$2(value, unit), isMeasurement(basis) ? Object.getOwnPropertyDescriptors(basis) : propertyDescriptors(basis));
+}
+
+/**
+ * Creates a dimension from a set of conversions.
+ * @param conversions - The conversions for the dimension.
+ * @returns The dimension.
+ * @template Units - The units of the dimension.
+ */ const dimension = (conversions)=>new Proxy(Object.create(null), new DimensionProxyHandler(conversions, measurement$1));
+
+/**
+ * Retrieves the units of a given measurement.
+ *
+ * @param measurement - The measurement object.
+ * @returns An array of units for the given measurement.
+ */ const units = (measurement)=>Object.keys(measurement);
+
+/**
+ * Returns the unit of measurement for the given measurement.
+ *
+ * @template Unit - The type of unit.
+ * @param measurement - The measurement value.
+ * @returns The unit of measurement.
+ */ function unit(measurement) {
+    if (isMeasurement$3(measurement)) return unit$3(measurement);
+    if (isMeasurement$2(measurement)) return unit$2(measurement);
+    return unit$1(measurement);
+}
+
+function measurement(base, value) {
+    const u = unit(base);
+    const v = value;
+    if (isMeasurement(base)) return measurement$1(base, v, u);
+    if (isMeasurement$1(base)) return measurement$2(v, u);
+    if (isMeasurement$2(base)) return measurement$3(v, u);
+    return measurement$4(v, u);
+}
+
+/**
+ * Retrieves the value from a measurement object.
+ *
+ * @param measurement - The measurement object to retrieve the value from.
+ * @returns The value of the measurement.
+ */ function value(measurement) {
+    if (isMeasurement$3(measurement)) return value$3(measurement);
+    if (isMeasurement$2(measurement)) return value$2(measurement);
+    return value$1(measurement);
+}
+
+const acceleration = dimension({
+    "m/s²": linearConversion(1.0),
+    "g": linearConversion(9.81)
+});
+acceleration["m/s²"];
+acceleration["g"];
+
+const angle = dimension({
+    "°": linearConversion(1),
+    "ʹ": linearConversion(1 / 60),
+    "ʺ": linearConversion(1 / 60 / 60),
+    "rad": linearConversion(180 / Math.PI),
+    "grad": linearConversion(9 / 10),
+    "rev": linearConversion(360)
+});
+angle["°"];
+angle["ʹ"];
+angle["ʺ"];
+angle["rad"];
+angle["grad"];
+angle["rev"];
+
+const area = dimension({
+    "Mm²": linearConversion(1e12),
+    "km²": linearConversion(1000000.0),
+    "m²": linearConversion(1.0),
+    "cm²": linearConversion(0.0001),
+    "mm²": linearConversion(0.000001),
+    "µm²": linearConversion(1e-12),
+    "nm²": linearConversion(1e-18),
+    "in²": linearConversion(0.00064516),
+    "ft²": linearConversion(0.092903),
+    "yd²": linearConversion(0.836127),
+    "mi²": linearConversion(2.59e+6),
+    "ac": linearConversion(4046.86),
+    "a": linearConversion(100),
+    "ha": linearConversion(10000)
+});
+area["Mm²"];
+area["km²"];
+area["m²"];
+area["cm²"];
+area["mm²"];
+area["µm²"];
+area["nm²"];
+area["in²"];
+area["ft²"];
+area["yd²"];
+area["mi²"];
+area["ac"];
+area["a"];
+area["ha"];
+
+const concentrationMass = dimension({
+    "g/L": linearConversion(1),
+    "mg/dL": linearConversion(0.01)
+});
+concentrationMass["g/L"];
+concentrationMass["mg/dL"];
+
+const dispersion = dimension({
+    "ppm": linearConversion(1),
+    "ppb": linearConversion(1e-3),
+    "ppt": linearConversion(1e-6)
+});
+dispersion["ppm"];
+dispersion["ppb"];
+dispersion["ppt"];
+
+const duration = dimension({
+    "sec": linearConversion(1),
+    "min": linearConversion(60),
+    "hr": linearConversion(3600)
+});
+duration["sec"];
+duration["min"];
+duration["hr"];
+
+const electricCharge = dimension({
+    "C": linearConversion(1.0),
+    "MAh": linearConversion(3.6e9),
+    "kAh": linearConversion(3600000.0),
+    "Ah": linearConversion(3600.0),
+    "mAh": linearConversion(3.6),
+    "µAh": linearConversion(0.0036)
+});
+electricCharge["C"];
+electricCharge["MAh"];
+electricCharge["kAh"];
+electricCharge["Ah"];
+electricCharge["mAh"];
+electricCharge["µAh"];
+
+const electricCurrent = dimension({
+    "MA": linearConversion(1000000.0),
+    "kA": linearConversion(1000.0),
+    "A": linearConversion(1.0),
+    "mA": linearConversion(0.001),
+    "µA": linearConversion(0.000001)
+});
+electricCurrent["MA"];
+electricCurrent["kA"];
+electricCurrent["A"];
+electricCurrent["mA"];
+electricCurrent["µA"];
+
+const electricPotentialDifference = dimension({
+    "MV": linearConversion(1000000.0),
+    "kV": linearConversion(1000.0),
+    "V": linearConversion(1.0),
+    "mV": linearConversion(0.001),
+    "µV": linearConversion(0.000001)
+});
+electricPotentialDifference["MV"];
+electricPotentialDifference["kV"];
+electricPotentialDifference["V"];
+electricPotentialDifference["mV"];
+electricPotentialDifference["µV"];
+
+const electricResistance = dimension({
+    "MΩ": linearConversion(1000000.0),
+    "kΩ": linearConversion(1000.0),
+    "Ω": linearConversion(1.0),
+    "mΩ": linearConversion(0.001),
+    "µΩ": linearConversion(0.000001)
+});
+electricResistance["MΩ"];
+electricResistance["kΩ"];
+electricResistance["Ω"];
+electricResistance["mΩ"];
+electricResistance["µΩ"];
+
+const energy = dimension({
+    "kJ": linearConversion(1000.0),
+    "J": linearConversion(1.0),
+    "kCal": linearConversion(4184.0),
+    "cal": linearConversion(4.184),
+    "kWh": linearConversion(3600000.0),
+    "Wh": linearConversion(3600.0),
+    "eV": linearConversion(1.60218e-19)
+});
+energy["kJ"];
+energy["J"];
+energy["kCal"];
+energy["cal"];
+energy["kWh"];
+energy["Wh"];
+energy["eV"];
+
+const frequency = dimension({
+    "THz": linearConversion(1e12),
+    "GHz": linearConversion(1e9),
+    "MHz": linearConversion(1000000.0),
+    "kHz": linearConversion(1000.0),
+    "Hz": linearConversion(1),
+    "mHz": linearConversion(0.001),
+    "µHz": linearConversion(0.000001),
+    "nHz": linearConversion(1e-9)
+});
+frequency["THz"];
+frequency["GHz"];
+frequency["MHz"];
+frequency["kHz"];
+frequency["Hz"];
+frequency["mHz"];
+frequency["µHz"];
+frequency["nHz"];
+
+const illuminance = dimension({
+    "lx": linearConversion(1.0)
+});
+illuminance["lx"];
+
+const information = dimension({
+    "b": linearConversion(1),
+    "B": linearConversion(8),
+    "kb": linearConversion(1000),
+    "Mb": linearConversion(1000e2),
+    "Gb": linearConversion(1000e3),
+    "Tb": linearConversion(1000e4),
+    "Pb": linearConversion(1000e5),
+    "Eb": linearConversion(1000e6),
+    "Zb": linearConversion(1000e7),
+    "Yb": linearConversion(1000e8),
+    "Kib": linearConversion(1024),
+    "KB": linearConversion(8192),
+    "Mib": linearConversion(1024e2),
+    "MB": linearConversion(8192e2),
+    "Gib": linearConversion(1024e3),
+    "GB": linearConversion(8192e3),
+    "Tib": linearConversion(1024e4),
+    "TB": linearConversion(8192e4),
+    "Pib": linearConversion(1024e5),
+    "PB": linearConversion(8192e5),
+    "Eib": linearConversion(1024e6),
+    "EB": linearConversion(8192e6),
+    "Zib": linearConversion(1024e7),
+    "ZB": linearConversion(8192e7),
+    "Yib": linearConversion(1024e8),
+    "YB": linearConversion(8192e8)
+});
+information["b"];
+information["B"];
+information["kb"];
+information["Mb"];
+information["Gb"];
+information["Tb"];
+information["Pb"];
+information["Eb"];
+information["Zb"];
+information["Yb"];
+information["Kib"];
+information["KB"];
+information["Mib"];
+information["MB"];
+information["Gib"];
+information["GB"];
+information["Tib"];
+information["TB"];
+information["Pib"];
+information["PB"];
+information["Eib"];
+information["EB"];
+information["Zib"];
+information["ZB"];
+information["Yib"];
+information["YB"];
+
+const length = dimension({
+    "Mm": linearConversion(1E6),
+    "kM": linearConversion(1E3),
+    "hm": linearConversion(1E2),
+    "dam": linearConversion(1E1),
+    "m": linearConversion(1),
+    "dm": linearConversion(1E-1),
+    "cm": linearConversion(1E-2),
+    "mm": linearConversion(1E-3),
+    "µm": linearConversion(1E-6),
+    "nm": linearConversion(1e-9),
+    "pm": linearConversion(1e-12),
+    "tw": linearConversion(127 / 7200 / 1000),
+    "pt": linearConversion(127 / 360 / 1000),
+    "P": linearConversion(127 / 30 / 1000),
+    "in": linearConversion(127 / 5 / 1000),
+    "ft": linearConversion(0.3048),
+    "yd": linearConversion(0.9144),
+    "mi": linearConversion(1609.34),
+    "smi": linearConversion(10000),
+    "ly": linearConversion(9.461e+15),
+    "NM": linearConversion(1852),
+    "ftm": linearConversion(1.8288),
+    "fur": linearConversion(201.168),
+    "ua": linearConversion(1.496e+11),
+    "pc": linearConversion(3.086e+16)
+});
+length["Mm"];
+length["kM"];
+length["hm"];
+length["dam"];
+length["m"];
+length["dm"];
+length["cm"];
+length["mm"];
+length["µm"];
+length["nm"];
+length["pm"];
+length["tw"];
+length["pt"];
+length["P"];
+length["in"];
+length["ft"];
+length["yd"];
+length["mi"];
+length["smi"];
+length["ly"];
+length["NM"];
+length["ftm"];
+length["fur"];
+length["ua"];
+length["pc"];
+
+const mass = dimension({
+    "kg": linearConversion(1.0),
+    "g": linearConversion(0.001),
+    "dg": linearConversion(0.0001),
+    "cg": linearConversion(0.00001),
+    "mg": linearConversion(0.000001),
+    "µg": linearConversion(1e-9),
+    "ng": linearConversion(1e-12),
+    "pg": linearConversion(1e-15),
+    "oz": linearConversion(0.0283495),
+    "lb": linearConversion(0.453592),
+    "st": linearConversion(0.157473),
+    "t": linearConversion(1000),
+    "ton": linearConversion(907.185),
+    "ct": linearConversion(0.0002),
+    "oz t": linearConversion(0.03110348),
+    "slug": linearConversion(14.5939)
+});
+mass["kg"];
+mass["g"];
+mass["dg"];
+mass["cg"];
+mass["mg"];
+mass["µg"];
+mass["ng"];
+mass["pg"];
+mass["oz"];
+mass["lb"];
+mass["st"];
+mass["t"];
+mass["ton"];
+mass["ct"];
+mass["oz t"];
+mass["slug"];
+
+const power$1 = dimension({
+    "TW": linearConversion(1e12),
+    "GW": linearConversion(1e9),
+    "MW": linearConversion(1000000.0),
+    "kW": linearConversion(1000.0),
+    "W": linearConversion(1),
+    "mW": linearConversion(0.001),
+    "µW": linearConversion(0.000001),
+    "nW": linearConversion(1e-9),
+    "pW": linearConversion(1e-12),
+    "fW": linearConversion(1e-15),
+    "hp": linearConversion(745.7)
+});
+power$1["TW"];
+power$1["GW"];
+power$1["MW"];
+power$1["kW"];
+power$1["W"];
+power$1["mW"];
+power$1["µW"];
+power$1["nW"];
+power$1["pW"];
+power$1["fW"];
+power$1["hp"];
+
+const pressure = dimension({
+    "N/m²": linearConversion(1.0),
+    "GPa": linearConversion(1e9),
+    "MPa": linearConversion(1000000.0),
+    "kPa": linearConversion(1000.0),
+    "hPa": linearConversion(100.0),
+    "inHg": linearConversion(3386.39),
+    "bar": linearConversion(100000),
+    "mbar": linearConversion(100),
+    "mmHg": linearConversion(133.322),
+    "psi": linearConversion(6894.76)
+});
+pressure["N/m²"];
+pressure["GPa"];
+pressure["MPa"];
+pressure["kPa"];
+pressure["hPa"];
+pressure["inHg"];
+pressure["bar"];
+pressure["mbar"];
+pressure["mmHg"];
+pressure["psi"];
+
+const speed = dimension({
+    "m/s": linearConversion(1.0),
+    "km/h": linearConversion(0.277778),
+    "mph": linearConversion(0.44704),
+    "kn": linearConversion(0.514444)
+});
+speed["m/s"];
+speed["km/h"];
+speed["mph"];
+speed["kn"];
+
+const temperature = dimension({
+    "K": linearConversion(1, 0),
+    "°C": linearConversion(1.0, 273.15),
+    "°F": linearConversion(0.55555555555556, 255.37222222222427),
+    "°R": linearConversion(0.55555555555556, 0)
+});
+temperature["K"];
+temperature["°C"];
+temperature["°F"];
+temperature["°R"];
+
+const volume = dimension({
+    "ML": linearConversion(1000000.0),
+    "kL": linearConversion(1000.0),
+    "L": linearConversion(1.0),
+    "dL": linearConversion(0.1),
+    "cL": linearConversion(0.01),
+    "mL": linearConversion(0.001),
+    "km³": linearConversion(1e12),
+    "m³": linearConversion(1000.0),
+    "dm³": linearConversion(1.0),
+    "mm³": linearConversion(0.000001),
+    "in³": linearConversion(0.0163871),
+    "ft³": linearConversion(28.3168),
+    "yd³": linearConversion(764.555),
+    "mi³": linearConversion(4.168e+12),
+    "af": linearConversion(1.233e+6),
+    "bsh": linearConversion(35.2391),
+    "tsp": linearConversion(0.00492892),
+    "tbsp": linearConversion(0.0147868),
+    "fl oz": linearConversion(0.0295735),
+    "cup": linearConversion(0.24),
+    "pt": linearConversion(0.473176),
+    "qt": linearConversion(0.946353),
+    "gal": linearConversion(3.78541),
+    "imperial tsp": linearConversion(0.00591939),
+    "imperial tbsp": linearConversion(0.0177582),
+    "imperial fl oz": linearConversion(0.0284131),
+    "imperial pt": linearConversion(0.568261),
+    "imperial qt": linearConversion(1.13652),
+    "imperial gal": linearConversion(4.54609),
+    "metric cup": linearConversion(0.25)
+});
+volume["ML"];
+volume["kL"];
+volume["L"];
+volume["dL"];
+volume["cL"];
+volume["mL"];
+volume["km³"];
+volume["m³"];
+volume["dm³"];
+volume["mm³"];
+volume["in³"];
+volume["ft³"];
+volume["yd³"];
+volume["mi³"];
+volume["af"];
+volume["bsh"];
+volume["tsp"];
+volume["tbsp"];
+volume["fl oz"];
+volume["cup"];
+volume["pt"];
+volume["qt"];
+volume["gal"];
+volume["imperial tsp"];
+volume["imperial tbsp"];
+volume["imperial fl oz"];
+volume["imperial pt"];
+volume["imperial qt"];
+volume["imperial gal"];
+volume["metric cup"];
+
+const builtInDimensions = [
+    acceleration,
+    angle,
+    area,
+    concentrationMass,
+    dispersion,
+    duration,
+    electricCharge,
+    electricCurrent,
+    electricPotentialDifference,
+    electricResistance,
+    energy,
+    frequency,
+    illuminance,
+    information,
+    length,
+    mass,
+    power$1,
+    pressure,
+    speed,
+    temperature,
+    volume
+];
+/**
+ * Converts an array of measurements to a common unit.
+ *
+ * @param measurements - The array of measurements to be converted.
+ * @returns An array of measurements in a common unit, or `undefined` if the measurements can't be converted to a common unit.
+ * @template Unit - The type of unit for the measurements.
+ */ function toCommonUnit(...measurements) {
+    if (measurements.length === 0) return [];
+    if (measurements.length === 1) return measurements;
+    const targetUnit = unit(measurements[0]);
+    const sourceUnits = measurements.map(unit);
+    const conversionContext = commonDimension(measurements, sourceUnits);
+    const result = [];
+    for (const m of measurements){
+        const convertedValue = valueInUnit(m, targetUnit, conversionContext);
+        if (convertedValue === undefined) return undefined;
+        result.push(measurementInUnit(m, convertedValue, targetUnit));
+    }
+    return result;
+}
+function commonDimension(measurements, sourceUnits) {
+    for (const m of measurements){
+        if (!isMeasurement(m)) continue;
+        if (sourceUnits.every((sourceUnit)=>units(m).includes(sourceUnit))) {
+            return {
+                kind: "measurement",
+                measurement: m
+            };
+        }
+    }
+    const dimension = builtInDimensions.find((dimension)=>sourceUnits.every((sourceUnit)=>sourceUnit in dimension));
+    if (dimension === undefined) return undefined;
+    return {
+        kind: "dimension",
+        dimension
+    };
+}
+function valueInUnit(measurement, targetUnit, conversionContext) {
+    const sourceUnit = unit(measurement);
+    if (sourceUnit === targetUnit) return value(measurement);
+    if (isMeasurement(measurement)) {
+        if (!units(measurement).includes(targetUnit)) return undefined;
+        return measurement[targetUnit].value;
+    }
+    if (conversionContext === undefined) return undefined;
+    const dimensionMeasurement = conversionContext.kind === "measurement" ? measurement$1(conversionContext.measurement, value(measurement), sourceUnit) : conversionContext.dimension[sourceUnit]?.(value(measurement));
+    if (dimensionMeasurement === undefined) return undefined;
+    return dimensionMeasurement[targetUnit]?.value;
+}
+function measurementInUnit(measurement, nextValue, nextUnit) {
+    if (isMeasurement(measurement)) return measurement$1(measurement, nextValue, nextUnit);
+    if (isMeasurement$1(measurement)) return measurement$2(nextValue, nextUnit);
+    if (isMeasurement$2(measurement)) return measurement$3(nextValue, nextUnit);
+    return measurement$4(nextValue, nextUnit);
+}
+
+/**
+ * Performs an arithmetic operation on a list of measurements.
+ * The measurements are converted to a common unit before the operation is performed.
+ *
+ * @template Unit - The unit type of the measurements.
+ * @param operation - The arithmetic operation to perform on the measurements.
+ * @param measurements - The list of measurements to perform the operation on.
+ * @returns The result of the arithmetic operation as a new measurement, or undefined if the list of measurements is empty or invalid.
+ */ function arithmeticOperation(operation, ...measurements) {
+    if (measurements.length === 0) return undefined;
+    if (measurements.length === 1) return measurement(measurements[0], value(measurements[0]));
+    const asCommonUnit = toCommonUnit(...measurements);
+    if (asCommonUnit === undefined) return undefined;
+    const [first, ...rest] = asCommonUnit;
+    if (first === undefined) return undefined;
+    return measurement(first, rest.reduce((acc, m)=>operation(acc, value(m)), value(first)));
+}
+
+const add = arithmeticOperation.bind(null, (a, b)=>a + b);
+const subtract = arithmeticOperation.bind(null, (a, b)=>a - b);
+function multiply(multiplicand, multiplier) {
+    return measurement(multiplicand, value(multiplicand) * multiplier);
+}
+function divide(dividend, divisor) {
+    return measurement(dividend, value(dividend) / divisor);
+}
+function power(base, exponent) {
+    return measurement(base, value(base) ** exponent);
+}
+function root(radicand, index) {
+    return measurement(radicand, value(radicand) ** (1 / index));
+}
+function logarithm(antilogarithm, base) {
+    return measurement(antilogarithm, Math.log(value(antilogarithm)) / Math.log(base));
+}
+
+/**
+ * Performs a logical operation on a series of measurements.
+ * The measurements are converted to a common unit before the operation is performed.
+ *
+ * @template Unit - The unit of measurement.
+ * @param operation - The logical operation to perform on the measurements.
+ * @param measurements - The measurements to perform the operation on.
+ * @returns The result of the logical operation.
+ */ function logicalOperation(operation, ...measurements) {
+    if (measurements.length < 2) return undefined;
+    const asCommonUnit = toCommonUnit(...measurements);
+    if (asCommonUnit === undefined) return undefined;
+    let lastMeasurement = asCommonUnit[0];
+    if (lastMeasurement === undefined) return undefined;
+    for (const current of asCommonUnit.slice(1)){
+        if (!operation(lastMeasurement, current)) return false;
+        lastMeasurement = current;
+    }
+    return true;
+}
+
+const areEqual = logicalOperation.bind(null, (a, b)=>value(a) === value(b));
+const greaterThan = logicalOperation.bind(null, (a, b)=>value(a) > value(b));
+const greaterThanOrEqual = logicalOperation.bind(null, (a, b)=>value(a) >= value(b));
+const lessThan = logicalOperation.bind(null, (a, b)=>value(a) < value(b));
+const lessThanOrEqual = logicalOperation.bind(null, (a, b)=>value(a) <= value(b));
+const notEqual = logicalOperation.bind(null, (a, b)=>value(a) !== value(b));
+
+/**
+ * Returns the ratio between two compatible measurements.
+ *
+ * Measurements with the same unit are compared directly. Measurements with
+ * different units are converted only when at least one input is a dimension
+ * measurement.
+ */ function proportion(numerator, denominator) {
+    const numeratorUnit = unit(numerator);
+    const denominatorUnit = unit(denominator);
+    if (numeratorUnit === denominatorUnit) {
+        return value(numerator) / value(denominator);
+    }
+    if (!isMeasurement(numerator) && !isMeasurement(denominator)) {
+        return undefined;
+    }
+    const commonUnit = toCommonUnit(numerator, denominator);
+    if (commonUnit === undefined) return undefined;
+    return value(commonUnit[0]) / value(commonUnit[1]);
+}
+
+exports.add = add;
+exports.areEqual = areEqual;
+exports.arithmeticOperation = arithmeticOperation;
+exports.divide = divide;
+exports.greaterThan = greaterThan;
+exports.greaterThanOrEqual = greaterThanOrEqual;
+exports.lessThan = lessThan;
+exports.lessThanOrEqual = lessThanOrEqual;
+exports.logarithm = logarithm;
+exports.logicalOperation = logicalOperation;
+exports.multiply = multiply;
+exports.notEqual = notEqual;
+exports.power = power;
+exports.proportion = proportion;
+exports.root = root;
+exports.subtract = subtract;
+exports.toCommonUnit = toCommonUnit;

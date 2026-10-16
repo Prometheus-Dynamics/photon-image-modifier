@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Random Aruco Markers</title>
+	</head>
+	<body>
+		<h1>Random Aruco Markers - String Version</h1>
+
+		<p><a href="./element.html">Try the custom element version</a></p>
+
+		<div id="marker"></div>
+
+		<script type="module">
+			import { arucoToSVGString } from '../dist/aruco-marker.js';
+			function randomMarker() {
+				const id = Math.floor(Math.random() * 1024);
+
+				const el = document.getElementById('marker');
+				el.innerHTML = '<p>ID: ' + id + '</p>' + arucoToSVGString(id, '500px');
+			}
+
+			randomMarker();
+			setInterval(randomMarker, 3000);
+		</script>
+	</body>
+</html>

@@ -1,0 +1,100 @@
+/**
+ * The string representation of a measurement.
+ */
+type Measurement$4<Unit extends string, Value extends number = number> = `${Value}${Unit}`;
+
+/**
+ * The tuple representation of a measurement.
+ */
+type Measurement$3<Unit extends string, Value extends number = number> = readonly [value: Value, unit: Unit];
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */
+type Measurement$2<Unit extends string, Value extends number = number> = Number & {
+    readonly value: Value;
+    readonly unit: Unit;
+};
+
+/**
+ * Represents a dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Measurement$1<Units extends string, Unit extends Units = Units, Value extends number = number> = Measurement$2<Unit, Value> & Alternatives<Units>;
+
+/**
+ * Represents a collection of alternative measurements for different units.
+ *
+ * @template Units - The string literal type representing the available units.
+ */
+type Alternatives<Units extends string> = {
+    readonly [unit in Units]: Measurement$1<Units, unit, number>;
+};
+
+/**
+ * Represents a measurement with a specific unit and value.
+ *
+ * @template Unit - The type of unit for the measurement.
+ * @template Value - The type of value for the measurement.
+ */
+type Measurement<Unit extends string, Value extends number = number> = Measurement$4<Unit, Value> | Measurement$3<Unit, Value> | Measurement$2<Unit, Value> | Measurement$1<Unit, Unit, Value>;
+
+/**
+ * Performs an arithmetic operation on a list of measurements.
+ * The measurements are converted to a common unit before the operation is performed.
+ *
+ * @template Unit - The unit type of the measurements.
+ * @param operation - The arithmetic operation to perform on the measurements.
+ * @param measurements - The list of measurements to perform the operation on.
+ * @returns The result of the arithmetic operation as a new measurement, or undefined if the list of measurements is empty or invalid.
+ */
+declare function arithmeticOperation<Unit extends string>(operation: (a: number, b: number) => number, ...measurements: Measurement<Unit>[]): Measurement<Unit> | undefined;
+
+declare const add: (...args: Measurement<string>[]) => Measurement<string> | undefined;
+declare const subtract: (...args: Measurement<string>[]) => Measurement<string> | undefined;
+declare function multiply<Unit extends string>(multiplicand: Measurement<Unit>, multiplier: number): Measurement<Unit>;
+declare function divide<Unit extends string>(dividend: Measurement<Unit>, divisor: number): Measurement<Unit>;
+declare function power<Unit extends string>(base: Measurement<Unit>, exponent: number): Measurement<Unit>;
+declare function root<Unit extends string>(radicand: Measurement<Unit>, index: number): Measurement<Unit>;
+declare function logarithm<Unit extends string>(antilogarithm: Measurement<Unit>, base: number): Measurement<Unit>;
+
+declare const areEqual: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+declare const greaterThan: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+declare const greaterThanOrEqual: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+declare const lessThan: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+declare const lessThanOrEqual: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+declare const notEqual: (args_0: Measurement<string>, args_1: Measurement<string>, ...args: Measurement<string>[]) => boolean | undefined;
+
+/**
+ * Performs a logical operation on a series of measurements.
+ * The measurements are converted to a common unit before the operation is performed.
+ *
+ * @template Unit - The unit of measurement.
+ * @param operation - The logical operation to perform on the measurements.
+ * @param measurements - The measurements to perform the operation on.
+ * @returns The result of the logical operation.
+ */
+declare function logicalOperation<Unit extends string>(operation: <M extends Measurement<Unit>>(a: M, b: M) => boolean, ...measurements: [Measurement<Unit>, Measurement<Unit>, ...Measurement<Unit>[]]): boolean | undefined;
+
+/**
+ * Returns the ratio between two compatible measurements.
+ *
+ * Measurements with the same unit are compared directly. Measurements with
+ * different units are converted only when at least one input is a dimension
+ * measurement.
+ */
+declare function proportion<NumeratorUnit extends string, DenominatorUnit extends string>(numerator: Measurement<NumeratorUnit>, denominator: Measurement<DenominatorUnit>): number | undefined;
+
+/**
+ * Converts an array of measurements to a common unit.
+ *
+ * @param measurements - The array of measurements to be converted.
+ * @returns An array of measurements in a common unit, or `undefined` if the measurements can't be converted to a common unit.
+ * @template Unit - The type of unit for the measurements.
+ */
+declare function toCommonUnit<Unit extends string>(...measurements: Measurement<Unit>[]): Measurement<Unit>[] | undefined;
+
+export { add, areEqual, arithmeticOperation, divide, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, logarithm, logicalOperation, multiply, notEqual, power, proportion, root, subtract, toCommonUnit };

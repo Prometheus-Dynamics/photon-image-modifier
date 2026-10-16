@@ -1,0 +1,63 @@
+type PowerSymbol = typeof powerSymbols[number];
+/**
+ * Type predicate.
+ * @param candidate The candidate to test.
+ */
+declare function isPowerSymbol(candidate: any): candidate is PowerSymbol;
+/**
+* All the Power symbols.
+*/
+declare const powerSymbols: readonly ["TW", "GW", "MW", "kW", "W", "mW", "µW", "nW", "pW", "fW", "hp"];
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */
+type Measurement$1<Unit extends string, Value extends number = number> = Number & {
+    readonly value: Value;
+    readonly unit: Unit;
+};
+
+/**
+ * Represents a dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Measurement<Units extends string, Unit extends Units = Units, Value extends number = number> = Measurement$1<Unit, Value> & Alternatives<Units>;
+
+/**
+ * Represents a collection of alternative measurements for different units.
+ *
+ * @template Units - The string literal type representing the available units.
+ */
+type Alternatives<Units extends string> = {
+    readonly [unit in Units]: Measurement<Units, unit, number>;
+};
+
+/**
+ * A dimension is a map of units to creation functions.
+ * Each function takes a number value and returns a
+ * dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Dimension<Units extends string> = {
+    readonly [unit in Units]: (value: number) => Measurement<Units>;
+};
+
+type Power = Measurement<PowerSymbol>;
+declare const power: Dimension<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const terawatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const gigawatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const megawatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const kilowatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const watts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const milliwatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const microwatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const nanowatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const picowatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const femtowatts: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+declare const horsepower: (value: number) => Measurement<"TW" | "GW" | "MW" | "kW" | "W" | "mW" | "µW" | "nW" | "pW" | "fW" | "hp">;
+
+export { femtowatts, gigawatts, horsepower, isPowerSymbol, kilowatts, megawatts, microwatts, milliwatts, nanowatts, picowatts, power, powerSymbols, terawatts, watts };
+export type { Power, PowerSymbol };

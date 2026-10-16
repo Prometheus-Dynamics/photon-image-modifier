@@ -1,0 +1,77 @@
+type LengthSymbol = typeof lengthSymbols[number];
+/**
+ * Type predicate.
+ * @param candidate The candidate to test.
+ */
+declare function isLengthSymbol(candidate: any): candidate is LengthSymbol;
+/**
+* All the Length symbols.
+*/
+declare const lengthSymbols: readonly ["Mm", "kM", "hm", "dam", "m", "dm", "cm", "mm", "µm", "nm", "pm", "tw", "pt", "P", "in", "ft", "yd", "mi", "smi", "ly", "NM", "ftm", "fur", "ua", "pc"];
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */
+type Measurement$1<Unit extends string, Value extends number = number> = Number & {
+    readonly value: Value;
+    readonly unit: Unit;
+};
+
+/**
+ * Represents a dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Measurement<Units extends string, Unit extends Units = Units, Value extends number = number> = Measurement$1<Unit, Value> & Alternatives<Units>;
+
+/**
+ * Represents a collection of alternative measurements for different units.
+ *
+ * @template Units - The string literal type representing the available units.
+ */
+type Alternatives<Units extends string> = {
+    readonly [unit in Units]: Measurement<Units, unit, number>;
+};
+
+/**
+ * A dimension is a map of units to creation functions.
+ * Each function takes a number value and returns a
+ * dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Dimension<Units extends string> = {
+    readonly [unit in Units]: (value: number) => Measurement<Units>;
+};
+
+type Length = Measurement<LengthSymbol>;
+declare const length: Dimension<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const megameters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const kilometers: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const hectometers: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const decameters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const meters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const decimeters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const centimeters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const millimeters: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const micrometers: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const nanometers: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const picometers: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const twips: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const points: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const picas: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const inches: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const feet: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const yards: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const miles: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const scandinavianMiles: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const lightyears: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const nauticalMiles: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const fathoms: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const furlongs: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const astronomicalUnits: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+declare const parsecs: (value: number) => Measurement<"Mm" | "kM" | "hm" | "dam" | "m" | "dm" | "cm" | "mm" | "µm" | "nm" | "pm" | "tw" | "pt" | "P" | "in" | "ft" | "yd" | "mi" | "smi" | "ly" | "NM" | "ftm" | "fur" | "ua" | "pc">;
+
+export { astronomicalUnits, centimeters, decameters, decimeters, fathoms, feet, furlongs, hectometers, inches, isLengthSymbol, kilometers, length, lengthSymbols, lightyears, megameters, meters, micrometers, miles, millimeters, nanometers, nauticalMiles, parsecs, picas, picometers, points, scandinavianMiles, twips, yards };
+export type { Length, LengthSymbol };

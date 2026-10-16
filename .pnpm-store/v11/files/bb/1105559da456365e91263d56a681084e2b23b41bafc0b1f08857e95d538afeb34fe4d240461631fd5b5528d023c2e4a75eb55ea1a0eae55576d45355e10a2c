@@ -1,0 +1,533 @@
+Object.defineProperty(exports, '__esModule', { value: true });
+
+/**
+ * Type predicate that checks if a string is a valid measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns The result of the check.
+ */ const isMeasurement$4 = (candidate, unit, value)=>{
+    if (typeof candidate !== "string") return false;
+    const valueCandidate = parseFloat(candidate);
+    if (Number.isNaN(valueCandidate)) return false;
+    const unitCandidate = candidate.replace(valueCandidate.toString(), "").trim();
+    if (!unitCandidate) return false;
+    if (unit !== undefined && unitCandidate !== unit) return false;
+    if (value !== undefined && valueCandidate !== value) return false;
+    if (`${valueCandidate}${unitCandidate}` !== candidate) return false;
+    return true;
+};
+
+/**
+ * The string representation of a measurement.
+ */ /**
+ * Create a new measurement string.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement string.
+ */ const measurement$4 = (value, unit)=>`${value}${unit}`;
+
+/**
+ * Returns the value of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @returns The value of the measurement.
+ */ const value$3 = (measurement)=>parseFloat(measurement);
+
+/**
+ * Returns the unit of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the unit of.
+ * @returns The unit of the measurement.
+ */ const unit$3 = (measurement)=>{
+    return measurement.slice(parseFloat(measurement).toString().length);
+};
+
+/**
+ * Returns the value of a measurement with a fixed number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @param fractionDigits The number of decimal places to return.
+ * @returns The value of the measurement with a fixed number of decimal places.
+ */ const toFixed$4 = (measurement, fractionDigits)=>{
+    const v = value$3(measurement).toFixed(fractionDigits);
+    const m = unit$3(measurement);
+    return `${v}${m}`;
+};
+
+/**
+ * Returns the value of a measurement with a fixed number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement to get the value of.
+ * @param fractionDigits The number of decimal places to return.
+ * @returns The value of the measurement with a fixed number of decimal places.
+ */ const toPrecision$4 = (measurement, precision)=>{
+    const v = value$3(measurement).toPrecision(precision);
+    const m = unit$3(measurement);
+    return `${v}${m}`;
+};
+
+var index$3 = {
+  __proto__: null,
+  isMeasurement: isMeasurement$4,
+  measurement: measurement$4,
+  toFixed: toFixed$4,
+  toPrecision: toPrecision$4,
+  unit: unit$3,
+  value: value$3
+};
+
+/**
+ * Type predicate that checks if a value is a measurement tuple.
+ *
+ * @param candidate The value to check.
+ * @param unit The expected unit of the measurement.
+ * @param value The expected value of the measurement.
+ * @returns The candidate is a measurement tuple.
+ */ const isMeasurement$3 = (candidate, unit, value)=>{
+    if (!Array.isArray(candidate)) return false;
+    if (candidate.length !== 2) return false;
+    const [valueCandidate, unitCandidate] = candidate;
+    if (typeof valueCandidate !== "number") return false;
+    if (typeof unitCandidate !== "string") return false;
+    if (unit !== undefined && unitCandidate !== unit) return false;
+    if (value !== undefined && valueCandidate !== value) return false;
+    return true;
+};
+
+/**
+ * The tuple representation of a measurement.
+ */ /**
+ * Creates a new measurement tuple.
+ *
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement tuple.
+ */ const measurement$3 = (value, unit)=>[
+        value,
+        unit
+    ];
+
+/**
+ * Rounds the value of a measurement tuple to the specified number of decimal places.
+ *
+ * @param measurement The measurement tuple.
+ * @param fractionDigits The number of decimal places.
+ * @returns A new measurement tuple with the rounded value.
+ */ const toFixed$3 = ([value, unit], fractionDigits)=>[
+        parseFloat(value.toFixed(fractionDigits)),
+        unit
+    ];
+
+/**
+ * Rounds the value of a measurement tuple to the specified precision.
+ *
+ * @param measurement The measurement tuple.
+ * @param precision The number of significant digits.
+ * @returns A new measurement tuple with the rounded value.
+ */ const toPrecision$3 = ([value, unit], precision)=>[
+        parseFloat(value.toPrecision(precision)),
+        unit
+    ];
+
+/**
+ * Extracts the unit from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The unit of the measurement.
+ */ const unit$2 = (measurement)=>measurement[1];
+
+/**
+ * Extracts the value from a measurement tuple.
+ *
+ * @param measurement The measurement tuple.
+ * @returns The value of the measurement.
+ */ const value$2 = (measurement)=>measurement[0];
+
+var index$2 = {
+  __proto__: null,
+  isMeasurement: isMeasurement$3,
+  measurement: measurement$3,
+  toFixed: toFixed$3,
+  toPrecision: toPrecision$3,
+  unit: unit$2,
+  value: value$2
+};
+
+/**
+ * Type predicate that checks if a value is a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param candidate The value to check.
+ * @param unit The unit of the measurement.
+ * @param value The value of the measurement.
+ * @returns true if the candidate is a measurement object, false otherwise.
+ */ const isMeasurement$2 = (candidate, unit, value)=>{
+    if (typeof candidate !== "object") return false;
+    if (candidate === null) return false;
+    if (!("unit" in candidate)) return false;
+    if (!("value" in candidate)) return false;
+    const { value: valueCandidate, unit: unitCandidate } = candidate;
+    if (typeof valueCandidate !== "number") return false;
+    if (typeof unitCandidate !== "string") return false;
+    if (unit !== undefined && unitCandidate !== unit) return false;
+    if (value !== undefined && valueCandidate !== value) return false;
+    return true;
+};
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */ /**
+ * Create a new measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param value The value of the measurement.
+ * @param unit The unit of the measurement.
+ * @returns A new measurement object.
+ */ const measurement$2 = (value, unit)=>Object.freeze(Object.create(null, {
+        ...Object.getOwnPropertyDescriptors(value),
+        value: {
+            value
+        },
+        unit: {
+            value: unit
+        }
+    }));
+
+/**
+ * Returns the value of a measurement object, fixed to a
+ * number of decimal places.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const toFixed$2 = ({ value, unit }, fractionDigits)=>measurement$2(parseFloat(value.toFixed(fractionDigits)), unit);
+
+/**
+ * Returns the value of a measurement object, rounded to
+ * the specified precision.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const toPrecision$2 = ({ value, unit }, precision)=>measurement$2(parseFloat(value.toPrecision(precision)), unit);
+
+/**
+ * Returns the unit of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const unit$1 = (measurement)=>measurement.unit;
+
+/**
+ * Returns the value of a measurement object.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ * @param measurement The measurement object.
+ * @returns The value of the measurement object.
+ */ const value$1 = (measurement)=>measurement.value;
+
+var index$1 = {
+  __proto__: null,
+  isMeasurement: isMeasurement$2,
+  measurement: measurement$2,
+  toFixed: toFixed$2,
+  toPrecision: toPrecision$2,
+  unit: unit$1,
+  value: value$1
+};
+
+/**
+ * A tuple of conversion functions to and from a base unit.
+ */ /**
+ * Creates a linear conversion tuple, where:
+ * - `base = value * coefficient + constant`
+ * - `value = (base - constant) / coefficient`
+ */ const linearConversion = (coefficient, constant = 0)=>[
+        (value)=>value * coefficient + constant,
+        (value)=>(value - constant) / coefficient
+    ];
+
+class CommonProxyHandler {
+    constructor(conversions){
+        this.conversions = conversions;
+    }
+    has(target, propertyKey) {
+        if (propertyKey in target) return true;
+        return this.isUnit(propertyKey);
+    }
+    ownKeys(target) {
+        return Reflect.ownKeys(target).concat(this.units);
+    }
+    set(_, __, ___, ____) {
+        return false;
+    }
+    deleteProperty(_, __) {
+        return false;
+    }
+    setPrototypeOf(_, __) {
+        return false;
+    }
+    getPrototypeOf() {
+        return null;
+    }
+    get(target, p, receiver) {
+        return Reflect.get(target, p, receiver);
+    }
+    getOwnPropertyDescriptor(target, p) {
+        if (p in target) return Reflect.getOwnPropertyDescriptor(target, p);
+        if (this.isUnit(p)) return {
+            enumerable: true,
+            configurable: true,
+            get: this.get.bind(this, target, p, undefined)
+        };
+        return undefined;
+    }
+    get units() {
+        return Reflect.ownKeys(this.conversions);
+    }
+    isUnit(candidate) {
+        return candidate in this.conversions;
+    }
+}
+
+class DimensionProxyHandler extends CommonProxyHandler {
+    constructor(conversions, createMeasurement){
+        super(conversions);
+        this.createMeasurement = createMeasurement;
+    }
+    get(target, propertyKey) {
+        if (propertyKey in target) return target[propertyKey];
+        if (!this.isUnit(propertyKey)) return undefined;
+        return (value)=>this.createMeasurement(this.conversions, value, propertyKey);
+    }
+}
+
+/// MARK: Property Descriptors
+/**
+ * Generates property descriptors for the given conversions.
+ *
+ * @template Units - The type of units.
+ * @param conversions - The conversions object.
+ * @returns The property descriptors for the alternatives.
+ */ function propertyDescriptors(conversions) {
+    const descriptors = Object.create(null);
+    for(const unit in conversions)descriptors[unit] = propertyDescriptor(conversions, unit);
+    return descriptors;
+}
+/**
+ * Creates a property descriptor for a specific unit of measurement.
+ *
+ * @template Units - The type of units available.
+ * @template Unit - The specific unit of measurement.
+ *
+ * @param conversions - The conversions object containing the unit conversions.
+ * @param unit - The specific unit of measurement.
+ *
+ * @returns A property descriptor for the specified unit of measurement.
+ */ const propertyDescriptor = (conversions, unit)=>({
+        enumerable: true,
+        get: alternativeGet(conversions, unit)
+    });
+/**
+ * Retrieves an alternative measurement value based on the specified unit.
+ *
+ * @template Units - The string literal type representing all possible units.
+ * @template Unit - The specific unit to retrieve the alternative value for.
+ * @param conversions - The conversion functions for all units.
+ * @param unit - The unit to retrieve the alternative value for.
+ * @returns A function that retrieves the alternative measurement value.
+ */ const alternativeGet = (conversions, unit)=>function() {
+        let value;
+        if (this.unit === unit) {
+            value = this.value;
+        } else {
+            const [toBase, fromBase] = [
+                conversions[this.unit][0],
+                conversions[unit][1]
+            ];
+            value = fromBase(toBase(this.value));
+        }
+        return Object.create(measurement$2(value, unit), propertyDescriptors(conversions));
+    };
+
+/**
+ * Type predicate, determining if a candidate is a dimension measurement.
+ * @param candidate - The candidate to check.
+ * @param units - The units of the dimension.
+ * @param unit - The unit of the measurement.
+ * @returns The predicate result.
+ */ const isMeasurement$1 = (candidate, units, unit)=>{
+    if (!isMeasurement$2(candidate, unit)) return false;
+    if (!units) units = Object.keys(candidate);
+    const candidateKeys = Object.keys(candidate);
+    if (!units.every((unit)=>candidateKeys.includes(unit))) return false;
+    if (!candidateKeys.every((key)=>units.includes(key))) return false;
+    if (candidateKeys.length === 0) return false;
+    if (Object.entries(candidate).some(([key, value])=>!isMeasurement$2(value, key))) return false;
+    return true;
+};
+
+function measurement$1(basis, value, unit) {
+    return Object.create(measurement$2(value, unit), isMeasurement$1(basis) ? Object.getOwnPropertyDescriptors(basis) : propertyDescriptors(basis));
+}
+
+/**
+ * Creates a dimension from a set of conversions.
+ * @param conversions - The conversions for the dimension.
+ * @returns The dimension.
+ * @template Units - The units of the dimension.
+ */ const dimension = (conversions)=>new Proxy(Object.create(null), new DimensionProxyHandler(conversions, measurement$1));
+
+/**
+ * Rounds the value of a measurement to a specified number of decimal places.
+ *
+ * @param measurement - The measurement to round.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default value is used.
+ * @returns A new measurement with the rounded value.
+ */ const toFixed$1 = (measurement, fractionDigits)=>Object.create(toFixed$2(measurement, fractionDigits), Object.getOwnPropertyDescriptors(measurement));
+
+/**
+ * Returns a new measurement with the value rounded to the specified number of decimal places.
+ *
+ * @param measurement - The measurement to round.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default behavior is used.
+ * @returns A new measurement with the rounded value.
+ */ const toPrecision$1 = (measurement, fractionDigits)=>Object.create(toPrecision$2(measurement, fractionDigits), Object.getOwnPropertyDescriptors(measurement));
+
+/**
+ * Retrieves the units of a given measurement.
+ *
+ * @param measurement - The measurement object.
+ * @returns An array of units for the given measurement.
+ */ const units = (measurement)=>Object.keys(measurement);
+
+var index = {
+  __proto__: null,
+  dimension: dimension,
+  isMeasurement: isMeasurement$1,
+  linearConversion: linearConversion,
+  measurement: measurement$1,
+  toFixed: toFixed$1,
+  toPrecision: toPrecision$1,
+  units: units
+};
+
+/**
+ * Type predicate, determining if a candidate is a measurement.
+ *
+ * @template Units - The type of units.
+ * @template Unit - The specific unit type.
+ * @param candidate - The value to be checked.
+ * @param unit - The specific unit to be checked against.
+ * @param units - Additional units to be checked against.
+ * @returns A boolean indicating whether the candidate is a valid measurement.
+ */ const isMeasurement = (candidate, unit, units)=>{
+    if (!unit) {
+        if (isMeasurement$1(candidate)) return true;
+        if (isMeasurement$4(candidate)) return true;
+        if (isMeasurement$3(candidate)) return true;
+        if (isMeasurement$2(candidate)) return true;
+    }
+    units = units ?? [];
+    if (isMeasurement$1(candidate, units, unit)) return true;
+    for (const u of units.concat(unit)){
+        if (isMeasurement$4(candidate, u)) return true;
+        if (isMeasurement$3(candidate, u)) return true;
+        if (isMeasurement$2(candidate, u)) return true;
+    }
+    return false;
+};
+
+/**
+ * Returns the unit of measurement for the given measurement.
+ *
+ * @template Unit - The type of unit.
+ * @param measurement - The measurement value.
+ * @returns The unit of measurement.
+ */ function unit(measurement) {
+    if (isMeasurement$4(measurement)) return unit$3(measurement);
+    if (isMeasurement$3(measurement)) return unit$2(measurement);
+    return unit$1(measurement);
+}
+
+function measurement(base, value) {
+    const u = unit(base);
+    const v = value;
+    if (isMeasurement$1(base)) return measurement$1(base, v, u);
+    if (isMeasurement$2(base)) return measurement$2(v, u);
+    if (isMeasurement$3(base)) return measurement$3(v, u);
+    return measurement$4(v, u);
+}
+
+/**
+ * Converts a measurement value to a fixed number with a specified number of decimal places.
+ *
+ * @param measurement - The measurement value to convert.
+ * @param fractionDigits - The number of decimal places to round to. If not provided, the default behavior is used.
+ * @returns The converted measurement value with the specified number of decimal places.
+ */ const toFixed = (measurement, fractionDigits)=>{
+    if (isMeasurement$1(measurement)) return toFixed$1(measurement, fractionDigits);
+    if (isMeasurement$4(measurement)) return toFixed$4(measurement, fractionDigits);
+    if (isMeasurement$3(measurement)) return toFixed$3(measurement, fractionDigits);
+    return toFixed$2(measurement, fractionDigits);
+};
+
+/**
+ * Applies precision formatting to a measurement value.
+ *
+ * @param measurement - The measurement value to apply precision formatting to.
+ * @param fractionDigits - The number of digits to appear after the decimal point.
+ * @returns A new measurement value with precision formatting applied.
+ */ const toPrecision = (measurement, fractionDigits)=>{
+    if (isMeasurement$1(measurement)) return toPrecision$1(measurement, fractionDigits);
+    if (isMeasurement$4(measurement)) return toPrecision$4(measurement, fractionDigits);
+    if (isMeasurement$3(measurement)) return toPrecision$3(measurement, fractionDigits);
+    return toPrecision$2(measurement, fractionDigits);
+};
+
+/**
+ * Retrieves the value from a measurement object.
+ *
+ * @param measurement - The measurement object to retrieve the value from.
+ * @returns The value of the measurement.
+ */ function value(measurement) {
+    if (isMeasurement$4(measurement)) return value$3(measurement);
+    if (isMeasurement$3(measurement)) return value$2(measurement);
+    return value$1(measurement);
+}
+
+exports.dimension = index;
+exports.isMeasurement = isMeasurement;
+exports.measurement = measurement;
+exports.object = index$1;
+exports.string = index$3;
+exports.toFixed = toFixed;
+exports.toPrecision = toPrecision;
+exports.tuple = index$2;
+exports.unit = unit;
+exports.value = value;

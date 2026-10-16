@@ -1,0 +1,78 @@
+type InformationSymbol = typeof informationSymbols[number];
+/**
+ * Type predicate.
+ * @param candidate The candidate to test.
+ */
+declare function isInformationSymbol(candidate: any): candidate is InformationSymbol;
+/**
+* All the Information symbols.
+*/
+declare const informationSymbols: readonly ["b", "B", "kb", "Mb", "Gb", "Tb", "Pb", "Eb", "Zb", "Yb", "Kib", "KB", "Mib", "MB", "Gib", "GB", "Tib", "TB", "Pib", "PB", "Eib", "EB", "Zib", "ZB", "Yib", "YB"];
+
+/**
+ * The object representation of a measurement.
+ *
+ * @template Unit The type of the unit of measurement.
+ * @template Value The type of the value of the measurement.
+ */
+type Measurement$1<Unit extends string, Value extends number = number> = Number & {
+    readonly value: Value;
+    readonly unit: Unit;
+};
+
+/**
+ * Represents a dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Measurement<Units extends string, Unit extends Units = Units, Value extends number = number> = Measurement$1<Unit, Value> & Alternatives<Units>;
+
+/**
+ * Represents a collection of alternative measurements for different units.
+ *
+ * @template Units - The string literal type representing the available units.
+ */
+type Alternatives<Units extends string> = {
+    readonly [unit in Units]: Measurement<Units, unit, number>;
+};
+
+/**
+ * A dimension is a map of units to creation functions.
+ * Each function takes a number value and returns a
+ * dimension measurement.
+ * @template Units - The units of the dimension.
+ */
+type Dimension<Units extends string> = {
+    readonly [unit in Units]: (value: number) => Measurement<Units>;
+};
+
+type Information = Measurement<InformationSymbol>;
+declare const information: Dimension<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const bits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const bytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const kilobits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const megabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const gigabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const terabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const petabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const exabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const zettabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const yottabits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const kibibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const kilobytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const mebibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const megabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const gibibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const gigabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const tebibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const terabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const pebibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const petabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const exbibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const exabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const zebibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const zettabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const yobibits: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+declare const yottabytes: (value: number) => Measurement<"b" | "B" | "kb" | "Mb" | "Gb" | "Tb" | "Pb" | "Eb" | "Zb" | "Yb" | "Kib" | "KB" | "Mib" | "MB" | "Gib" | "GB" | "Tib" | "TB" | "Pib" | "PB" | "Eib" | "EB" | "Zib" | "ZB" | "Yib" | "YB">;
+
+export { bits, bytes, exabits, exabytes, exbibits, gibibits, gigabits, gigabytes, information, informationSymbols, isInformationSymbol, kibibits, kilobits, kilobytes, mebibits, megabits, megabytes, pebibits, petabits, petabytes, tebibits, terabits, terabytes, yobibits, yottabits, yottabytes, zebibits, zettabits, zettabytes };
+export type { Information, InformationSymbol };

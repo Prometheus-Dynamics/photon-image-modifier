@@ -1,0 +1,60 @@
+//#region src/aruco-marker.ts
+function e(e, t) {
+	if ((typeof t == "string" || typeof t == "number" && e > 32) && (t = e > 32 ? BigInt(t) : Number(t)), Array.isArray(t)) return (function* () {
+		for (let e of t) for (let t = 0; t < 8; t++) yield e >> 7 - t & 1;
+	})();
+	if (typeof t == "number") return (function* () {
+		for (let n = 0; n < e; n++) yield t >> e - 1 - n & 1;
+	})();
+	if (typeof t == "bigint") return (function* () {
+		for (let n = 0; n < e; n++) yield Number(t >> BigInt(e - 1 - n) & 1n);
+	})();
+	throw TypeError("Unrecognized marker codeList type");
+}
+function t(t, n) {
+	let r = n ? n.codeList.length - 1 : 1023;
+	if (t < 0 || t > r) throw RangeError(`Marker ID must be in the range [0..${r}]`);
+	let i;
+	if (n === void 0) {
+		let e = [
+			16,
+			23,
+			9,
+			14
+		];
+		i = [
+			,
+			,
+			,
+			,
+			,
+		].fill(void 0).map((e) => [
+			,
+			,
+			,
+			,
+			,
+		].fill(0));
+		for (let n = 0; n < 5; n++) {
+			let r = e[t >> 2 * (4 - n) & 3];
+			for (let e = 0; e < 5; e++) i[e][n] = r >> 4 - e & 1;
+		}
+	} else {
+		let r = Math.ceil(Math.sqrt(n.nBits)), a = e(n.nBits, n.codeList[t]);
+		i = Array(r).fill(void 0).map((e) => Array(r).fill(0));
+		for (let e = 0; e < r; e++) for (let t = 0; t < r; t++) i[t][e] = a.next().value;
+	}
+	return i;
+}
+function n(e, n, r) {
+	let i = t(e, r), a = i.length + 2;
+	n = n ? `height="${n}" width="${n}"` : "";
+	let o = `<svg ${n} viewBox="0 0 ${a} ${a}" version="1.1" xmlns="http://www.w3.org/2000/svg">\n  <rect x="0" y="0" width="${a}" height="${a}" fill="black"/>\n`;
+	for (let e = 0; e < i.length; e++) for (let t = 0; t < i.length; t++) i[t][e] === 1 && (o += `  <rect x="${t + 1}" y="${e + 1}" width="1" height="1" fill="white" stroke="white" stroke-width="0.01" />
+`);
+	return o += "</svg>", o;
+}
+//#endregion
+export { t as arucoMarkerMatrix, n as arucoToSVGString };
+
+//# sourceMappingURL=aruco-marker.js.map

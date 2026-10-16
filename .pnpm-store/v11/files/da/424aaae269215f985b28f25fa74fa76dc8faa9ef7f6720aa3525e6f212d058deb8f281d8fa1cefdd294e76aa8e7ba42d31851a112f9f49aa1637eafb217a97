@@ -1,0 +1,68 @@
+{
+	"name": "aruco-marker",
+	"version": "3.0.0",
+	"description": "Library for generating Aruco marker images",
+	"type": "module",
+	"source": [
+		"src/aruco-marker.ts",
+		"src/element.ts",
+		"src/dictionary.ts",
+		"src/dictionaries.ts",
+		"src/dictionaries/*.ts"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/src/aruco-marker.d.ts",
+			"import": "./dist/aruco-marker.js",
+			"require": "./dist/aruco-marker.cjs"
+		},
+		"./element": {
+			"types": "./dist/src/element.d.ts",
+			"import": "./dist/element.js",
+			"require": "./dist/element.cjs"
+		},
+		"./dictionary": {
+			"types": "./dist/src/dictionary.d.ts"
+		},
+		"./dictionaries/*": {
+			"types": "./dist/src/dictionaries/*.d.ts",
+			"import": "./dist/dictionaries/*.js",
+			"require": "./dist/dictionaries/*.cjs"
+		}
+	},
+	"main": "./dist/aruco-marker.cjs",
+	"module": "./dist/aruco-marker.js",
+	"types": "./dist/src/aruco-marker.d.ts",
+	"scripts": {
+		"build": "vite build",
+		"dev": "vite",
+		"demo": "npm run build && node demos/demo-server.js",
+		"test": "vitest",
+		"pretty": "prettier --write \"src/**/*.{js,ts,tsx,scss,css,html}\""
+	},
+	"keywords": [
+		"aruco",
+		"image",
+		"augmented reality"
+	],
+	"files": [
+		"./dist/*"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:bhollis/aruco-marker.git"
+	},
+	"author": "Benjamin Hollis",
+	"license": "MIT",
+	"devDependencies": {
+		"glob": "^13.0.6",
+		"prettier": "^3.0.1",
+		"vite": "^8.0.12",
+		"vite-plugin-dts": "5.0.0",
+		"vitest": "^4.1.6"
+	},
+	"sideEffects": [
+		"./dist/element.js",
+		"./dist/element.cjs"
+	]
+}
