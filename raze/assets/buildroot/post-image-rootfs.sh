@@ -256,7 +256,7 @@ fi
 #                              os-release's DEFAULT_HOSTNAME covers early boot
 #   NetworkManager profiles    /data/NetworkManager/system-connections
 #                              (NetworkManager conf.d), state in /var/lib
-#   SSH host keys              /data/ssh (sshd_config.d, data-setup)
+#   SSH host keys              the board's, /data/ssh (device package)
 #   /etc/machine-id            empty: systemd mounts a transient ID each boot
 #   journal                    volatile (journald.conf.d)
 #   manage-url                 link to /run/board/manage-url
