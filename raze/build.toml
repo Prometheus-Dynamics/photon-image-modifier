@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "f9b0c497338478714ad1283ca0f954e832040253"
+rev = "43e53252af4a5ac8e7505aa1928237fe65f8a09c"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -201,12 +201,6 @@ id = "photonvision-raze-data-owners"
 src = "raze/assets/rootfs/usr/lib/board/data-owners.d/photonvision.conf"
 dest = "/usr/lib/board/data-owners.d/photonvision.conf"
 mode = 420
-origin = "static-asset"
-
-[[stage.files]]
-id = "photonvision-raze-sshd-config"
-src = "raze/assets/rootfs/etc/ssh/sshd_config.d/40-photonvision-os.conf"
-dest = "/etc/ssh/sshd_config.d/40-photonvision-os.conf"
 origin = "static-asset"
 
 [[stage.files]]
@@ -463,7 +457,6 @@ stage_files = [
   "photonvision-raze-hostnamed-dropin",
   "photonvision-raze-networkmanager-conf",
   "photonvision-raze-data-owners",
-  "photonvision-raze-sshd-config",
   "photonvision-raze-sshd-dropin",
   "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",

@@ -9,10 +9,9 @@
 #     image's hardwareConfig.json is copied in on every boot, so an update
 #     brings the current hardware defaults (PhotonVision only reads it when
 #     its database has none). PhotonVision's logs are in its logs/ there.
-#   - SSH host keys live in /data/ssh, where sshd reads them
-#     (/etc/ssh/sshd_config.d/40-photonvision-os.conf), so a board keeps its
-#     host key across updates. Boards updated from an ext4 image already have
-#     them there.
+#   - SSH host keys are the board's, not this OS's: the device package keeps
+#     them on /data/ssh (board-ssh-hostkeys.service), one identity per board
+#     across slots and OSes.
 set -eu
 
 log() { echo "data-setup: $*"; }
@@ -36,15 +35,3 @@ fi
 cp "$defaults/hardwareConfig.json" "$data/photonvision_config/hardwareConfig.json"
 mountpoint -q "$image_config" || mount --bind "$data/photonvision_config" "$image_config"
 
-# SSH host keys: generate the missing ones once, on /data.
-mkdir -p "$data/ssh"
-chmod 700 "$data/ssh"
-for type in ed25519 ecdsa rsa; do
-	key="$data/ssh/ssh_host_${type}_key"
-	if [ ! -s "$key" ]; then
-		log "generating the $type SSH host key"
-		rm -f "$key" "$key.pub"
-		ssh-keygen -q -t "$type" -N '' -C "root@$(hostname)" -f "$key"
-	fi
-	chmod 600 "$key"
-done
