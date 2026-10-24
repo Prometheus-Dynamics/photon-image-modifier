@@ -290,8 +290,8 @@ overrides = [
   ["input.slot_version", "2026.3.4"],
   ["input.pv", "2026"],
   ["input.backend", "styx"],
-  ["input.raze_photonvision_rev", "0d28600535414b3e8a63e2a81c62202e62e72d3a"],
-  ["input.raze_photonvision_version", "dev-v2026.3.4-55-g0d286005"],
+  ["input.raze_photonvision_rev", "f0eae2d43129efe026b944be7c0d102081c33bde"],
+  ["input.raze_photonvision_version", "dev-v2026.3.4-56-gf0eae2d4"],
   ["input.raze_styx_build_image", "photonvision-gaia-build-styx-jdk17"],
   ["input.raze_styx_build_dockerfile", "docker/build-styx-jdk17/Dockerfile"],
 ]
