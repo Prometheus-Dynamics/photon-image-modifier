@@ -13,10 +13,10 @@ mkdir -p "${out%/*}"
 rows=""
 if [ -r "$db" ]; then
 	rows=$(sqlite3 -readonly -separator '	' "$db" \
-		"select json_extract(contents,'\$.nickname'), json_extract(contents,'\$.streamIndex')
+		"select json_extract(config_json,'\$.nickname'), json_extract(config_json,'\$.streamIndex')
 		   from cameras
-		  where coalesce(json_extract(contents,'\$.deactivated'), 0) = 0
-		  order by json_extract(contents,'\$.streamIndex')" 2>/dev/null) || rows=""
+		  where coalesce(json_extract(config_json,'\$.deactivated'), 0) = 0
+		  order by json_extract(config_json,'\$.streamIndex')" 2>/dev/null) || rows=""
 fi
 sep=""
 tab=$(printf '\t')
