@@ -75,7 +75,7 @@ on Raze; this repository only adds PhotonVision and the OS around it.
 | `atlas:devices/raze/gaia/device.toml` | `raze` | CM5 defconfig and kernel, OV9782 driver, libcamera/libpisp, `raze-device.txt` and overlays, device services |
 | `atlas:devices/raze/gaia/gpu.toml` | `raze`, `full` | Mesa V3D/VC4 with EGL, GLES and gbm for the libcamera GL driver |
 | `base/arm64/photonvision.toml` | `full` | PhotonVision service and jar install |
-| `raze/build.toml` | `raze` | declares the `atlas` source; `config.txt`, `cmdline.txt`, boot partition and `sdcard.img`, the read-only EROFS root and its writable paths, the jlink'd Java runtime, module check and first-boot grow of `/data`, NetworkManager + systemd-resolved |
+| `raze/build.toml` | `raze` | declares the `atlas` source; the boot tree the slots image is built from, the read-only EROFS root and its writable paths, the jlink'd Java runtime, module check, NetworkManager + systemd-resolved |
 | `raze/photonvision.toml` | `raze`, `full` | libcamera GL driver and PhotonVision jar built from the forks |
 
 Layers imported after the device layer override its defaults. The `atlas`
@@ -91,31 +91,30 @@ off (all are defaults; `/etc/board/*.env` overrides them).
 
 What stays here:
 
-- `raze/assets/config.txt`: the OS owns `config.txt`; it ends with
-  `include raze-device.txt`, which the device layer puts on the boot
-  partition. To change a device setting (fan curve, port power, camera
-  overlay), copy the line from `raze-device.txt` into `config.txt` instead
-  of including it.
-- `raze/assets/cmdline.txt`, the boot assembly tree `boot`, and the
-  partition layout.
+- The boot assembly tree `boot` (kernel8.img; the device package adds
+  `raze-device.txt` and its overlays). The partition layout and the boot
+  files are Atlas's dynamic slots (`devices/raze/gaia/slots.toml`): p1 a FAT
+  boot partition with Atlas's `config.txt`/`tryboot.txt` (they end with
+  `include raze-device.txt`) and `slots/<id>/` with each slot's kernel,
+  initramfs and `cmdline.txt` (`input.slot_cmdline` plus the slot
+  arguments), p2 an ext4 `/data` holding the slot's verity'd root image. A
+  device setting (fan curve, port power, camera overlay) changes in Atlas's
+  `raze-device.txt`.
 - The root filesystem is a read-only, LZMA-compressed EROFS image
-  (`rootfs.erofs`) in a 512 MiB slot; see "Read-only root" below. Buildroot
-  makes `rootfs.tar`, and `raze/assets/buildroot/post-image-rootfs.sh` turns
-  it into `rootfs.erofs` and writes the flash id that p1 carries, failing the
-  build if the root does not fit its slot. `sdcard.img` ends after rootfs-a's
-  content (packed EBRs, `truncate = "last-data"`): slot B's root and `/data`
-  are in the partition table but not in the file, and the device package's
-  `board-data-setup` makes `/data` on first boot (and again after a flash with
-  a new flash id). The same script checks that every kernel
-  module of the kernel build ships (Buildroot ignores a failed
-  `modules_install`, which once left 58 of 1898 modules in the image),
-  reruns depmod, writes `/opt/photonvision/image-metadata.json` from the
-  `photonvision-image` env set, and packs PhotonVision's jar
-  (`pack-photonvision-jar.py`, below). On every boot `grow-rootfs.service`
-  grows `/data` (p7) to fill the eMMC if it does not already; PhotonVision
-  starts after it.
-  The flashable output is `output/gaia/photonvision-full-raze/images/<build>-<version>.img.xz`
-  (also `sdcard.img`); Atlas flashes either.
+  (`rootfs.erofs`); see "Read-only root" below. Buildroot makes `rootfs.tar`,
+  and `raze/assets/buildroot/post-image-rootfs.sh` turns it into
+  `rootfs.erofs`. The same script checks that every kernel module of the
+  kernel build ships (Buildroot ignores a failed `modules_install`, which once
+  left 58 of 1898 modules in the image), reruns depmod, writes
+  `/opt/photonvision/image-metadata.json` from the `photonvision-image` env
+  set, and packs PhotonVision's jar (`pack-photonvision-jar.py`, below). The
+  slots fragment appends a dm-verity tree and puts it on `/data`. The image is
+  sized to its content; on first boot the device package's `board-data-setup`
+  grows `/data` to fill the eMMC.
+  The flashable output, and the only one, is
+  `output/gaia/photonvision-full-raze/images/<build>-<backend>-<version>.img.xz`;
+  Atlas flashes it, and the board's `slots stage-image` installs the same file
+  as an update.
 - The hostname stays `photonvision` (`/etc/hostname`, a link to
   `/data/etc/hostname` seeded from the image); the device default
   `raze-{serial8}` only applies over an unset or stock hostname.
@@ -129,11 +128,11 @@ What stays here:
 
 ### Read-only root
 
-The root slots hold EROFS (`rootfstype=erofs ro` in `cmdline.txt`; the
+The slot root is EROFS (opened through dm-verity by the slot initramfs; the
 kernel support comes from the device package, 1.5.0 or later). Nothing
 writes to `/` at run time. `photonvision-data-early.service` runs before
-`local-fs.target`, after `/data` (p7, mounted with
-`x-systemd.before=local-fs.target`) and makes the writable places:
+`local-fs.target`, after `/data` (p2, mounted by the slot initramfs before
+the root) and makes the writable places:
 
 | Written at run time | Where it goes | How |
 | --- | --- | --- |
@@ -153,7 +152,7 @@ writes to `/` at run time. `photonvision-data-early.service` runs before
 If `/data` does not mount, data-early mounts a tmpfs there: the board boots
 and works, but keeps nothing across a reboot. PhotonVision's offline update
 (uploading a jar in the UI) cannot replace the jar on a read-only root;
-updates go through the device package's A/B updater.
+updates go through the device package's slots writer.
 
 ### Java runtime
 

@@ -3,7 +3,8 @@
 # boot: after /data is mounted (or has failed to mount) and before
 # local-fs.target, so every ordinary service sees them.
 #
-#   /data             p7, ext4, kept across A/B updates. If it did not mount
+#   /data             p2, ext4, kept across slot updates; the slot initramfs
+#                     mounts it before the root. If it did not mount
 #                     (missing or damaged partition), a tmpfs takes its place
 #                     so the board still boots and works, without keeping
 #                     anything across a reboot.

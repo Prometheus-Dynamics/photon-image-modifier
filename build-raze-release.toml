@@ -51,6 +51,10 @@ imports = [
   { path = "raze/build.toml", when = { target = "raze" } },
   { path = "raze/photonvision-release.toml", when = { profile = "full", target = "raze" } },
   { path = "raze/expect-full-release.toml", when = { profile = "full", target = "raze" } },
+  # Dynamic slots, the only Raze layout: Atlas's slot initramfs and slots fragment (a verity'd
+  # slot root on /data and the first-flash disk, raze/build.toml's image output).
+  { source = "atlas", path = "devices/raze/gaia/initramfs.toml", when = { target = "raze" } },
+  { source = "atlas", path = "devices/raze/gaia/slots.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },
   { path = "limelight/limelight3/build.toml", when = { profile = "full", target = "limelight3" } },
   { path = "limelight/limelight3g/build.toml", when = { profile = "full", target = "limelight3g" } },
@@ -188,3 +192,32 @@ default = "a2a43cc8dc20e9e0751a7212714bd1dd58682de9"
 description = "Raze disk image archive: img.xz (releases) or img.zst (fast, for dev builds and the board updater)"
 kind = "string"
 default = "img.xz"
+
+# The slot identity for the device package's slots fragment
+# (devices/raze/gaia/slots.toml): the id is <family>-<version>-<variant>-<commit>.
+# slot_version is the release tag without its "v"; keep it with
+# raze_photonvision_version (an input default cannot name another input). No
+# fork is built, so the commit is this repository's.
+[inputs.slot_family]
+kind = "string"
+default = "photonvision"
+
+[inputs.slot_version]
+kind = "string"
+default = "2026.3.4"
+
+[inputs.slot_variant]
+kind = "string"
+default = "libcamera"
+
+[inputs.slot_commit]
+kind = "string"
+default = "${project.commit_short}"
+
+[inputs.slot_source]
+kind = "string"
+default = "${project.commit}"
+
+[inputs.slot_data_dir]
+kind = "string"
+default = "photonvision_config"

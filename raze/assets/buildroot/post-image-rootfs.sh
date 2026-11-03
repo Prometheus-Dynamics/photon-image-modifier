@@ -1,6 +1,6 @@
 #!/bin/sh
 # Buildroot post-image script: turn rootfs.tar into the read-only root,
-# rootfs.erofs, and write the flash id the boot selector (p1) carries.
+# rootfs.erofs.
 #
 # The content comes from rootfs.tar, which Buildroot creates under fakeroot
 # with the final ownership and permissions. Extraction, the fixes below and
@@ -28,13 +28,11 @@
 #   "Read-only root" below and data-early).
 #
 # The root filesystem is EROFS (LZMA, 1 MiB physical clusters, fragments and
-# deduplication), mounted read-only (cmdline.txt: rootfstype=erofs ro). It
-# must fit a 512 MiB root slot. Nothing is written to it at run time, so it
+# deduplication), mounted read-only (the slot initramfs opens it through
+# dm-verity from /data). Nothing is written to it at run time, so it
 # needs no free space.
 set -eu
 
-# The A/B layout's root slots (raze/build.toml).
-slot_mib=512
 # mkfs.erofs: LZMA (kernel CONFIG_EROFS_FS_ZIP_LZMA), 1 MiB physical clusters
 # (the best ratio; the kernel reads at most 1 MiB to fill a cold page), small
 # file tails packed into shared fragments. No dedupe: it saves nothing on this
@@ -209,10 +207,10 @@ if [ "$DEVICE_PACKAGE_COMMIT" != unknown ]; then
 	printf 'BOARD_PACKAGE_COMMIT=%s\n' "$DEVICE_PACKAGE_COMMIT" >"$root/etc/board/board-package.env"
 fi
 
-# /data (p7 on the A/B layout) holds what an update must keep and everything
-# written at run time (data-early, data-setup). It is mounted before
-# local-fs.target, so before the device package's services; nofail: if it is
-# missing, data-early puts a tmpfs there and the board still boots.
+# /data (p2 of the slots disk) holds what an update must keep and everything
+# written at run time (data-early, data-setup). The slot initramfs mounts it
+# before the root, so it has no fstab line; if it is missing, data-early puts
+# a tmpfs there and the board still boots.
 # The root line stays "ro" (Buildroot writes it so without
 # BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW; enforced here so systemd-remount-fs
 # never tries rw on EROFS).
@@ -221,9 +219,8 @@ touch "$root/etc/fstab"
 sed -i -e '/[[:space:]]\/data[[:space:]]/d' \
 	-e 's|^\(/dev/root[[:space:]][[:space:]]*/[[:space:]][[:space:]]*[^[:space:]]*[[:space:]][[:space:]]*\)rw|\1ro|' \
 	"$root/etc/fstab"
-printf '/dev/mmcblk0p7\t/data\text4\tdefaults,noatime,nofail,x-systemd.device-timeout=10s,x-systemd.before=local-fs.target\t0\t2\n' >>"$root/etc/fstab"
 
-for f in pv-leds-ring manage-url grow-rootfs.sh data-setup data-early; do
+for f in pv-leds-ring manage-url data-setup data-early; do
 	[ -f "$root/usr/lib/photonvision-os/$f" ] && chmod 755 "$root/usr/lib/photonvision-os/$f"
 done
 [ -f "$root/etc/board/update-health" ] && chmod 755 "$root/etc/board/update-health"
@@ -341,14 +338,3 @@ content_mib=$(du -sm "$root" | cut -f1)
 log "rootfs.erofs is ${size_mib} MiB (${content_mib} MiB of files)"
 du -sm "$root/usr/lib/jvm" "$root/opt/photonvision" "$root/usr/lib/photonvision" \
 	"$root/lib/modules" "$root/usr/lib/dri" 2>/dev/null | sed 's/^/rootfs:   /'
-
-[ "$size_mib" -le "$slot_mib" ] ||
-	die "rootfs.erofs (${size_mib} MiB) does not fit a ${slot_mib} MiB root slot"
-
-# The image ships no /data filesystem (p7, and slot B's root, are left out of
-# sdcard.img). The device package's board-data-setup makes /data on first boot
-# and grows it to fill the eMMC; it remakes /data whenever p1's flash id
-# differs from the one /data was made for, so a flash resets /data and an A/B
-# update (which never writes p1) keeps it. A new id for every build.
-cat /proc/sys/kernel/random/uuid >"$BINARIES_DIR/flash-id.raw"
-log "flash id $(cat "$BINARIES_DIR/flash-id.raw")"

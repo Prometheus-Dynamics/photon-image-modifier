@@ -1,4 +1,4 @@
-description = "Raze target, PhotonVision OS side: boot partition, config.txt and cmdline.txt, root filesystem and networking. Device support comes from the Raze device package (Atlas), imported before this layer."
+description = "Raze target, PhotonVision OS side: the boot payload for the slots image, root filesystem and networking. Device support comes from the Raze device package (Atlas), imported before this layer."
 target = "raze"
 
 # The Raze device package (devices/raze/gaia/device.toml in Atlas, imported
@@ -78,33 +78,6 @@ repo = "https://github.com/Prometheus-Dynamics/Styx.git"
 rev = "12b63ebfba9b150608c30b168db9f546dde3aa69"
 
 [[stage.files]]
-id = "photonvision-raze-config"
-src = "raze/assets/config.txt"
-dest = "/boot/firmware/config.txt"
-origin = "static-asset"
-
-[[stage.files]]
-id = "photonvision-raze-grow-rootfs"
-src = "raze/assets/rootfs/usr/lib/photonvision-os/grow-rootfs.sh"
-dest = "/usr/lib/photonvision-os/grow-rootfs.sh"
-origin = "static-asset"
-
-# The root is a read-only EROFS image in a fixed 512 MiB slot; this grows
-# /data (p7) and its filesystem to fill the eMMC on first boot.
-[[stage.services]]
-id = "photonvision-raze-grow-rootfs-service"
-name = "grow-rootfs.service"
-unit_path = "raze/assets/rootfs/grow-rootfs.service"
-
-# PhotonVision waits for the grow (it writes its settings and logs to /data).
-[[stage.files]]
-id = "photonvision-raze-photonvision-grow-rootfs-dropin"
-src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
-dest = "/usr/lib/systemd/system/photonvision.service.d/10-grow-rootfs.conf"
-origin = "static-asset"
-
-# A plain stop is not a failure (see the drop-in).
-[[stage.files]]
 id = "photonvision-raze-photonvision-clean-stop-dropin"
 src = "raze/assets/rootfs/usr/lib/systemd/system/photonvision.service.d/15-clean-stop.conf"
 dest = "/usr/lib/systemd/system/photonvision.service.d/15-clean-stop.conf"
@@ -148,7 +121,7 @@ src = "raze/assets/rootfs/opt/photonvision/photonvision_config/hardwareConfig.js
 dest = "/opt/photonvision/photonvision_config/hardwareConfig.json"
 origin = "static-asset"
 
-# /data, the partition kept across A/B updates: data-setup seeds PhotonVision's
+# /data, the partition kept across slot updates: data-setup seeds PhotonVision's
 # settings there from these defaults and bind-mounts them over
 # /opt/photonvision/photonvision_config, and keeps the SSH host keys.
 [[stage.files]]
@@ -311,10 +284,10 @@ entries = [
   ["ORION_COMMIT", "${source.orion.commit}"],
 ]
 
-# The device package's A/B updater takes the same .img.xz that is flashed: it
-# copies boot A and root A from the image into the inactive slot. The image
-# supplies a health check (a trial boot is kept only when PhotonVision runs and
-# its web server answers) and a pre-reboot hook that stops PhotonVision cleanly.
+# The device package's slots writer takes the same .img.xz that is flashed
+# (`slots stage-image`) and installs it as a new slot. The image supplies a
+# health check (a trial boot is kept only when PhotonVision runs and its web
+# server answers) and a pre-reboot hook that stops PhotonVision cleanly.
 [[stage.files]]
 id = "photonvision-raze-update-health"
 src = "raze/assets/rootfs/etc/board/update-health"
@@ -325,12 +298,6 @@ origin = "static-asset"
 id = "photonvision-raze-update-pre-reboot"
 src = "raze/assets/rootfs/etc/board/update.d/pre-reboot"
 dest = "/etc/board/update.d/pre-reboot"
-origin = "static-asset"
-
-[[stage.files]]
-id = "photonvision-raze-cmdline"
-src = "raze/assets/cmdline.txt"
-dest = "/boot/firmware/cmdline.txt"
 origin = "static-asset"
 
 [image]
@@ -360,17 +327,15 @@ config_overrides = [
   # host veritysetup, for Gaia's dm-verity step on the slot root images (a host tool only;
   # nothing lands in the target).
   ["BR2_PACKAGE_HOST_CRYPTSETUP", "y"],
-  # The boot partition and sdcard.img are built by the assembly below. The
+  # The slots image is built by the assembly (below and Atlas's slots.toml). The
   # post-image script builds the read-only rootfs.erofs from rootfs.tar, after
   # checking the kernel modules, writing the PhotonVision image-metadata.json,
   # packing PhotonVision's jar and pointing run-time writes at /data or /run
   # (see the script).
   ["BR2_ROOTFS_POST_IMAGE_SCRIPT", "\"${project.root_dir}/raze/assets/buildroot/post-image-rootfs.sh\""],
-  ["BR2_PACKAGE_RPI_FIRMWARE_CONFIG_FILE", "\"${project.root_dir}/raze/assets/config.txt\""],
   # orion-node runs as the orion user; the image has no systemd-sysusers to
   # create it at boot, so it comes from Orion's own users table.
   ["BR2_ROOTFS_USERS_TABLES", "\"${source.orion.path}/packaging/buildroot/orion-users.table\""],
-  ["BR2_PACKAGE_RPI_FIRMWARE_CMDLINE_FILE", "\"${project.root_dir}/raze/assets/cmdline.txt\""],
   # Buildroot makes rootfs.tar (ownership applied under fakeroot); the
   # post-image script turns it into rootfs.erofs (host erofs-utils, LZMA) and
   # writes the flash id.
@@ -414,11 +379,6 @@ config_overrides = [
   ["BR2_SYSTEM_DHCP", "\"\""],
 ]
 
-[[image.expected_images]]
-name = "sdcard.img"
-format = "raw"
-required = true
-
 # The root filesystem is rootfs.erofs (post-image script), not the base
 # layer's rootfs.ext4.
 [[image.expected_images]]
@@ -431,19 +391,8 @@ name = "rootfs.erofs"
 format = "erofs"
 required = true
 
-# The flash id for p1 (post-image script); collected so the assembly can read
-# it (".raw": Gaia matches expected images to their format by extension).
-[[image.expected_images]]
-name = "flash-id.raw"
-format = "raw"
-required = true
-
 [image.feed]
 stage_files = [
-  "photonvision-raze-config",
-  "photonvision-raze-cmdline",
-  "photonvision-raze-grow-rootfs",
-  "photonvision-raze-photonvision-grow-rootfs-dropin",
   "photonvision-raze-preset",
   "photonvision-raze-pv-leds-ring",
   "photonvision-raze-leds-tmpfiles",
@@ -469,19 +418,25 @@ stage_files = [
   "photonvision-raze-nm-dispatcher-timesync",
 ]
 stage_env_sets = ["photonvision-raze-image-env"]
-stage_services = ["photonvision-raze-grow-rootfs-service", "photonvision-raze-manage-url-service", "photonvision-raze-camera-streams-service", "photonvision-raze-camera-streams-path", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
+stage_services = ["photonvision-raze-manage-url-service", "photonvision-raze-camera-streams-service", "photonvision-raze-camera-streams-path", "photonvision-raze-leds-service", "photonvision-raze-data-setup-service", "photonvision-raze-data-early-service"]
 
-# Raze is the only target that assembles a bootable disk; Gaia compresses it
-# next to sdcard.img by the name's extension (input.raze_archive_ext: img.xz,
-# or img.zst for dev builds).
+# The image is the dynamic slots first-flash disk (Atlas devices/raze/gaia/slots.toml,
+# imported from the root build.toml): a FAT boot partition and an ext4 /data
+# holding the slot's verity'd root. The same .img.xz flashes a board and
+# updates one (`slots stage-image`). Gaia compresses it by the name's
+# extension (input.raze_archive_ext: img.xz, or img.zst for dev builds); with
+# img.xz it takes the slots fragment's own xz output instead of compressing
+# the disk twice, so the run publishes this one file.
 [image.output]
 archive_name = "${build.name}-${input.backend}-${input.raze_photonvision_version}.${input.raze_archive_ext}"
-# The A/B disk is the main image; the slot first-flash disk and the slot bundle
-# (raze/slots.toml) are published next to it.
-disk = "sdcard"
+disk = "slots-sdcard"
 
-# The OS owns the boot partition: the device package adds raze-device.txt,
-# its overlays and the stock overlays it loads to the tree with id "boot".
+# The boot payload the slots are built from: the slots fragment reads
+# kernel8.img (below) and the device package's raze-device.txt and overlays
+# (ov9782, raze-fan, raze-usb-power) from this tree, and takes the DTBs and
+# the stock overlays from Buildroot's output itself. The boot FAT's config.txt,
+# tryboot.txt and each slot's cmdline.txt are the slots fragment's
+# (input.slot_cmdline), so this image has none of its own.
 [image.assembly]
 out_dir = "$provider.images"
 
@@ -489,163 +444,8 @@ out_dir = "$provider.images"
 id = "boot"
 path = "$assembly.work/boot"
 
-[[image.assembly.files]]
-tree = "boot"
-src = "raze/assets/config.txt"
-dest = "config.txt"
-
-[[image.assembly.files]]
-tree = "boot"
-src = "raze/assets/cmdline.txt"
-dest = "cmdline.txt"
-
-# start4.elf/fixup4.dat are the Pi 4 GPU firmware. A CM5 boots from its EEPROM
-# bootloader and never reads them, and rpi-firmware installs them only when its
-# Pi 4 variant is selected, so they are optional here.
-[[image.assembly.files]]
-tree = "boot"
-src_glob = "$provider.buildroot_output/images/rpi-firmware/start4.elf"
-dest = "."
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src_glob = "$provider.buildroot_output/images/rpi-firmware/fixup4.dat"
-dest = "."
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src_glob = "$provider.buildroot_output/images/bcm*.dtb"
-dest = "."
-
-[[image.assembly.files]]
-tree = "boot"
-src = "$provider.buildroot_output/images/rpi-firmware/overlays/bcm2712d0.dtbo"
-dest = "overlays/bcm2712d0.dtbo"
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi.dtbo"
-dest = "overlays/disable-wifi.dtbo"
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-wifi-pi5.dtbo"
-dest = "overlays/disable-wifi-pi5.dtbo"
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt.dtbo"
-dest = "overlays/disable-bt.dtbo"
-optional = true
-
-[[image.assembly.files]]
-tree = "boot"
-src = "$provider.buildroot_output/images/rpi-firmware/overlays/disable-bt-pi5.dtbo"
-dest = "overlays/disable-bt-pi5.dtbo"
-optional = true
-
 [[image.assembly.transforms]]
 kind = "gzip"
 src = "$provider.buildroot_output/images/Image"
 dest = "$assembly.tree.boot/kernel8.img"
 deterministic = true
-
-# p1: autoboot.txt only. The bootloader reads it first: boot A (p2) by
-# default, boot B (p3) once on a tryboot. The device package's update writer
-# rewrites it, keeps its state there (board-update.env), and reads opt-in SSH keys
-# from board/authorized_keys on it, so p1 is shared by both slots.
-[[image.assembly.trees]]
-id = "autoboot"
-path = "$assembly.work/autoboot"
-
-[[image.assembly.files]]
-tree = "autoboot"
-src = "raze/assets/autoboot.txt"
-dest = "autoboot.txt"
-
-# The flash id (post-image-rootfs.sh): board-data-setup remakes /data when it
-# changes, so a flash resets /data and an update keeps it.
-[[image.assembly.files]]
-tree = "autoboot"
-src = "$provider.images/flash-id.raw"
-dest = "board/flash-id"
-
-[[image.assembly.filesystems]]
-id = "autoboot"
-kind = "vfat"
-source_tree = "autoboot"
-output = "$assembly.work/autoboot.vfat"
-size = "16M"
-
-# One boot image serves both boot slots: the update writer rewrites root= in
-# the slot it writes (cmdline.txt here says root A, /dev/mmcblk0p5).
-[[image.assembly.filesystems]]
-id = "boot"
-kind = "vfat"
-source_tree = "boot"
-output = "$provider.images/boot.vfat"
-size = "128M"
-
-# A/B layout for the device package's update writer (Atlas docs/ota.md):
-# p1 autoboot, p2/p3 boot A/B, p4 extended (added by Gaia), p5/p6 root A/B
-# (512 MiB each, read-only EROFS; the post-image script fails a root image
-# that does not fit), p7 /data (64 MiB here, grown to fill the eMMC on first
-# boot).
-# Slot B ships empty. Unwritten space stays sparse, so the .img.xz stays
-# small.
-[[image.assembly.disks]]
-id = "sdcard"
-output = "$provider.images/sdcard.img"
-partition_table = "mbr"
-signature = "0x5056525a"
-# The EBR chain sits at the start of the extended partition (p4), so the file
-# can end after rootfs-a's content: slot B's root and /data are in the table but
-# not in the image (about 0.4 GB instead of 1.36 GB raw).
-ebr_placement = "packed"
-truncate = "last-data"
-first_lba = 2048
-alignment_lba = 2048
-
-[[image.assembly.disks.partitions]]
-name = "autoboot"
-type_alias = "fat32-lba"
-bootable = true
-image = "$assembly.work/autoboot.vfat"
-size = "16M"
-
-[[image.assembly.disks.partitions]]
-name = "boot-a"
-type_alias = "fat32-lba"
-image = "$provider.images/boot.vfat"
-size = "128M"
-
-[[image.assembly.disks.partitions]]
-name = "boot-b"
-type_alias = "fat32-lba"
-image = "$provider.images/boot.vfat"
-size = "128M"
-
-[[image.assembly.disks.partitions]]
-name = "rootfs-a"
-type_alias = "linux"
-image = "$provider.images/rootfs.erofs"
-size = "512M"
-
-[[image.assembly.disks.partitions]]
-name = "rootfs-b"
-type_alias = "linux"
-size = "512M"
-materialize = false
-
-# Made on first boot by the device package's board-data-setup, and grown to
-# fill the eMMC.
-[[image.assembly.disks.partitions]]
-name = "data"
-type_alias = "linux"
-size = "64M"
-materialize = false

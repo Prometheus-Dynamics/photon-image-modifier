@@ -46,8 +46,8 @@ imports = [
   { path = "raze/photonvision-libcamera.toml", when = { profile = "full", target = "raze", input = { backend = "libcamera" } } },
   { path = "raze/photonvision-styx.toml", when = { profile = "full", target = "raze", input = { backend = "styx" } } },
   { path = "raze/expect-full.toml", when = { profile = "full", target = "raze" } },
-  # Dynamic slots (Atlas's slot initramfs and this image's slot layer): a verity'd slot root, a
-  # <id>.slot.tar bundle and the slot first-flash disk, next to the A/B disk for now.
+  # Dynamic slots, the only Raze layout: Atlas's slot initramfs and slots fragment (a verity'd
+  # slot root on /data and the first-flash disk, raze/build.toml's image output).
   { source = "atlas", path = "devices/raze/gaia/initramfs.toml", when = { target = "raze" } },
   { source = "atlas", path = "devices/raze/gaia/slots.toml", when = { profile = "full", target = "raze" } },
   { path = "limelight/limelight/build.toml", when = { profile = "full", target = "limelight" } },

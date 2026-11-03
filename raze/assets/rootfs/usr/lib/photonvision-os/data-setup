@@ -1,5 +1,5 @@
 #!/bin/sh
-# Prepare /data, the partition kept across A/B updates (p7), before
+# Prepare /data, the partition kept across slot updates (p2), before
 # PhotonVision and sshd start. data-early has already made sure /data is
 # mounted (the partition, or a tmpfs if it is missing).
 #
