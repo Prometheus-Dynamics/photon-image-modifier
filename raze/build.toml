@@ -70,6 +70,31 @@ rev = "50533a8d79cbac8dbc8986b6d3042f5ff6c18b16"
 # window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event; kernel-modules/pispbe:
 # the ISP back end with faster job setup). Built once in the shared Buildroot base against the image's own kernel, and left
 # out of the libcamera variants (raze/photonvision-libcamera.toml exclude_packages), so only the
+# r8152's firmware (the device package keeps r8152 for USB Ethernet adapters;
+# RTL8153/8156 load these patches for some chip revisions): the seven files of
+# Buildroot's BR2_PACKAGE_LINUX_FIRMWARE_RTL_815X, from the same release
+# Buildroot pins (package/linux-firmware). Gaia extracts only these members,
+# once per workspace (its extract cache), instead of Buildroot extracting the
+# whole tarball on every clean build.
+[[sources]]
+id = "linux-firmware"
+kind = "archive"
+url = "https://cdn.kernel.org/pub/linux/kernel/firmware/linux-firmware-20260810.tar.xz"
+sha256 = "ac17c34fe73756926a961fbafadf8d8f07a3bd2dd2f4ea31a0fb5d50c714a49a"
+strip_components = 1
+# A rootfs overlay (BR2_ROOTFS_OVERLAY below): /usr/lib/firmware/rtl_nic/
+# (merged /usr: /lib is a link to usr/lib).
+extract_to = "rootfs/usr/lib/firmware"
+members = [
+  "linux-firmware-20260810/rtl_nic/rtl8153a-2.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8153a-3.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8153a-4.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8153b-2.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8153c-1.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8156a-2.fw",
+  "linux-firmware-20260810/rtl_nic/rtl8156b-2.fw",
+]
+
 # Styx images ship it; their kernel stays the same. The same rev in every variant.
 [[sources]]
 id = "styx"
@@ -357,11 +382,13 @@ config_overrides = [
   ["BR2_PACKAGE_OPENJDK", "n"],
   ["BR2_PACKAGE_OPENJDK_VERSION_25", "n"],
   ["BR2_PACKAGE_PHOTONVISION_JRE", "y"],
-  # base-os enables linux-firmware, but the Raze selects no blob from it
-  # (the camera needs none and the VPU firmware comes from rpi-firmware),
-  # so it only cost about 5 minutes of download and extract per clean build
-  # and installed nothing.
+  # base-os enables linux-firmware, but the Raze needs only r8152's seven
+  # Realtek files from it (the linux-firmware source above, as a rootfs overlay),
+  # and Buildroot's package extracts the whole 650 MB tarball on every clean
+  # build. The camera needs no blob and the VPU firmware comes from rpi-firmware.
   ["BR2_PACKAGE_LINUX_FIRMWARE", "n"],
+  # r8152's firmware from the linux-firmware source (above).
+  ["BR2_ROOTFS_OVERLAY", "\"${source.linux-firmware.path}/rootfs\""],
   # NetworkManager owns Ethernet. mDNS is avahi's (the device package turns
   # resolved's and NetworkManager's mDNS off): WPILib's NetworkTables finds the
   # robot controller (_SystemCore._tcp) through avahi-client, and avahi
@@ -390,6 +417,11 @@ required = false
 name = "rootfs.erofs"
 format = "erofs"
 required = true
+
+# r8152 also lists rtl8157-1.fw and rtl8159-1.fw, which no linux-firmware
+# release ships (20260810 has none); it loads without them.
+[image.checks]
+optional_firmware = ["rtl_nic/rtl8157-1.fw", "rtl_nic/rtl8159-1.fw"]
 
 [image.feed]
 stage_files = [
