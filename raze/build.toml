@@ -483,9 +483,6 @@ disk = "sdcard"
 # The OS owns the boot partition: the device package adds raze-device.txt,
 # its overlays and the stock overlays it loads to the tree with id "boot".
 [image.assembly]
-# In RAM (/dev/shm): trees, boot.vfat and the raw sdcard.img; only the
-# published outputs (sdcard.img, the archive) are written to disk.
-work_dir = "ram"
 out_dir = "$provider.images"
 
 [[image.assembly.trees]]

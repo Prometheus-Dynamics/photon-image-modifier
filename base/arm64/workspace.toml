@@ -63,9 +63,6 @@ timeout_seconds = 28800
 # (BR2_PER_PACKAGE_DIRECTORIES), and a compiler cache shared by every build.
 local_jobs = 0
 parallel_packages = true
-# Build the Buildroot tree in RAM (falls back to disk when memory is short):
-# a full build is mostly small-file IO, which a spinning disk makes slow.
-work_dir = "ram"
 
 [providers.buildroot.host_tools]
 # The build image's ccache instead of building host-ccache and its libraries.
