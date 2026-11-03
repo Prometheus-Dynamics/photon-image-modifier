@@ -236,6 +236,12 @@ default = "photonvision"
 kind = "string"
 default = "2027.0.0-alpha-2"
 
+# The flasher tar's version (Atlas devices/raze/gaia/flasher.toml): the slot's
+# PhotonVision line, so each variant's flasher says 2026 or 2027.
+[inputs.flasher_version]
+kind = "string"
+default = "v${input.slot_version}"
+
 [inputs.slot_variant]
 kind = "string"
 default = "libcamera"
