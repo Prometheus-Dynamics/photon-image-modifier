@@ -20,7 +20,7 @@ build_target = "build/libs/photon-libcamera-gl-driver-linuxarm64.jar"
 build_command = ["./tools/build_arm64_jni.sh"]
 build_env = [
   ["BUILDROOT_HOST_DIR", "${project.build_dir}/image/buildroot-output/host"],
-  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  ["MAVEN_LOCAL_REPO", "${project.build_dir}/m2"],
   ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF"],
   ["GRADLE_EXTRA_ARGS", "-PversionString=${input.raze_libcamera_driver_version}"],
   ["CLEAN_BUILD", "1"],
@@ -46,7 +46,7 @@ build_command = ["${project.root_dir}/raze/scripts/build-photonvision-jar.sh"]
 build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
   ["LIBCAMERA_DRIVER_VERSION", "${input.raze_libcamera_driver_version}"],
-  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  ["MAVEN_LOCAL_REPO", "${project.build_dir}/m2"],
 ]
 source = "photonvision-source"
 dependencies = ["photon-libcamera-gl-driver"]

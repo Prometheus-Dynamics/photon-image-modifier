@@ -26,7 +26,7 @@ build_env = [
   ["PHOTONVISION_VERSION", "${input.raze_photonvision_version}"],
   ["PHOTONVISION_STYX", "1"],
   ["EIDOS_PATH", "${source.eidos.path}"],
-  ["MAVEN_LOCAL_REPO", "${project.root_dir}/${workspace.build_dir}/m2"],
+  ["MAVEN_LOCAL_REPO", "${project.build_dir}/m2"],
 ]
 source = "photonvision-source"
 install_name = "photonvision.jar"
