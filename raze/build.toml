@@ -29,7 +29,7 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "1ed76fd9a114e46b51b1f023a1f2d0dba6351b46"
+rev = "034663e54b82855f409c92b24afb14f9b7863390"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -64,7 +64,7 @@ rev = "0703507a4b192abaca4ca501f2b4a22a7bc77db3"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "01939e9d32fa1522bda04ed3fdb718aa9edf9179"
+rev = "50533a8d79cbac8dbc8986b6d3042f5ff6c18b16"
 
 # Styx's out-of-tree kernel modules (kernel-modules/ov9282: the OV9782 driver with the 1280x480
 # window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event; kernel-modules/pispbe:
