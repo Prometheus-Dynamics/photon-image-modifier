@@ -34,12 +34,14 @@
 set -eu
 
 # mkfs.erofs: LZMA (kernel CONFIG_EROFS_FS_ZIP_LZMA), 1 MiB physical clusters
-# (the best ratio; the kernel reads at most 1 MiB to fill a cold page), small
-# file tails packed into shared fragments. No dedupe: it saves nothing on this
-# root (+0.2% without it) and forces single-threaded compression; with
-# host-erofs-utils built multithreaded (external.mk), --workers cuts the
-# compression from ~105 s to ~14 s. A binary without --workers still works.
-erofs_opts="-zlzma,level=6 -C1048576 -Eztailpacking,fragments -Lrootfs"
+# (the best ratio; the kernel reads at most 1 MiB to fill a cold page), every
+# file's data packed into shared fragments (all-fragments: 172 KB smaller and
+# 3 s faster than tails only on the pv2027-styx root; HeliOS's Raze root uses
+# it too). No dedupe: 0.5% smaller for 8x the compression time (84 s against
+# 7 s); with host-erofs-utils built multithreaded (external.mk), --workers
+# cuts the compression from ~105 s to ~14 s. A binary without --workers
+# still works.
+erofs_opts="-zlzma,level=6 -C1048576 -Eztailpacking,fragments,all-fragments -Lrootfs"
 if mkfs.erofs --help 2>&1 | grep -q -- '--workers'; then
 	erofs_opts="$erofs_opts --workers=$(nproc)"
 fi
