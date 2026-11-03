@@ -29,23 +29,25 @@ target = "raze"
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "eadcf7cd15b4079f409a0a5fcb6875831c332a79"
+rev = "1ed76fd9a114e46b51b1f023a1f2d0dba6351b46"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
-# 414834b: the orion user at fixed uid/gid 901, so its state on the shared /data keeps its owner
+# 0703507: Gaia config v3 packaging layers (the Atlas device package is config v3 since 3c62ba1); the same
+# Orion HeliOS's Raze image ships. 414834b: the orion user at fixed uid/gid 901, so its state on the shared /data keeps its owner
 # across OS images. f8d767ac (live-streams, protocol 5): push sessions, streams with history and backfill, open
 # read and USB auto-enroll; the same Orion commit as the device package's board-agent.
 [[sources]]
 id = "orion"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Orion.git"
-rev = "414834b9abbe666bb86571dde7ca7e79d4fbfaa4"
+rev = "0703507a4b192abaca4ca501f2b4a22a7bc77db3"
 
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
 # import sources, so the Lemnos pin lives here, at the commit the device
-# package is tested with (Atlas devices/README.md). 384b2b1: the lemnos user at fixed uid/gid
+# package is tested with (Atlas devices/README.md). 01939e9: the commit Atlas 1ed76fd's Raze
+# package imports (manifest gaia_import.rev). 384b2b1: the lemnos user at fixed uid/gid
 # 900 (shared /data); 026abcd: lemnos-orion on Orion protocol 5 (it was rejected as protocol 4).
 # 7821ecd: one PIO TX
 # helper per bus (IMU ~5.6% of a core, was 8.4%); a9e352f: USB port power
@@ -62,7 +64,7 @@ rev = "414834b9abbe666bb86571dde7ca7e79d4fbfaa4"
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "384b2b1379b0c81e7d47349c93beb74e69d51bd0"
+rev = "01939e9d32fa1522bda04ed3fdb718aa9edf9179"
 
 # Styx's out-of-tree kernel modules (kernel-modules/ov9282: the OV9782 driver with the 1280x480
 # window mode; kernel-modules/rp1-cfe: the receiver with the mid-frame line event; kernel-modules/pispbe:
@@ -73,7 +75,7 @@ rev = "384b2b1379b0c81e7d47349c93beb74e69d51bd0"
 id = "styx"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Styx.git"
-rev = "fca40156dac138aef3f3aadc1d1a0f39e491fc32"
+rev = "12b63ebfba9b150608c30b168db9f546dde3aa69"
 
 [[stage.files]]
 id = "photonvision-raze-config"
@@ -461,6 +463,7 @@ stage_files = [
   "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",
   "photonvision-raze-builtin-camera-dropin",
+  "photonvision-raze-photonvision-clean-stop-dropin",
   "photonvision-raze-timesyncd-dropin",
   "photonvision-raze-timesyncd-conf",
   "photonvision-raze-nm-dispatcher-timesync",

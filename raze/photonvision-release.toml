@@ -25,7 +25,7 @@ kind = "java"
 build_target = "cmake_build/libphotonlibcamera.so"
 build_command = ["./tools/build_arm64_jni.sh"]
 build_env = [
-  ["BUILDROOT_HOST_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host"],
+  ["BUILDROOT_HOST_DIR", "${project.build_dir}/image/buildroot-output/host"],
   # No RPATH to the build tree's OpenCV: PhotonVision loads the jar's OpenCV
   # natives before this library.
   ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF -DCMAKE_SKIP_RPATH=ON"],
