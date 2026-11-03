@@ -104,6 +104,14 @@ if [ -n "$linux_dir" ] && grep -q '^CONFIG_MODULES=y' "$linux_dir/.config"; then
 	kver=$(cat "$linux_dir/include/config/kernel.release")
 	moddir="$root/lib/modules/$kver"
 
+	# Out-of-tree modules in updates/ (Styx's) by modprobe name ("-" is "_"):
+	# modprobe loads them instead of the in-tree module of the same name,
+	# which the device package leaves out (Gaia drop_shadowed_modules).
+	updates=
+	if [ -d "$moddir/updates" ]; then
+		updates=" $(find "$moddir/updates" -type f -name '*.ko*' | sed 's#.*/##; s/\.ko.*$//' | tr - _ | tr '\n' ' ')"
+	fi
+
 	# kbuild lists objects (foo.o) since 6.x, older kernels list foo.ko.
 	missing_modules() {
 		sed 's/\.o$/.ko/' "$linux_dir/modules.order" | while read -r ko; do
@@ -114,6 +122,10 @@ if [ -n "$linux_dir" ] && grep -q '^CONFIG_MODULES=y' "$linux_dir/.config"; then
 					break
 				fi
 			done
+			if [ -z "$found" ] && [ -n "$updates" ]; then
+				name=$(basename "$ko" .ko | tr - _)
+				case "$updates " in *" $name "*) found=1 ;; esac
+			fi
 			[ -n "$found" ] || echo "$ko"
 		done
 	}
