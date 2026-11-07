@@ -296,20 +296,13 @@ overrides = [
   ["input.raze_styx_build_dockerfile", "docker/build-styx-jdk17/Dockerfile"],
 ]
 
-# One run builds all four Raze images: the base config is the default
-# variant (PhotonVision 2027, libcamera), plus these three. They share the
-# sources, the whole Buildroot base, Lemnos, Orion and the Styx library; each
-# variant builds only its application, rootfs and image.
+# One run builds both Raze images: the base config is the default variant
+# (PhotonVision 2027, libcamera), plus Styx. They share the sources, the whole
+# Buildroot base, Lemnos, Orion and the Styx library; each variant builds only
+# its application, rootfs and image. The PhotonVision 2026 images are no longer
+# built (pv2026 and pv2026-styx stay as presets for a build by hand).
 #   gaia run build.toml --set input.target=raze --set input.profile=full
 #   gaia run build.toml --variant pv2027-styx ...   (a subset)
 [[variants]]
-id = "pv2026"
-preset = "pv2026"
-
-[[variants]]
 id = "pv2027-styx"
 preset = "pv2027-styx"
-
-[[variants]]
-id = "pv2026-styx"
-preset = "pv2026-styx"

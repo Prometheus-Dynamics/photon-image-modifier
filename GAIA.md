@@ -256,6 +256,10 @@ gaia run build.toml --set input.target=raze --set input.profile=full \
 
 ### PhotonVision 2026 (`--preset pv2026`)
 
+The 2026 Raze images are no longer built: they are not in `[[variants]]`, so
+a plain run and CI build only PhotonVision 2027 (libcamera and Styx). The
+presets below still build them by hand.
+
 The Raze image comes in two PhotonVision lines from one recipe, `build.toml`.
 2027 is the default. The `pv2026` preset selects PhotonVision 2026:
 
