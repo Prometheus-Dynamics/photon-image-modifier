@@ -25,11 +25,13 @@ target = "raze"
 # RP1 PIO I2C bus, the trial's self-test phase, and the ring kept lit while the
 # LED driver loads); see GAIA.md for building against a local Atlas
 # checkout.
+# 7ef0aa1: the joint dev point (Lemnos 80d5d1e, Orion a1eb750; bench-lock restarts,
+# trial-only installs, the ov9282 -ERANGE fix merged); Gaia 2.0.2 floor.
 [[sources]]
 id = "atlas"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Atlas-Hardware-Manager"
-rev = "f35131668e816951d27c147deeb5aa17d2988267"
+rev = "7ef0aa183ab9ce66e4a69cdf603735daf4771287"
 
 # orion-node (Orion's own Gaia layer, imported from the root build.toml) gives
 # the board an Orion node for host facts, actions and, later, updates.
@@ -37,11 +39,12 @@ rev = "f35131668e816951d27c147deeb5aa17d2988267"
 # Orion HeliOS's Raze image ships. 414834b: the orion user at fixed uid/gid 901, so its state on the shared /data keeps its owner
 # across OS images. f8d767ac (live-streams, protocol 5): push sessions, streams with history and backfill, open
 # read and USB auto-enroll; the same Orion commit as the device package's board-agent.
+# a1eb750: the joint dev point, the Orion Atlas 7ef0aa1 is tested with.
 [[sources]]
 id = "orion"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Orion.git"
-rev = "0703507a4b192abaca4ca501f2b4a22a7bc77db3"
+rev = "a1eb75034d80be4a5b1b231a6b616038fa20511d"
 
 # lemnosd, the board's hardware service (LEDs, fan, sensors), comes from the
 # device package's lemnos.toml layer. Gaia lets only local files declare
@@ -60,11 +63,12 @@ rev = "0703507a4b192abaca4ca501f2b4a22a7bc77db3"
 # demand (no IMU reads with no subscriber), one thread per bus; looks as data
 # (named and inline LED looks, look files, the pv.* looks), plus 8e59039's subscribe
 # replies, a deadline scheduler and boot-clock timestamps for live readings.
+# 80d5d1e: the joint dev point, Atlas 7ef0aa1's tested Lemnos (gaia_import.rev).
 [[sources]]
 id = "lemnos"
 kind = "git"
 repo = "https://github.com/Prometheus-Dynamics/Lemnos.git"
-rev = "50533a8d79cbac8dbc8986b6d3042f5ff6c18b16"
+rev = "80d5d1e67972c5f6ff4ffae944fb6fa6e090c76e"
 
 [[stage.files]]
 id = "photonvision-raze-photonvision-clean-stop-dropin"
