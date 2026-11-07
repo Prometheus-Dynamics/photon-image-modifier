@@ -25,7 +25,7 @@ kind = "java"
 build_target = "cmake_build/libphotonlibcamera.so"
 build_command = ["./tools/build_arm64_jni.sh"]
 build_env = [
-  ["BUILDROOT_HOST_DIR", "${project.root_dir}/${workspace.build_dir}/image/buildroot-output/host"],
+  ["BUILDROOT_HOST_DIR", "${project.build_dir}/image/buildroot-output/host"],
   # No RPATH to the build tree's OpenCV: PhotonVision loads the jar's OpenCV
   # natives before this library.
   ["CMAKE_EXTRA_ARGS", "-DPHOTON_LIBCAMERA_LINK_GLES=ON -DPHOTON_LIBCAMERA_WERROR=OFF -DCMAKE_SKIP_RPATH=ON"],
@@ -51,12 +51,12 @@ backend = "docker"
 [[artifacts]]
 id = "photonvision-jar"
 kind = "java"
-build_target = "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar"
+build_target = "${project.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar"
 build_command = [
   "${project.root_dir}/raze/scripts/swap-photonlibcamera.py",
   "--jar", "photonvision-${input.photonvision_ref}-linuxarm64.jar",
   "--lib", "${project.root_dir}/${workspace.out_dir}/artifacts/libphotonlibcamera.so",
-  "--out", "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar",
+  "--out", "${project.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar",
 ]
 source = "photonvision-source"
 dependencies = ["photon-libcamera-gl-driver-release"]
