@@ -51,12 +51,12 @@ backend = "docker"
 [[artifacts]]
 id = "photonvision-jar"
 kind = "java"
-build_target = "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar"
+build_target = "${project.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar"
 build_command = [
   "${project.root_dir}/raze/scripts/swap-photonlibcamera.py",
   "--jar", "photonvision-${input.photonvision_ref}-linuxarm64.jar",
   "--lib", "${project.root_dir}/${workspace.out_dir}/artifacts/libphotonlibcamera.so",
-  "--out", "${project.root_dir}/${workspace.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar",
+  "--out", "${project.build_dir}/photonvision-${input.photonvision_ref}-raze-linuxarm64.jar",
 ]
 source = "photonvision-source"
 dependencies = ["photon-libcamera-gl-driver-release"]
