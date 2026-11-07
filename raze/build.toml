@@ -447,6 +447,7 @@ stage_files = [
   "photonvision-raze-journald-conf",
   "photonvision-raze-photonvision-read-only-dropin",
   "photonvision-raze-builtin-camera-dropin",
+  "photonvision-raze-photonvision-clean-stop-dropin",
   "photonvision-raze-timesyncd-dropin",
   "photonvision-raze-timesyncd-conf",
   "photonvision-raze-nm-dispatcher-timesync",
